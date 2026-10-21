@@ -14,7 +14,7 @@ export const POLL_MS = 5000
  *
  * Separate from the resources' transition polls because invoices are not decided by `status`: an invoice
  * being paid stays `status: New` and moves on `paymentState` instead. The admin portal
- * (titan-admin-console) keeps a copy of this hook so both stop at the same moment — an admin watching a
+ * (titan-admin-console) keeps a copy of this hook with the same rule, so both stop at the same moment — an admin watching a
  * payment they triggered and the customer watching the same payment should not disagree.
  *
  * `null`/absent is SETTLED here, not "in flight": it means nobody has paid this invoice, which is a
