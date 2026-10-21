@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+/* Light values live in @theme; the dark palette only redefines the same variables below.
+   Utilities compile to var(--color-…), so the theme switches without touching a component.
+   No `@theme inline`: it bakes the values into each utility and the dark override stops working. */
+@theme {
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --color-background: #f3f4f7;
+  --color-foreground: #1b1d27;
+  --color-soft-foreground: #393d4d;
+  --color-muted-foreground: #555a6c;
+  --color-faint: #636878;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #1b1d27;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1b1d27;
+
+  --color-muted: #eceef3;
+  --color-border: #e1e4ea;
+  --color-border-strong: #c9cdd7;
+  --color-input: #c9cdd7;
+  --color-ring: hsl(32 92% 42%);
+  --color-overlay: rgb(10 11 16 / 0.5);
+
+  /* Accent: amber, the brand colour shared with the public site. Text on it is near-black. */
+  --color-primary: hsl(38 95% 52%);
+  --color-primary-foreground: #2a1800;
+  --color-primary-soft: hsl(40 92% 92%);
+  --color-primary-ink: hsl(30 90% 30%);
+
+  --color-secondary: #eceef3;
+  --color-secondary-foreground: #1b1d27;
+  --color-accent: #eceef3;
+  --color-accent-foreground: #1b1d27;
+
+  --color-destructive: #b42318;
+  --color-destructive-foreground: #ffffff;
+
+  --color-sidebar: #ffffff;
+  --color-sidebar-border: #e1e4ea;
+  --color-sidebar-foreground: #555a6c;
+  --color-sidebar-foreground-active: #1b1d27;
+
+  /* Status colours, each with a soft fill and a border, so a badge reads in both themes. */
+  --color-ok: #146c43;
+  --color-ok-soft: #e2f4ea;
+  --color-ok-border: #b4e0c8;
+  --color-warn: #8a4b00;
+  --color-warn-soft: #fcefd8;
+  --color-warn-border: #efd19c;
+  --color-bad: #b42318;
+  --color-bad-soft: #fde7e4;
+  --color-bad-border: #f4c0b9;
+  --color-info: #2453b8;
+  --color-info-soft: #e5edff;
+  --color-info-border: #bccdf6;
+  --color-idle: #555a6c;
+  --color-idle-soft: #eceef3;
+  --color-idle-border: #d6d9e1;
+
+  /* A QR code must stay black on white in either theme to scan. */
+  --color-qr: #ffffff;
+  --color-qr-foreground: #111111;
+
+  --radius: 0.5rem;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-background: #0d0e12;
+    --color-foreground: #eceef3;
+    --color-soft-foreground: #c9ccd6;
+    --color-muted-foreground: #a3a8b8;
+    --color-faint: #8b90a1;
+    --color-card: #15161c;
+    --color-card-foreground: #eceef3;
+    --color-popover: #1b1d24;
+    --color-popover-foreground: #eceef3;
+    --color-muted: #20222a;
+    --color-border: #262933;
+    --color-border-strong: #383c49;
+    --color-input: #383c49;
+    --color-ring: hsl(38 95% 58%);
+    --color-overlay: rgb(0 0 0 / 0.6);
+    --color-primary: hsl(38 95% 58%);
+    --color-primary-foreground: #1d1300;
+    --color-primary-soft: hsl(38 60% 14%);
+    --color-primary-ink: hsl(38 95% 64%);
+    --color-secondary: #20222a;
+    --color-secondary-foreground: #eceef3;
+    --color-accent: #20222a;
+    --color-accent-foreground: #eceef3;
+    --color-destructive: #f87167;
+    --color-destructive-foreground: #1d0b09;
+    --color-sidebar: #121318;
+    --color-sidebar-border: #262933;
+    --color-sidebar-foreground: #a3a8b8;
+    --color-sidebar-foreground-active: #eceef3;
+    --color-ok: #4cc98a;
+    --color-ok-soft: #12271d;
+    --color-ok-border: #1f4d36;
+    --color-warn: #f0b04a;
+    --color-warn-soft: #2a2010;
+    --color-warn-border: #5a4218;
+    --color-bad: #f87167;
+    --color-bad-soft: #2d1513;
+    --color-bad-border: #5e2722;
+    --color-info: #7ea6ff;
+    --color-info-soft: #151f36;
+    --color-info-border: #29406f;
+    --color-idle: #a3a8b8;
+    --color-idle-soft: #20222a;
+    --color-idle-border: #383c49;
+  }
+}
+
+/* Same dark values: an explicit choice in the account menu wins over the OS setting both ways. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-background: #0d0e12;
+  --color-foreground: #eceef3;
+  --color-soft-foreground: #c9ccd6;
+  --color-muted-foreground: #a3a8b8;
+  --color-faint: #8b90a1;
+  --color-card: #15161c;
+  --color-card-foreground: #eceef3;
+  --color-popover: #1b1d24;
+  --color-popover-foreground: #eceef3;
+  --color-muted: #20222a;
+  --color-border: #262933;
+  --color-border-strong: #383c49;
+  --color-input: #383c49;
+  --color-ring: hsl(38 95% 58%);
+  --color-overlay: rgb(0 0 0 / 0.6);
+  --color-primary: hsl(38 95% 58%);
+  --color-primary-foreground: #1d1300;
+  --color-primary-soft: hsl(38 60% 14%);
+  --color-primary-ink: hsl(38 95% 64%);
+  --color-secondary: #20222a;
+  --color-secondary-foreground: #eceef3;
+  --color-accent: #20222a;
+  --color-accent-foreground: #eceef3;
+  --color-destructive: #f87167;
+  --color-destructive-foreground: #1d0b09;
+  --color-sidebar: #121318;
+  --color-sidebar-border: #262933;
+  --color-sidebar-foreground: #a3a8b8;
+  --color-sidebar-foreground-active: #eceef3;
+  --color-ok: #4cc98a;
+  --color-ok-soft: #12271d;
+  --color-ok-border: #1f4d36;
+  --color-warn: #f0b04a;
+  --color-warn-soft: #2a2010;
+  --color-warn-border: #5a4218;
+  --color-bad: #f87167;
+  --color-bad-soft: #2d1513;
+  --color-bad-border: #5e2722;
+  --color-info: #7ea6ff;
+  --color-info-soft: #151f36;
+  --color-info-border: #29406f;
+  --color-idle: #a3a8b8;
+  --color-idle-soft: #20222a;
+  --color-idle-border: #383c49;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+    box-sizing: border-box;
+  }
+
+  html {
+    background-color: var(--color-background);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: var(--color-primary-soft);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-faint);
+  }
+}
