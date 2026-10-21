@@ -1,8 +1,8 @@
 name: CI — Portal
 
 on:
-  # Every push to main builds every image of the repository, so they all come from one commit (titan pulls a
-  # commit only when every workflow here published it).
+  # Every push to main publishes titan-cloud-console. Which tag an environment runs is decided outside this repository:
+  # dev by scripts/pull-images.py of OpenViCloud/titan-local-cluster, staging by a release of OpenViCloud/titan.
   push:
     branches: [main]
   pull_request:
