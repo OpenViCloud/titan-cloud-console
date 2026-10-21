@@ -26,7 +26,7 @@ thì phải chạy `npx eslint . --prune-suppressions` — nếu không CI đỏ
 `react-refresh/only-export-components` | 7 | `src/` | không (chỉ ảnh hưởng HMR lúc dev) |
 `@typescript-eslint/no-unused-vars` | 1 (nay 0) | `src/test/` | không |
 
-**2 dòng có hậu quả đã được SỬA, không suppress.** 46 dòng còn lại nằm trong baseline lúc dựng (2026-10-13 còn 40), và **không
+**2 dòng có hậu quả đã được SỬA, không suppress.** 46 dòng còn lại nằm trong baseline lúc dựng (2026-10-13 còn 40; nay 39 sau khi tách repo: 33 + 6), và **không
 dòng nào** ở code runtime của khách.
 
 ## Từng mục trong baseline

@@ -24,7 +24,7 @@ function devClusterConfig(): Plugin {
           res.end(JSON.stringify(config))
         } catch (error) {
           res.statusCode = 502
-          res.end(`dev cluster unreachable at ${app}/config.json — start it with local-cluster/mac (${String(error)})`)
+          res.end(`dev cluster unreachable at ${app}/config.json — start it with mac/ of OpenViCloud/titan-local-cluster (${String(error)})`)
         }
       })
     },

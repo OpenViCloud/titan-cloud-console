@@ -13,8 +13,8 @@ export const POLL_MS = 5000
  * docs/architecture/money-and-wallet.md#single-writer-outbox S7 — refresh invoices while any payment is still being applied, then stop.
  *
  * Separate from the resources' transition polls because invoices are not decided by `status`: an invoice
- * being paid stays `status: New` and moves on `paymentState` instead. Shared by the tenant list, the
- * tenant detail page and the admin table so all three stop at the same moment — an admin watching a
+ * being paid stays `status: New` and moves on `paymentState` instead. The admin portal
+ * (titan-admin-console) keeps a copy of this hook so both stop at the same moment — an admin watching a
  * payment they triggered and the customer watching the same payment should not disagree.
  *
  * `null`/absent is SETTLED here, not "in flight": it means nobody has paid this invoice, which is a
