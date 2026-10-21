@@ -1,4 +1,4 @@
-// Which language the portal shows (docs/features/customer-portal/design.md#portal-language): English unless the
+// Which language the portal shows (docs/features/cloud-console/design.md#portal-language): English unless the
 // user picked Vietnamese in the account menu; with nothing picked, a first visit from Vietnam starts in
 // Vietnamese. The pick is per browser (same rule as the public site, docs/features/public-site/design.md#site-language).
 export type Lang = 'en' | 'vi'
@@ -32,7 +32,7 @@ export function browserStorage(): Storage | null {
 
 // Keycloak's login page in the language the user picked; with no pick it follows the browser, since the portal's
 // guess by country is not known yet when an unsigned visitor is sent to Keycloak
-// (docs/features/customer-portal/design.md#login-page).
+// (docs/features/cloud-console/design.md#login-page).
 export function signinArgs(storage: Storage | null): { ui_locales?: Lang } {
   const saved = readSavedLang(storage)
   if (saved === null) {

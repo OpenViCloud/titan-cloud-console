@@ -20,7 +20,7 @@ interface LanguageState {
 // Without a provider (most component tests) the portal is English and the switch does nothing.
 export const LanguageContext = createContext<LanguageState>({ lang: 'en', setLang: () => {} })
 
-// Same-origin Cloudflare trace (docs/features/customer-portal/design.md#portal-language). Anything but a
+// Same-origin Cloudflare trace (docs/features/cloud-console/design.md#portal-language). Anything but a
 // trace with a loc= line — no Cloudflare in front, the SPA fallback page, a timeout — means no country.
 export type CountryDetector = (signal: AbortSignal) => Promise<string | null>
 

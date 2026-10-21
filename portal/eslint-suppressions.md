@@ -26,7 +26,7 @@ thì phải chạy `npx eslint . --prune-suppressions` — nếu không CI đỏ
 `react-refresh/only-export-components` | 7 | `src/` | không (chỉ ảnh hưởng HMR lúc dev) |
 `@typescript-eslint/no-unused-vars` | 1 (nay 0) | `src/test/` | không |
 
-**2 dòng có hậu quả đã được SỬA, không suppress.** 46 dòng còn lại nằm trong baseline lúc dựng (2026-10-13 còn 40), và **không
+**2 dòng có hậu quả đã được SỬA, không suppress.** 46 dòng còn lại nằm trong baseline lúc dựng (2026-10-13 còn 40; nay 39 sau khi tách repo: 33 + 6), và **không
 dòng nào** ở code runtime của khách.
 
 ## Từng mục trong baseline
@@ -61,7 +61,7 @@ nếu chúng đã hết dùng (chúng phục vụ iteration `pay-requires-confir
 dạng upstream ship. Hậu quả duy nhất là **Fast Refresh** remount thay vì hot-update file đó lúc dev.
 
 **Đường teo:** tách phần không-phải-component ra file riêng (`badge-variants.ts`, `router-routes.ts`).
-Rẻ và cơ học. **Chưa có story** — nhưng đây là 7 dòng **nên** teo, khác 33 dòng ở trên.
+Rẻ và cơ học. **Chưa có story** — nhưng đây là 6 dòng **nên** teo, khác 33 dòng ở trên.
 
 ### `@typescript-eslint/no-unused-vars` — 0 (đã teo)
 

@@ -1,4 +1,4 @@
-// English is the portal's default language (docs/features/customer-portal/design.md#portal-language).
+// English is the portal's default language (docs/features/cloud-console/design.md#portal-language).
 // vi.ts must have the same keys: its type is Messages, taken from this object.
 export const en = {
   common: {
