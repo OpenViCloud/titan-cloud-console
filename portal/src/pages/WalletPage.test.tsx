@@ -132,7 +132,7 @@ describe('WalletPage', () => {
     await waitFor(() => expect(screen.getByText(/credit added/i)).toBeInTheDocument())
   })
 
-  // docs/features/customer-portal/design.md#portal-language — the page shows 500.000 ₫ in Vietnamese, so a customer types
+  // docs/features/cloud-console/design.md#portal-language — the page shows 500.000 ₫ in Vietnamese, so a customer types
   // it that way; it must ask for five hundred thousand đồng, not five hundred.
   it('asks for the amount typed with the grouping mark the page shows', async () => {
     stub({ topups: [topUp({ status: 'Pending' })] })

@@ -61,7 +61,7 @@ nếu chúng đã hết dùng (chúng phục vụ iteration `pay-requires-confir
 dạng upstream ship. Hậu quả duy nhất là **Fast Refresh** remount thay vì hot-update file đó lúc dev.
 
 **Đường teo:** tách phần không-phải-component ra file riêng (`badge-variants.ts`, `router-routes.ts`).
-Rẻ và cơ học. **Chưa có story** — nhưng đây là 7 dòng **nên** teo, khác 33 dòng ở trên.
+Rẻ và cơ học. **Chưa có story** — nhưng đây là 6 dòng **nên** teo, khác 33 dòng ở trên.
 
 ### `@typescript-eslint/no-unused-vars` — 0 (đã teo)
 

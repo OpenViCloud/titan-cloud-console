@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 
-// Every word the portal shows comes from src/i18n (docs/features/customer-portal/design.md#portal-language),
+// Every word the portal shows comes from src/i18n (docs/features/cloud-console/design.md#portal-language),
 // so it reads in the language the user picked. This scan finds text written straight into a component:
 // JSX text, the text attributes below, toast messages, and label/title fields of object literals.
 // It does not see text built elsewhere and passed in as a variable, or text inside lib/*.ts.

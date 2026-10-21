@@ -1,6 +1,6 @@
 import type { Lang } from '@/i18n/lang'
 
-// Money and dates follow the language the reader picked (docs/features/customer-portal/design.md#portal-language):
+// Money and dates follow the language the reader picked (docs/features/cloud-console/design.md#portal-language):
 // 900,000 ₫ in English, 900.000 ₫ in Vietnamese. Titan bills in VND (docs/architecture/money-and-wallet.md#money-is-long-vnd)
 // — VND has no minor unit, so totals show no decimals and a "₫" suffix. A legacy/other currency falls back
 // to the old prefix style so nothing renders as raw numbers if the backend ever returns non-VND.

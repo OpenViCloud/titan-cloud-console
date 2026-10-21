@@ -52,7 +52,7 @@ describe('dates follow the language', () => {
   })
 })
 
-// docs/features/customer-portal/design.md#portal-language: the page shows 500.000 ₫ in Vietnamese, so a reader types
+// docs/features/cloud-console/design.md#portal-language: the page shows 500.000 ₫ in Vietnamese, so a reader types
 // it that way. Number('500.000') is 500 — the old reading — and these pin the new one.
 describe('typed money follows the way the page shows it', () => {
   it('reads a whole-đồng amount with either grouping mark', () => {
