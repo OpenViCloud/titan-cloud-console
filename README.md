@@ -28,8 +28,10 @@ Node 22.
 
 Every push to `main` publishes the `linux/arm64` image `ghcr.io/openvicloud/titan-cloud-console` (`ci-portal.yml`),
 tagged with the commit's first 7 characters. Only the publishing job of a push to `main` may write packages; pull
-requests run the tests only. OpenViCloud/titan decides which tag each of its environments runs and is responsible for
-pulling it.
+requests run the tests only. Which tag an environment runs is decided
+outside this repository: dev by `scripts/pull-images.py` of
+[OpenViCloud/titan-local-cluster](https://github.com/OpenViCloud/titan-local-cluster), staging by a release of
+[OpenViCloud/titan](https://github.com/OpenViCloud/titan).
 
 ## License
 
