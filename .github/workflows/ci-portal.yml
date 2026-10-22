@@ -2,7 +2,7 @@ name: CI — Portal
 
 on:
   # Every push to main publishes titan-cloud-console. Which tag an environment runs is decided outside this repository:
-  # dev by scripts/pull-images.py of OpenViCloud/titan-local-cluster, staging by a release of OpenViCloud/titan.
+  # dev by scripts/pull-images.py of OpenViCloud/titan-local-cluster, staging by a release of OpenViCloud/titan-ops.
   push:
     branches: [main]
   pull_request:
@@ -47,12 +47,39 @@ jobs:
       - name: Typecheck & build
         run: npm run build
 
-  # Only a push to main publishes: pull requests (forks included) run the tests with a read-only token.
-  build-and-push:
-    name: Build & Push
+  # Built on every run beside the tests, its layers kept in the Actions cache. Pushed only from main, once the tests
+  # passed, by the push job reading those layers back; pull requests (forks included) run with a read-only token.
+  # The push job publishes with this repository's token, so the package is linked to this repository; the label
+  # records the source too.
+  image:
+    name: Image build
     runs-on: ubuntu-latest
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v5
+        with:
+          context: portal
+          platforms: linux/arm64
+          push: false
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=titan-cloud-console
+          cache-to: type=gha,mode=max,scope=titan-cloud-console
+
+  push:
+    name: Image push
+    runs-on: ubuntu-latest
+    needs: [test, image]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
@@ -77,8 +104,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Published with this repository's token, the package is linked to this repository; the label records the source too.
-      - name: Build and push Docker image
+      - name: Push
         uses: docker/build-push-action@v5
         with:
           context: portal
@@ -86,3 +112,4 @@ jobs:
           push: true
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: ghcr.io/openvicloud/titan-cloud-console:${{ env.SHORT_SHA }}
+          cache-from: type=gha,scope=titan-cloud-console
