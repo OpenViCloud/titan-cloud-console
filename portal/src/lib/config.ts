@@ -3,6 +3,8 @@ export interface AppConfig {
   keycloakRealm: string
   keycloakClientId: string
   apiBaseUrl: string
+  // docs/features/billing/topup/design.md#topup-portal
+  topUpEnabled?: boolean
 }
 
 let _config: AppConfig | null = null

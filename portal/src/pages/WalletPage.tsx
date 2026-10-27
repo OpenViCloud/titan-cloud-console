@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { useT, useFormat } from '@/i18n/LanguageContext'
 import type { Messages } from '@/i18n/en'
+import { getConfig } from '@/lib/config'
 import { vietQrUrl, sepayBankInfo } from '@/lib/sepay'
 import { parseWholeVnd } from '@/lib/money'
 import {
@@ -58,6 +59,8 @@ export function WalletPage() {
   const debt = useOutstandingDebt()
   const currency = wallet?.currency ?? debt.currency
   const [buyOpen, setBuyOpen] = useState(false)
+  // docs/features/billing/topup/design.md#topup-portal
+  const topUpEnabled = getConfig().topUpEnabled === true
 
   return (
     <div className="max-w-4xl">
@@ -70,10 +73,12 @@ export function WalletPage() {
             {t.wallet.subtitle}
           </p>
         </div>
-        <Button onClick={() => setBuyOpen(true)}>
-          <Plus className="w-4 h-4" strokeWidth={1.75} />
-          {t.wallet.buyCredit}
-        </Button>
+        {topUpEnabled && (
+          <Button onClick={() => setBuyOpen(true)}>
+            <Plus className="w-4 h-4" strokeWidth={1.75} />
+            {t.wallet.buyCredit}
+          </Button>
+        )}
       </div>
 
       <OverdueBanner debt={debt} currency={currency} />
@@ -96,10 +101,10 @@ export function WalletPage() {
         />
       </div>
 
-      <StatementSection currency={currency} />
-      <ReceiptsSection currency={currency} />
+      <StatementSection currency={currency} topUpEnabled={topUpEnabled} />
+      {topUpEnabled && <ReceiptsSection currency={currency} />}
 
-      <BuyCreditDialog open={buyOpen} onOpenChange={setBuyOpen} currency={currency} />
+      {topUpEnabled && <BuyCreditDialog open={buyOpen} onOpenChange={setBuyOpen} currency={currency} />}
     </div>
   )
 }
@@ -170,7 +175,7 @@ function typeBadge(t: Messages, type: StatementLine['type']) {
   return <Badge variant="success">{t.wallet.typeTopUp}</Badge>
 }
 
-function StatementSection({ currency }: { currency: string }) {
+function StatementSection({ currency, topUpEnabled }: { currency: string; topUpEnabled: boolean }) {
   const t = useT()
   const f = useFormat()
   const { data: statement, isError } = useWalletStatement()
@@ -203,7 +208,7 @@ function StatementSection({ currency }: { currency: string }) {
                       <WalletIcon className="w-5 h-5" strokeWidth={1.5} />
                     </div>
                     <p className="text-[13px] text-faint font-medium">{t.wallet.statementEmpty}</p>
-                    <p className="text-xs text-faint">{t.wallet.statementEmptyHint}</p>
+                    {topUpEnabled && <p className="text-xs text-faint">{t.wallet.statementEmptyHint}</p>}
                   </div>
                 </TableCell>
               </TableRow>
