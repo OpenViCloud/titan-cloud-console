@@ -3,6 +3,9 @@ export interface AppConfig {
   keycloakRealm: string
   keycloakClientId: string
   apiBaseUrl: string
+  // Buying credit shows only when this is the boolean true; absent means off
+  // (docs/features/billing/topup/design.md#topup-portal).
+  topUpEnabled?: boolean
 }
 
 let _config: AppConfig | null = null

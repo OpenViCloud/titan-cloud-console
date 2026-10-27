@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/server'
 import { MemoryRouter } from 'react-router-dom'
 import { renderWithProviders } from '@/test/renderWithProviders'
+import { getConfig, setConfig, type AppConfig } from '@/lib/config'
 import { WalletPage } from './WalletPage'
 
 // docs/architecture/money-and-wallet.md#human-confirmed-debit — the overdue banner now links to the invoice list (topping up no longer settles anything
@@ -15,6 +16,17 @@ function renderPage() {
       <WalletPage />
     </MemoryRouter>,
   )
+}
+
+// Buying credit shows only when config.json turns top-up on (docs/features/billing/topup/design.md#topup-portal).
+// setup.ts loads a config without the flag, so the cases that buy credit turn it on for themselves.
+function withConfig(change: Partial<AppConfig>) {
+  let loaded: AppConfig
+  beforeEach(() => {
+    loaded = getConfig()
+    setConfig({ ...loaded, ...change })
+  })
+  afterEach(() => setConfig(loaded))
 }
 
 const wallet = (o = {}) => ({ balance: 900000, currency: 'VND', ...o })
@@ -55,6 +67,7 @@ function stub(opts: {
 }
 
 describe('WalletPage', () => {
+  withConfig({ topUpEnabled: true })
   beforeEach(() => vi.clearAllMocks())
 
   // AC-P1.1 — real content: the balance value and a statement row, not just the heading.
@@ -78,6 +91,7 @@ describe('WalletPage', () => {
     renderPage()
 
     await waitFor(() => expect(screen.getByText(/no wallet activity yet/i)).toBeInTheDocument())
+    expect(screen.getByText(/buy credit to get started/i)).toBeInTheDocument()
     expect(await screen.findAllByText(/0\s*₫/)).not.toHaveLength(0)
   })
 
@@ -355,7 +369,45 @@ describe('WalletPage — overdue banner offers a way to pay', () => {
   })
 })
 
+describe('WalletPage — top-up off', () => {
+  it('shows the balance and statement, with no way to buy credit and no receipts', async () => {
+    stub({
+      st: statement([{ at: '2026-08-25T00:00:00Z', type: 'Promo', amount: 900000, runningBalance: 900000 }]),
+      topups: [topUp({ status: 'Confirmed', confirmedAt: '2026-08-27T00:00:00Z' })],
+    })
+    renderPage()
+
+    expect(await screen.findByText('Promo')).toBeInTheDocument()
+    expect(screen.getAllByText(/900[.,]000\s*₫/).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: /buy credit/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /^receipts$/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/TITAN-7F3KQ9A2/)).not.toBeInTheDocument()
+  })
+
+  it('says nothing about buying credit on an empty statement', async () => {
+    stub({ w: wallet({ balance: 0 }), st: statement([]) })
+    renderPage()
+
+    expect(await screen.findByText(/no wallet activity yet/i)).toBeInTheDocument()
+    expect(screen.queryByText(/buy credit/i)).not.toBeInTheDocument()
+  })
+
+  describe('with a flag that is not the boolean true', () => {
+    withConfig({ topUpEnabled: 'true' as unknown as boolean })
+
+    it('still offers no way to buy credit', async () => {
+      stub()
+      renderPage()
+
+      expect(await screen.findByText(/no wallet activity yet/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /buy credit/i })).not.toBeInTheDocument()
+    })
+  })
+})
+
 describe('WalletPage — Vietnamese', () => {
+  withConfig({ topUpEnabled: true })
+
   it('shows the heading, the statement and the overdue banner in Vietnamese', async () => {
     stub({
       st: statement([
