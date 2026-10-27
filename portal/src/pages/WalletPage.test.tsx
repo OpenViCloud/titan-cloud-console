@@ -19,7 +19,7 @@ function renderPage() {
 }
 
 // Buying credit shows only when config.json turns top-up on (docs/features/billing/topup/design.md#topup-portal).
-// setup.ts loads a config without the flag, so the cases that buy credit turn it on for themselves.
+// setup.ts loads a config without the flag, so the cases that buy credit or read receipts turn it on for themselves.
 function withConfig(change: Partial<AppConfig>) {
   let loaded: AppConfig
   beforeEach(() => {

@@ -59,8 +59,7 @@ export function WalletPage() {
   const debt = useOutstandingDebt()
   const currency = wallet?.currency ?? debt.currency
   const [buyOpen, setBuyOpen] = useState(false)
-  // Off unless config.json turns it on (docs/features/billing/topup/design.md#topup-portal): with it off the page
-  // shows no button, dialog, receipts or hint that speaks of buying credit.
+  // docs/features/billing/topup/design.md#topup-portal
   const topUpEnabled = getConfig().topUpEnabled === true
 
   return (
