@@ -7,13 +7,13 @@ import { server } from '@/test/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { VmCreateModal } from './VmCreateModal'
 
-const activeNetwork = { id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' }
-const zone = { id: 'z1', name: 'Zone 1' }
+const activeNetwork = { id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }
+const cluster = { id: 'z1', name: 'Cluster 1' }
 const template = { id: 't1', name: 'Ubuntu 22.04', os: 'Ubuntu' }
 const offering = { id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }
-const zoneTwoNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', zoneId: 'z2' }
+const clusterTwoNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', clusterId: 'z2' }
 
-// The form refuses to send until zone, network, template and size are chosen; a test about what the server answers
+// The form refuses to send until cluster, network, template and size are chosen; a test about what the server answers
 // picks whatever it did not pick itself: the first option of each choice still empty.
 async function chooseTheRest() {
   for (const name of ['Network', 'Template', 'Size']) {
@@ -46,7 +46,7 @@ describe('VmCreateModal', () => {
     expect(screen.getByText('Vui lòng nhập tên')).toBeInTheDocument()
   })
 
-  // A request without zone, template or size is a 400 the form showed as "Something went wrong".
+  // A request without cluster, template or size is a 400 the form showed as "Something went wrong".
   it('asks for every choice and sends nothing while one is missing', async () => {
     let posted = false
     server.use(
@@ -60,7 +60,7 @@ describe('VmCreateModal', () => {
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
 
-    expect(screen.getByText('Choose a zone, network, template and size.')).toBeInTheDocument()
+    expect(screen.getByText('Choose a cluster, network, template and size.')).toBeInTheDocument()
     expect(posted).toBe(false)
   })
 
@@ -83,7 +83,7 @@ describe('VmCreateModal', () => {
     let requestBody: unknown
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', async ({ request }) => {
         requestBody = await request.json()
@@ -95,8 +95,8 @@ describe('VmCreateModal', () => {
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    // The zone comes first: the network and template lists only open once a zone is chosen.
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z1')
+    // The cluster comes first: the network and template lists only open once a cluster is chosen.
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
 
     // Template option label pulls the `os` field from the API DTO — regression guard
     // against the `osTypeName` mismatch that rendered "<name> — undefined".
@@ -108,8 +108,8 @@ describe('VmCreateModal', () => {
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
     expect((requestBody as { name: string }).name).toBe('my-vm')
-    expect((requestBody as { zoneId: string; networkId: string }).zoneId).toBe('z1')
-    expect((requestBody as { zoneId: string; networkId: string }).networkId).toBe('n1')
+    expect((requestBody as { clusterId: string; networkId: string }).clusterId).toBe('z1')
+    expect((requestBody as { clusterId: string; networkId: string }).networkId).toBe('n1')
     expect((requestBody as { templateId: string }).templateId).toBe('t1')
   })
 
@@ -122,7 +122,7 @@ describe('VmCreateModal', () => {
     let requestBody: { sshKeyIds?: string[] } = {}
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.get('*/v1/tenant/ssh-keys', () => HttpResponse.json([laptopKey, desktopKey])),
       http.post('*/v1/tenant/vms', async ({ request }) => {
@@ -134,7 +134,7 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z1')
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
     await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
     for (const s of screen.getAllByRole('combobox')) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
 
@@ -158,7 +158,7 @@ describe('VmCreateModal', () => {
   it('says so when a picked key was deleted meanwhile', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.get('*/v1/tenant/ssh-keys', () => HttpResponse.json([laptopKey])),
       http.post('*/v1/tenant/vms', () =>
@@ -167,7 +167,7 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z1')
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
     await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
     for (const s of screen.getAllByRole('combobox')) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
     await userEvent.click(await screen.findByRole('checkbox', { name: /laptop/ }))
@@ -177,58 +177,58 @@ describe('VmCreateModal', () => {
     expect(await screen.findByText('A picked SSH key no longer exists — pick again')).toBeInTheDocument()
   })
 
-  // docs/features/catalog/design.md#template-per-zone — each zone's cluster holds its own copy of a template; the
-  // form offers only the ones synced in the zone picked.
-  const zoneTwo = { id: 'z2', name: 'Zone 2' }
+  // docs/features/catalog/design.md#template-per-cluster — each cluster holds its own copy of a template; the
+  // form offers only the ones synced in the cluster picked.
+  const clusterTwo = { id: 'z2', name: 'Cluster 2' }
   const debian = { id: 't2', name: 'Debian 12', os: 'Debian' }
-  const templatesByZone = http.get('*/v1/templates', ({ request }) => {
-    const zoneId = new URL(request.url).searchParams.get('zoneId')
-    if (zoneId === 'z1') {
+  const templatesByCluster = http.get('*/v1/templates', ({ request }) => {
+    const clusterId = new URL(request.url).searchParams.get('clusterId')
+    if (clusterId === 'z1') {
       return HttpResponse.json([template])
     }
-    if (zoneId === 'z2') {
+    if (clusterId === 'z2') {
       return HttpResponse.json([debian])
     }
     return HttpResponse.json([template, debian])
   })
 
-  it('lists only the templates synced in the picked zone', async () => {
+  it('lists only the templates synced in the picked cluster', async () => {
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, zoneTwoNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone, zoneTwo])),
-      templatesByZone,
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, clusterTwoNetwork])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster, clusterTwo])),
+      templatesByCluster,
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
 
-    await waitFor(() => expect(screen.getAllByText(/select a zone first/i)).toHaveLength(2)) // network + template
-    const zoneSelect = await screen.findByRole('combobox', { name: 'Zone' })
+    await waitFor(() => expect(screen.getAllByText(/select a cluster first/i)).toHaveLength(2)) // network + template
+    const clusterSelect = await screen.findByRole('combobox', { name: 'Cluster' })
 
-    await userEvent.selectOptions(zoneSelect, 'z1')
+    await userEvent.selectOptions(clusterSelect, 'z1')
     expect(await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Debian 12 — Debian' })).not.toBeInTheDocument()
 
-    await userEvent.selectOptions(zoneSelect, 'z2')
+    await userEvent.selectOptions(clusterSelect, 'z2')
     expect(await screen.findByRole('option', { name: 'Debian 12 — Debian' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })).not.toBeInTheDocument()
   })
 
-  it('drops the chosen template when the new zone does not offer it', async () => {
+  it('drops the chosen template when the new cluster does not offer it', async () => {
     let requestBody: unknown
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, zoneTwoNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone, zoneTwo])),
-      templatesByZone,
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, clusterTwoNetwork])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster, clusterTwo])),
+      templatesByCluster,
       http.post('*/v1/tenant/vms', async ({ request }) => {
         requestBody = await request.json()
         return HttpResponse.json({ id: 'vm-new' }, { status: 202 })
       }),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-    const zoneSelect = await screen.findByRole('combobox', { name: 'Zone' })
-    await userEvent.selectOptions(zoneSelect, 'z1')
+    const clusterSelect = await screen.findByRole('combobox', { name: 'Cluster' })
+    await userEvent.selectOptions(clusterSelect, 'z1')
     await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Template' }), 't1')
 
-    await userEvent.selectOptions(zoneSelect, 'z2')
+    await userEvent.selectOptions(clusterSelect, 'z2')
     await screen.findByRole('option', { name: 'Debian 12 — Debian' })
 
     // Network and size chosen, template not: a template still chosen from z1 would let the form send. The select
@@ -237,15 +237,15 @@ describe('VmCreateModal', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Size' }), 'm')
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
-    expect(await screen.findByText('Choose a zone, network, template and size.')).toBeInTheDocument()
+    expect(await screen.findByText('Choose a cluster, network, template and size.')).toBeInTheDocument()
     expect(requestBody).toBeUndefined()
   })
 
-  it('keeps the chosen template when the new zone offers it too', async () => {
+  it('keeps the chosen template when the new cluster offers it too', async () => {
     let requestBody: unknown
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, zoneTwoNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone, zoneTwo])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, clusterTwoNetwork])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster, clusterTwo])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', async ({ request }) => {
         requestBody = await request.json()
@@ -253,11 +253,11 @@ describe('VmCreateModal', () => {
       }),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-    const zoneSelect = await screen.findByRole('combobox', { name: 'Zone' })
-    await userEvent.selectOptions(zoneSelect, 'z1')
+    const clusterSelect = await screen.findByRole('combobox', { name: 'Cluster' })
+    await userEvent.selectOptions(clusterSelect, 'z1')
     await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Template' }), 't1')
 
-    await userEvent.selectOptions(zoneSelect, 'z2')
+    await userEvent.selectOptions(clusterSelect, 'z2')
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Template' })).toHaveValue('t1'))
 
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
@@ -270,33 +270,33 @@ describe('VmCreateModal', () => {
   it('asks for another template on 422 TEMPLATE_NOT_SYNCED', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', () => HttpResponse.json({ status: 422, title: 'x', code: 'TEMPLATE_NOT_SYNCED' }, { status: 422 })),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z1')
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
 
-    expect(await screen.findByText(/not available in this zone yet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/not available in this cluster yet/i)).toBeInTheDocument()
   })
 
-  // docs/features/catalog/design.md#zone-is-a-real-choice — a VM lands on its network's cluster, so the form
-  // offers only the networks of the zone the customer picked.
-  it('opens the network list only after a zone is picked, and lists only that zone’s networks', async () => {
-    const otherZoneNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', zoneId: 'z2' }
+  // docs/features/catalog/design.md#cluster-is-a-real-choice — a VM lands on its network's cluster, so the form
+  // offers only the networks of the cluster the customer picked.
+  it('opens the network list only after a cluster is picked, and lists only that cluster’s networks', async () => {
+    const otherClusterNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', clusterId: 'z2' }
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, otherZoneNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone, { id: 'z2', name: 'Zone 2' }])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, otherClusterNetwork])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
 
-    expect(await screen.findByText(/select a zone first/i)).toBeInTheDocument()
+    expect(await screen.findByText(/select a cluster first/i)).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: 'Network' })).not.toBeInTheDocument()
 
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z1')
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
 
     const network = screen.getByRole('combobox', { name: 'Network' })
     expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'default'])
@@ -315,21 +315,21 @@ describe('VmCreateModal', () => {
         usable('n5', 'pending', { currentState: 'Pending' }),
         usable('n6', 'gone', { currentState: null, currentExistence: 'NotFound' }),
       ])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z1')
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
 
     const network = screen.getByRole('combobox', { name: 'Network' })
     expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'default'])
   })
 
-  it('drops the chosen network when the zone changes to one it is not in', async () => {
-    const otherZoneNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', zoneId: 'z2' }
+  it('drops the chosen network when the cluster changes to one it is not in', async () => {
+    const otherClusterNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', clusterId: 'z2' }
     let requestBody: unknown
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, otherZoneNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone, { id: 'z2', name: 'Zone 2' }])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, otherClusterNetwork])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', async ({ request }) => {
         requestBody = await request.json()
@@ -337,11 +337,11 @@ describe('VmCreateModal', () => {
       }),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-    const zoneSelect = await screen.findByRole('combobox', { name: 'Zone' })
-    await userEvent.selectOptions(zoneSelect, 'z1')
+    const clusterSelect = await screen.findByRole('combobox', { name: 'Cluster' })
+    await userEvent.selectOptions(clusterSelect, 'z1')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Network' }), 'n1')
 
-    await userEvent.selectOptions(zoneSelect, 'z2')
+    await userEvent.selectOptions(clusterSelect, 'z2')
 
     const network = screen.getByRole('combobox', { name: 'Network' })
     expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'far-away'])
@@ -351,42 +351,42 @@ describe('VmCreateModal', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Size' }), 'm')
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
-    expect(await screen.findByText('Choose a zone, network, template and size.')).toBeInTheDocument()
+    expect(await screen.findByText('Choose a cluster, network, template and size.')).toBeInTheDocument()
     expect(requestBody).toBeUndefined()
   })
 
-  it('says the zone has no networks when the picked zone has none', async () => {
+  it('says the cluster has no networks when the picked cluster has none', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone, { id: 'z2', name: 'Zone 2' }])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z2')
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z2')
 
-    expect(screen.getByText(/no active networks in this zone/i)).toBeInTheDocument()
+    expect(screen.getByText(/no active networks in this cluster/i)).toBeInTheDocument()
   })
 
-  it('asks for another zone on 404 ZONE_NOT_FOUND', async () => {
+  it('asks for another cluster on 404 CLUSTER_NOT_FOUND', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
-      http.post('*/v1/tenant/vms', () => HttpResponse.json({ status: 404, title: 'x', code: 'ZONE_NOT_FOUND' }, { status: 404 })),
+      http.post('*/v1/tenant/vms', () => HttpResponse.json({ status: 404, title: 'x', code: 'CLUSTER_NOT_FOUND' }, { status: 404 })),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Zone' }), 'z1')
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Network' }), 'n1')
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
 
-    expect(await screen.findByText(/selected zone is no longer available/i)).toBeInTheDocument()
+    expect(await screen.findByText(/selected cluster is no longer available/i)).toBeInTheDocument()
   })
 
   it('shows quota exceeded error from API', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', () =>
         HttpResponse.json({ status: 422, title: 'Quota exceeded', code: 'VM_QUOTA_EXCEEDED' }, { status: 422 })
@@ -407,7 +407,7 @@ describe('VmCreateModal', () => {
   it('shows a clear suspended message on 403 TENANT_SUSPENDED — S3', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', () =>
         HttpResponse.json({ status: 403, title: 'Suspended', code: 'TENANT_SUSPENDED' }, { status: 403 })
@@ -429,7 +429,7 @@ describe('VmCreateModal', () => {
   it('asks for another template on 422 TEMPLATE_UNAVAILABLE', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', () =>
         HttpResponse.json({ status: 422, title: 'Unavailable', code: 'TEMPLATE_UNAVAILABLE' }, { status: 422 })
@@ -451,7 +451,7 @@ describe('VmCreateModal', () => {
   it('shows a clear pending-approval message on 403 TENANT_PENDING_APPROVAL — S3', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', () =>
         HttpResponse.json({ status: 403, title: 'Pending approval', code: 'TENANT_PENDING_APPROVAL' }, { status: 403 })

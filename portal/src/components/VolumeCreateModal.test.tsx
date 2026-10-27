@@ -6,22 +6,22 @@ import { server } from '@/test/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { VolumeCreateModal } from './VolumeCreateModal'
 
-const zone = { id: 'z1', name: 'Zone 1' }
+const cluster = { id: 'z1', name: 'Cluster 1' }
 // isCustomized=true → user must type a size; isCustomized=false → size comes from the offering.
 const customOffering = { id: 'vo-custom', name: 'Custom SSD', sizeGb: 0, isCustomized: true }
 const fixedOffering = { id: 'vo-fixed', name: 'Standard', sizeGb: 100, isCustomized: false }
 
 function mockCatalog(offerings = [customOffering, fixedOffering]) {
   server.use(
-    http.get('*/v1/zones', () => HttpResponse.json([zone])),
+    http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
     http.get('*/v1/volume-offerings', () => HttpResponse.json(offerings)),
   )
 }
 
-// combobox[0] = Zone, combobox[1] = Volume Offering (DOM order in the modal).
-async function selectZoneAndOffering(offeringId: string) {
-  const [zoneSelect, offeringSelect] = screen.getAllByRole('combobox')
-  await userEvent.selectOptions(zoneSelect, zone.id)
+// combobox[0] = Cluster, combobox[1] = Volume Offering (DOM order in the modal).
+async function selectClusterAndOffering(offeringId: string) {
+  const [clusterSelect, offeringSelect] = screen.getAllByRole('combobox')
+  await userEvent.selectOptions(clusterSelect, cluster.id)
   await userEvent.selectOptions(offeringSelect, offeringId)
 }
 
@@ -32,7 +32,7 @@ describe('VolumeCreateModal', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: /Custom SSD/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectZoneAndOffering(customOffering.id)
+    await selectClusterAndOffering(customOffering.id)
     // size field is present for a custom offering but left empty
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
 
@@ -54,14 +54,14 @@ describe('VolumeCreateModal', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectZoneAndOffering(fixedOffering.id)
+    await selectClusterAndOffering(fixedOffering.id)
     // fixed offering → no custom size input rendered
     expect(screen.queryByPlaceholderText(/e\.g\. 50/i)).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
     expect(onCreated).toHaveBeenCalled()
-    expect(body).toEqual({ name: 'my-vol', volumeOfferingId: fixedOffering.id, zoneId: zone.id, sizeGb: 100 })
+    expect(body).toEqual({ name: 'my-vol', volumeOfferingId: fixedOffering.id, clusterId: cluster.id, sizeGb: 100 })
   })
 
   it('posts the typed size for a custom offering', async () => {
@@ -77,12 +77,12 @@ describe('VolumeCreateModal', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: /Custom SSD/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectZoneAndOffering(customOffering.id)
+    await selectClusterAndOffering(customOffering.id)
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. 50/i), '50')
 
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
     await waitFor(() => expect(body).toEqual(
-      { name: 'my-vol', volumeOfferingId: customOffering.id, zoneId: zone.id, sizeGb: 50 },
+      { name: 'my-vol', volumeOfferingId: customOffering.id, clusterId: cluster.id, sizeGb: 50 },
     ))
   })
 
@@ -97,7 +97,7 @@ describe('VolumeCreateModal', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectZoneAndOffering(fixedOffering.id)
+    await selectClusterAndOffering(fixedOffering.id)
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
 
     await waitFor(() => expect(screen.getByText('Volume quota exceeded (max 10).')).toBeInTheDocument())
@@ -109,7 +109,7 @@ describe('VolumeCreateModal', () => {
     expect(screen.getByRole('heading', { name: 'Tạo ổ đĩa dữ liệu' })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('option', { name: 'Custom SSD — Dung lượng tuỳ chọn' })).toBeInTheDocument())
     expect(screen.getByText('Cấu hình ổ đĩa')).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Chọn zone…' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Chọn cluster…' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Tạo ổ đĩa' })).toBeDisabled()
   })
 })

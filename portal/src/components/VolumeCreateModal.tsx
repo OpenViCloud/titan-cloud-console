@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCreateVolume } from '@/hooks/useVolumes'
 import { useVolumeOfferings } from '@/hooks/useVolumeOfferings'
-import { useZones } from '@/hooks/useZones'
+import { useClusters } from '@/hooks/useClusters'
 import { useT } from '@/i18n/LanguageContext'
 
 interface Props {
@@ -18,24 +18,24 @@ interface Props {
 export function VolumeCreateModal({ open, onOpenChange, onCreated }: Props) {
   const [name, setName] = useState('')
   const [volumeOfferingId, setVolumeOfferingId] = useState('')
-  const [zoneId, setZoneId] = useState('')
+  const [clusterId, setClusterId] = useState('')
   const [sizeGb, setSizeGb] = useState('')
   const [error, setError] = useState('')
 
   const createVolume = useCreateVolume()
   const { data: offerings = [] } = useVolumeOfferings()
-  const { data: zones = [] } = useZones()
+  const { data: clusters = [] } = useClusters()
   const t = useT()
 
   const selectedOffering = offerings.find(o => o.id === volumeOfferingId)
   const needsCustomSize = selectedOffering?.isCustomized ?? true
 
   function reset() {
-    setName(''); setVolumeOfferingId(''); setZoneId(''); setSizeGb(''); setError('')
+    setName(''); setVolumeOfferingId(''); setClusterId(''); setSizeGb(''); setError('')
   }
 
   async function handleCreate() {
-    if (!name.trim() || !volumeOfferingId || !zoneId) return
+    if (!name.trim() || !volumeOfferingId || !clusterId) return
     if (needsCustomSize && (!sizeGb || parseInt(sizeGb) <= 0)) {
       setError(t.volumeCreate.sizeRequired)
       return
@@ -45,7 +45,7 @@ export function VolumeCreateModal({ open, onOpenChange, onCreated }: Props) {
       await createVolume.mutateAsync({
         name: name.trim(),
         volumeOfferingId,
-        zoneId,
+        clusterId,
         sizeGb: needsCustomSize ? parseInt(sizeGb) : (selectedOffering?.sizeGb ?? 0),
       })
       reset()
@@ -73,14 +73,14 @@ export function VolumeCreateModal({ open, onOpenChange, onCreated }: Props) {
             <Input placeholder={t.volumeCreate.namePlaceholder} value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">{t.volumeCreate.zone}</label>
+            <label className="text-xs text-muted-foreground mb-1 block">{t.volumeCreate.cluster}</label>
             <select
               className="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm text-foreground"
-              value={zoneId}
-              onChange={e => setZoneId(e.target.value)}
+              value={clusterId}
+              onChange={e => setClusterId(e.target.value)}
             >
-              <option value="">{t.volumeCreate.selectZone}</option>
-              {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+              <option value="">{t.volumeCreate.selectCluster}</option>
+              {clusters.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
             </select>
           </div>
           <div>
@@ -118,7 +118,7 @@ export function VolumeCreateModal({ open, onOpenChange, onCreated }: Props) {
           </DialogClose>
           <Button
             onClick={handleCreate}
-            disabled={createVolume.isPending || !name.trim() || !volumeOfferingId || !zoneId}
+            disabled={createVolume.isPending || !name.trim() || !volumeOfferingId || !clusterId}
           >
             {createVolume.isPending ? t.volumeCreate.creating : t.volumeCreate.submit}
           </Button>

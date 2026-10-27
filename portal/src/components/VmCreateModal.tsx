@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCreateVm } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
-import { useZones } from '@/hooks/useZones'
-import { useZoneTemplates } from '@/hooks/useTemplates'
+import { useClusters } from '@/hooks/useClusters'
+import { useClusterTemplates } from '@/hooks/useTemplates'
 import { useVmOfferings, formatOfferingLabel } from '@/hooks/useVmOfferings'
 import { useSshKeys } from '@/hooks/useSshKeys'
 import type { AxiosError } from 'axios'
@@ -62,7 +62,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const t = useT()
   const [name, setName]           = useState('')
   const [networkId, setNetworkId] = useState('')
-  const [zoneId, setZoneId]       = useState('')
+  const [clusterId, setClusterId]       = useState('')
   const [templateId, setTemplateId] = useState('')
   const [vmOfferingId, setVmOfferingId] = useState('')
   const [sshKeyIds, setSshKeyIds] = useState<string[]>([])
@@ -71,8 +71,8 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
 
   const createVm = useCreateVm()
   const { data: networks = [] }  = useNetworks()
-  const { data: zones = [] }     = useZones()
-  const { data: zoneTemplates = [] } = useZoneTemplates(zoneId)
+  const { data: clusters = [] }     = useClusters()
+  const { data: clusterTemplates = [] } = useClusterTemplates(clusterId)
   const { data: offerings = [] } = useVmOfferings()
   const { data: sshKeys = [] } = useSshKeys()
   const queryClient = useQueryClient()
@@ -82,35 +82,35 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   // A network whose delete is waiting still reads Created on Incus, and the server refuses a VM on it
   // (Network.BeginVmDeployment).
   const activeNetworks = networks.filter(isUsableNetwork)
-  // A VM lands on its network's cluster, so only the chosen zone's networks are offered
-  // (docs/features/catalog/design.md#zone-is-a-real-choice).
-  const zoneNetworks = activeNetworks.filter(n => n.zoneId === zoneId)
+  // A VM lands on its network's cluster, so only the chosen cluster's networks are offered
+  // (docs/features/catalog/design.md#cluster-is-a-real-choice).
+  const clusterNetworks = activeNetworks.filter(n => n.clusterId === clusterId)
   const canSubmit = activeNetworks.length > 0 && !createVm.isPending
 
-  let networkEmptyText = t.vmCreate.noNetworksInZone
-  const noZoneChosen = zoneId === ''
+  let networkEmptyText = t.vmCreate.noNetworksInCluster
+  const noClusterChosen = clusterId === ''
   if (activeNetworks.length === 0) {
     networkEmptyText = t.vmCreate.noNetworks
-  } else if (noZoneChosen) {
-    networkEmptyText = t.vmCreate.selectZoneFirst
+  } else if (noClusterChosen) {
+    networkEmptyText = t.vmCreate.selectClusterFirst
   }
 
-  // The chosen template counts only while the chosen zone offers it: switching zone keeps a template synced in
-  // both, and drops one the new zone does not have yet (docs/features/catalog/design.md#template-per-zone).
-  const templateOfferedInZone = zoneTemplates.some(zt => zt.id === templateId)
+  // The chosen template counts only while the chosen cluster offers it: switching cluster keeps a template synced in
+  // both, and drops one the new cluster does not have yet (docs/features/catalog/design.md#template-per-cluster).
+  const templateOfferedInCluster = clusterTemplates.some(zt => zt.id === templateId)
   let chosenTemplateId = ''
-  if (templateOfferedInZone) {
+  if (templateOfferedInCluster) {
     chosenTemplateId = templateId
   }
-  let templateEmptyText = t.vmCreate.noTemplatesInZone
-  if (noZoneChosen) {
-    templateEmptyText = t.vmCreate.selectZoneFirst
+  let templateEmptyText = t.vmCreate.noTemplatesInCluster
+  if (noClusterChosen) {
+    templateEmptyText = t.vmCreate.selectClusterFirst
   }
 
-  function handleZoneChange(nextZoneId: string) {
-    setZoneId(nextZoneId)
-    const chosenNetworkStaysInZone = activeNetworks.some(n => n.id === networkId && n.zoneId === nextZoneId)
-    if (!chosenNetworkStaysInZone) {
+  function handleClusterChange(nextClusterId: string) {
+    setClusterId(nextClusterId)
+    const chosenNetworkStaysInCluster = activeNetworks.some(n => n.id === networkId && n.clusterId === nextClusterId)
+    if (!chosenNetworkStaysInCluster) {
       setNetworkId('')
     }
   }
@@ -127,7 +127,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     if (!name.trim()) { setNameError(t.vmCreate.nameRequired); return false }
     if (name.length > 64) { setNameError(t.vmCreate.nameTooLong); return false }
     setNameError('')
-    const everyChoiceMade = zoneId !== '' && networkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
+    const everyChoiceMade = clusterId !== '' && networkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
     if (!everyChoiceMade) {
       setApiError(t.vmCreate.choicesRequired)
       return false
@@ -140,7 +140,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     if (!validate()) return
     setApiError('')
     try {
-      await createVm.mutateAsync({ name, networkId, zoneId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds })
+      await createVm.mutateAsync({ name, networkId, clusterId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds })
       handleClose()
       onCreated?.()
     } catch (err) {
@@ -148,8 +148,8 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       const code = res?.data?.code
       if (res?.status === 409) setApiError(t.vmCreate.nameTaken)
       else if (res?.status === 422 && code === 'VM_QUOTA_EXCEEDED') setApiError(t.vmCreate.vmQuotaExceeded)
-      else if (res?.status === 404 && code === 'ZONE_NOT_FOUND') setApiError(t.vmCreate.zoneGone)
-      else if (res?.status === 422 && code === 'NETWORK_ZONE_MISMATCH') setApiError(t.vmCreate.networkZoneMismatch)
+      else if (res?.status === 404 && code === 'CLUSTER_NOT_FOUND') setApiError(t.vmCreate.clusterGone)
+      else if (res?.status === 422 && code === 'NETWORK_CLUSTER_MISMATCH') setApiError(t.vmCreate.networkClusterMismatch)
       else if (res?.status === 404 && code === 'VM_OFFERING_NOT_FOUND') setApiError(t.vmCreate.sizeGone)
       else if (res?.status === 422 && code === 'TEMPLATE_UNAVAILABLE') setApiError(t.vmCreate.templateUnavailable)
       else if (res?.status === 422 && code === 'TEMPLATE_NOT_SYNCED') setApiError(t.vmCreate.templateNotSynced)
@@ -164,7 +164,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   }
 
   function handleClose() {
-    setName(''); setNetworkId(''); setZoneId('')
+    setName(''); setNetworkId(''); setClusterId('')
     setTemplateId(''); setVmOfferingId(''); setSshKeyIds([])
     setNameError(''); setApiError('')
     onOpenChange(false)
@@ -192,11 +192,11 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
           </div>
 
           <SelectField
-            label={t.vmCreate.zone}
-            value={zoneId}
-            onChange={handleZoneChange}
-            options={zones.map(z => ({ id: z.id, label: z.name }))}
-            placeholder={t.vmCreate.selectZone}
+            label={t.vmCreate.cluster}
+            value={clusterId}
+            onChange={handleClusterChange}
+            options={clusters.map(z => ({ id: z.id, label: z.name }))}
+            placeholder={t.vmCreate.selectCluster}
             disabled={createVm.isPending}
           />
 
@@ -204,7 +204,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
             label={t.vmCreate.network}
             value={networkId}
             onChange={setNetworkId}
-            options={zoneNetworks.map(n => ({ id: n.id, label: n.name }))}
+            options={clusterNetworks.map(n => ({ id: n.id, label: n.name }))}
             placeholder={t.vmCreate.selectNetwork}
             disabled={createVm.isPending}
             empty={networkEmptyText}
@@ -214,7 +214,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
             label={t.vmCreate.template}
             value={chosenTemplateId}
             onChange={setTemplateId}
-            options={zoneTemplates.map(zt => ({ id: zt.id, label: `${zt.name} — ${zt.os}` }))}
+            options={clusterTemplates.map(zt => ({ id: zt.id, label: `${zt.name} — ${zt.os}` }))}
             placeholder={t.vmCreate.selectTemplate}
             disabled={createVm.isPending}
             empty={templateEmptyText}

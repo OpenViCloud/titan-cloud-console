@@ -9,7 +9,7 @@ export interface LoadBalancer {
   id: string
   name: string
   networkId: string
-  zoneId: string
+  clusterId: string
   vip: string
   listeners: ListenerFields[]
   backends: { vmId: string }[]

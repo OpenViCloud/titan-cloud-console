@@ -20,7 +20,7 @@ export interface Vm {
   networkId: string
   vmOfferingId: string
   templateId: string
-  zoneId: string
+  clusterId: string
   diskSizeGb: number
   createdAt: string
 }
@@ -28,7 +28,7 @@ export interface Vm {
 interface CreateVmRequest {
   name: string
   networkId: string
-  zoneId: string
+  clusterId: string
   vmOfferingId: string
   templateId: string
   diskSizeGb?: number

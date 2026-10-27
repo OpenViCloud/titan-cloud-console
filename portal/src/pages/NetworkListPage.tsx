@@ -14,7 +14,7 @@ import {
 import { useNetworks, useDeleteNetwork, useRenameNetwork, type Network } from '@/hooks/useNetworks'
 import { useVms } from '@/hooks/useVms'
 import { useLoadBalancers } from '@/hooks/useLoadBalancers'
-import { useZoneMap } from '@/hooks/useZones'
+import { useClusterMap } from '@/hooks/useClusters'
 import {
   useFirewallRules,
   useCreateFirewallRule,
@@ -368,7 +368,7 @@ export function NetworkListPage() {
   const shown = networks.filter(n => n.name.toLowerCase().includes(query.toLowerCase()))
   const { data: vms = [] } = useVms()
   const deleteNetwork = useDeleteNetwork()
-  const zoneMap = useZoneMap()
+  const clusterMap = useClusterMap()
   const t = useT()
   const f = useFormat()
 
@@ -467,7 +467,7 @@ export function NetworkListPage() {
                       <Badge variant={statusVariant[incusLabel(net)] ?? 'default'}>{incusLabel(net)}</Badge>
                     </div>
                     <p className="mt-0.5 truncate text-[12.5px] text-faint">
-                      {zoneMap.get(net.zoneId) ?? net.zoneId} · {t.networks.createdOn(f.date(net.createdAt))}
+                      {clusterMap.get(net.clusterId) ?? net.clusterId} · {t.networks.createdOn(f.date(net.createdAt))}
                     </p>
                     {refusedRequestReason(net) !== null && (
                       <p className="mt-0.5 text-[12px] text-bad">{refusedRequestReason(net)}</p>

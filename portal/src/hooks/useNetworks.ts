@@ -17,13 +17,13 @@ export interface Network {
   gateway: string | null
   // The network's public /64; null when it has no public IPv6 (docs/features/network/design.md#ipv6-public).
   publicIpv6Subnet: string | null
-  zoneId: string
+  clusterId: string
   createdAt: string
 }
 
 interface CreateNetworkRequest {
   name: string
-  zoneId: string
+  clusterId: string
   cidr?: string
   enablePublicIpv6?: boolean
 }

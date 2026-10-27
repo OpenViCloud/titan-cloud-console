@@ -18,13 +18,13 @@ describe('DashboardPage', () => {
     server.use(
       http.get('*/v1/tenant/vms', () =>
         HttpResponse.json([
-          { id: 'v1', name: 'web-01', currentState: 'Running', desiredState: 'Running', transition: null, currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null, ipAddress: '10.0.0.1', networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', zoneId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z' },
-          { id: 'v2', name: 'web-02', currentState: 'Stopped', desiredState: 'Stopped', transition: null, currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null, ipAddress: null, networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', zoneId: 'z1', diskSizeGb: 50, createdAt: '2026-01-02T00:00:00Z' },
+          { id: 'v1', name: 'web-01', currentState: 'Running', desiredState: 'Running', transition: null, currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null, ipAddress: '10.0.0.1', networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'v2', name: 'web-02', currentState: 'Stopped', desiredState: 'Stopped', transition: null, currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null, ipAddress: null, networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-02T00:00:00Z' },
         ])
       ),
       http.get('*/v1/tenant/networks', () =>
         HttpResponse.json([
-          { id: 'n1', name: 'prod-net', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1', zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'n1', name: 'prod-net', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1', clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
         ])
       ),
     )
@@ -41,8 +41,8 @@ describe('DashboardPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () =>
         HttpResponse.json([
-          { id: 'vol1', name: 'd1', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null, requestFailureReason: null, requestFailedAt: null, zoneId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T00:00:00Z' },
-          { id: 'vol2', name: 'd2', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: 'v1', currentAttachedElsewhere: false, desiredAttachedVmId: 'v1', transition: null, requestFailureReason: null, requestFailedAt: null, zoneId: 'z1', volumeOfferingId: 'o1', sizeGb: 250, createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'vol1', name: 'd1', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'vol2', name: 'd2', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: 'v1', currentAttachedElsewhere: false, desiredAttachedVmId: 'v1', transition: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 250, createdAt: '2026-01-01T00:00:00Z' },
         ])
       ),
       http.get('*/v1/tenant/billing/summary', () =>
@@ -107,7 +107,7 @@ describe('DashboardPage — Vietnamese', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () =>
         HttpResponse.json([
-          { id: 'vol1', name: 'd1', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null, requestFailureReason: null, requestFailedAt: null, zoneId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T12:00:00Z' },
+          { id: 'vol1', name: 'd1', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T12:00:00Z' },
         ])
       ),
       http.get('*/v1/tenant/billing/summary', () =>

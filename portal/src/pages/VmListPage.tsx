@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { VmCreateModal } from '@/components/VmCreateModal'
 import { VmActions, VmStatusBadge, VmStatusNote } from '@/components/vm/VmActions'
 import { useVms, type Vm } from '@/hooks/useVms'
-import { useZoneMap } from '@/hooks/useZones'
+import { useClusterMap } from '@/hooks/useClusters'
 import { useTemplateMap } from '@/hooks/useTemplates'
 import { useVmOfferings, type VmOfferingInfo } from '@/hooks/useVmOfferings'
 import { useT } from '@/i18n/LanguageContext'
@@ -19,11 +19,11 @@ function sizeLabel(vm: Vm, offerings: VmOfferingInfo[]): string {
   return `${offering.name} · ${offering.vcpu} vCPU · ${offering.memoryMb / 1024} GB`
 }
 
-function VmRow({ vm, offerings, templateName, zoneName }: {
+function VmRow({ vm, offerings, templateName, clusterName }: {
   vm: Vm
   offerings: VmOfferingInfo[]
   templateName: string
-  zoneName: string
+  clusterName: string
 }) {
   const t = useT()
   return (
@@ -40,7 +40,7 @@ function VmRow({ vm, offerings, templateName, zoneName }: {
           <VmStatusNote vm={vm} />
         </div>
         <p className="mt-0.5 truncate text-[12.5px] text-faint">
-          {sizeLabel(vm, offerings)} · {templateName} · {zoneName}
+          {sizeLabel(vm, offerings)} · {templateName} · {clusterName}
         </p>
       </div>
       <div className="col-start-2 min-w-0 md:col-start-auto">
@@ -66,7 +66,7 @@ export function VmListPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const { data: vms = [], isLoading, isError } = useVms()
   const { data: offerings = [] } = useVmOfferings()
-  const zoneMap = useZoneMap()
+  const clusterMap = useClusterMap()
   const templateMap = useTemplateMap()
 
   let subtitle = t.vms.machineCount(vms.length)
@@ -113,7 +113,7 @@ export function VmListPage() {
                   vm={vm}
                   offerings={offerings}
                   templateName={templateMap.get(vm.templateId) ?? vm.templateId}
-                  zoneName={zoneMap.get(vm.zoneId) ?? vm.zoneId}
+                  clusterName={clusterMap.get(vm.clusterId) ?? vm.clusterId}
                 />
               ))}
             </ul>

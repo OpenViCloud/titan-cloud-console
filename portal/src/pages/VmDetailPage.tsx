@@ -4,7 +4,7 @@ import { VmActions, VmStatusBadge, VmStatusNote } from '@/components/vm/VmAction
 import { VmSnapshotPanel } from '@/components/vm/VmSnapshotPanel'
 import { useVms } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
-import { useZoneMap } from '@/hooks/useZones'
+import { useClusterMap } from '@/hooks/useClusters'
 import { useTemplateMap } from '@/hooks/useTemplates'
 import { useVmOfferings } from '@/hooks/useVmOfferings'
 import { useBillingSummary } from '@/hooks/useBilling'
@@ -44,7 +44,7 @@ export function VmDetailPage() {
   const { data: vms = [], isLoading } = useVms()
   const { data: networks = [] } = useNetworks()
   const { data: offerings = [] } = useVmOfferings()
-  const zoneMap = useZoneMap()
+  const clusterMap = useClusterMap()
   const templateMap = useTemplateMap()
   const { data: billing } = useBillingSummary(currentMonth())
 
@@ -87,7 +87,7 @@ export function VmDetailPage() {
               <VmStatusNote vm={vm} />
             </div>
             <p className="mt-1 text-[13px] text-muted-foreground">
-              {size} · {templateMap.get(vm.templateId) ?? vm.templateId} · {zoneMap.get(vm.zoneId) ?? vm.zoneId}
+              {size} · {templateMap.get(vm.templateId) ?? vm.templateId} · {clusterMap.get(vm.clusterId) ?? vm.clusterId}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -123,7 +123,7 @@ export function VmDetailPage() {
                 {vm.publicIpv6Address ?? (networkHasPublicIpv6 ? '—' : t.vmDetail.notEnabled)}
               </Fact>
               <Fact label={t.vmDetail.network}>{network?.name ?? vm.networkId}</Fact>
-              <Fact label={t.vmDetail.zone}>{zoneMap.get(vm.zoneId) ?? vm.zoneId}</Fact>
+              <Fact label={t.vmDetail.cluster}>{clusterMap.get(vm.clusterId) ?? vm.clusterId}</Fact>
               <Fact label={t.vmDetail.template}>{templateMap.get(vm.templateId) ?? vm.templateId}</Fact>
               <Fact label={t.vmDetail.created}>
                 {f.date(vm.createdAt)}

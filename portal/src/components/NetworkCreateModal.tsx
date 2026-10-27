@@ -6,7 +6,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCreateNetwork } from '@/hooks/useNetworks'
-import { useZones } from '@/hooks/useZones'
+import { useClusters } from '@/hooks/useClusters'
 import type { AxiosError } from 'axios'
 import { useT } from '@/i18n/LanguageContext'
 
@@ -39,14 +39,14 @@ function isInsideAPrivateRange(cidr: string): boolean {
 }
 
 export function NetworkCreateModal({ open, onOpenChange, onCreated }: Props) {
-  const { data: zones = [] } = useZones()
+  const { data: clusters = [] } = useClusters()
   const [name, setName] = useState('')
-  const [zoneId, setZoneId] = useState('')
+  const [clusterId, setClusterId] = useState('')
   const [cidr, setCidr] = useState('')
   const [enableIpv6, setEnableIpv6] = useState(false)
   const [nameError, setNameError] = useState('')
   const [cidrError, setCidrError] = useState('')
-  const [zoneError, setZoneError] = useState('')
+  const [clusterError, setClusterError] = useState('')
   const [apiError, setApiError] = useState('')
 
   const createNetwork = useCreateNetwork()
@@ -56,11 +56,11 @@ export function NetworkCreateModal({ open, onOpenChange, onCreated }: Props) {
     let valid = true
     if (!name.trim()) { setNameError(t.networkCreate.nameRequired); valid = false }
     else setNameError('')
-    if (zoneId === '') {
-      setZoneError(t.networkCreate.zoneRequired)
+    if (clusterId === '') {
+      setClusterError(t.networkCreate.clusterRequired)
       valid = false
     } else {
-      setZoneError('')
+      setClusterError('')
     }
     if (cidr && !CIDR_REGEX.test(cidr)) {
       setCidrError(t.networkCreate.cidrInvalid)
@@ -79,7 +79,7 @@ export function NetworkCreateModal({ open, onOpenChange, onCreated }: Props) {
     try {
       await createNetwork.mutateAsync({
         name,
-        zoneId,
+        clusterId,
         ...(cidr ? { cidr } : {}),
         ...(enableIpv6 ? { enablePublicIpv6: true } : {}),
       })
@@ -111,8 +111,8 @@ export function NetworkCreateModal({ open, onOpenChange, onCreated }: Props) {
   }
 
   function handleClose() {
-    setName(''); setZoneId(''); setCidr(''); setEnableIpv6(false)
-    setNameError(''); setZoneError(''); setCidrError(''); setApiError('')
+    setName(''); setClusterId(''); setCidr(''); setEnableIpv6(false)
+    setNameError(''); setClusterError(''); setCidrError(''); setApiError('')
     onOpenChange(false)
   }
 
@@ -140,25 +140,25 @@ export function NetworkCreateModal({ open, onOpenChange, onCreated }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-soft-foreground">{t.networkCreate.zone}</label>
-            {zones.length === 0 ? (
+            <label className="text-[13px] font-medium text-soft-foreground">{t.networkCreate.cluster}</label>
+            {clusters.length === 0 ? (
               <div className="rounded-md border border-border bg-card px-3 py-2 text-[13px] text-faint">
-                {t.networkCreate.noZones}
+                {t.networkCreate.noClusters}
               </div>
             ) : (
               <select
                 className="w-full rounded-md border border-border bg-popover px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40"
-                value={zoneId}
-                onChange={e => setZoneId(e.target.value)}
+                value={clusterId}
+                onChange={e => setClusterId(e.target.value)}
                 disabled={createNetwork.isPending}
               >
-                <option value="">{t.networkCreate.selectZone}</option>
-                {zones.map(z => (
+                <option value="">{t.networkCreate.selectCluster}</option>
+                {clusters.map(z => (
                   <option key={z.id} value={z.id}>{z.name}</option>
                 ))}
               </select>
             )}
-            {zoneError && <p className="text-[12px] text-bad">{zoneError}</p>}
+            {clusterError && <p className="text-[12px] text-bad">{clusterError}</p>}
           </div>
 
           <div className="space-y-1.5">

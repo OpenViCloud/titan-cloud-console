@@ -15,7 +15,7 @@ const vol = (overrides = {}) => ({
   id: 'vol-1', name: 'data-vol-1', currentExistence: 'Exists', desiredExistence: 'Exists',
   currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null,
   requestFailureReason: null, requestFailedAt: null,
-  zoneId: 'z1', volumeOfferingId: 'do1', sizeGb: 50,
+  clusterId: 'z1', volumeOfferingId: 'do1', sizeGb: 50,
   createdAt: '2026-01-01T00:00:00Z',
   ...overrides,
 })
@@ -214,12 +214,12 @@ describe('VolumeListPage', () => {
   })
 
   // C2 (design sync 2026-08-23) — "Attached to" shows the VM name, not the raw id (mirrors design;
-  // same shape as admin B-INV). Name resolved via useVms map, like zoneMap/offeringMap.
+  // same shape as admin B-INV). Name resolved via useVms map, like clusterMap/offeringMap.
   it('shows attached VM name (not id) in Attached to column', async () => {
     server.use(
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([attached()])),
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
-        { id: 'vm-1', name: 'api-gateway-01', currentState: 'Running', desiredState: 'Running', transition: null, zoneId: 'z1',
+        { id: 'vm-1', name: 'api-gateway-01', currentState: 'Running', desiredState: 'Running', transition: null, clusterId: 'z1',
           currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null,
           ipAddress: '10.0.0.5', networkId: 'n1', vmOfferingId: 'so1',
           templateId: 't1', createdAt: '2026-01-01T00:00:00Z',
@@ -387,7 +387,7 @@ describe('VolumeListPage', () => {
     let posted = false
     server.use(
       http.get('*/v1/volume-offerings', () => HttpResponse.json([{ id: 'do1', name: 'Fast SSD', sizeGb: 0, isCustomized: true }])),
-      http.get('*/v1/zones', () => HttpResponse.json([{ id: 'z1', name: 'Zone 1' }])),
+      http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.post('*/v1/tenant/volumes', async ({ request }) => {
         const body = await request.json() as Record<string, unknown>
         if (body.name === 'my-vol') posted = true
@@ -413,7 +413,7 @@ describe('VolumeListPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol()])),
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
-        { id: 'vm-1', name: 'web-01', currentState: 'Running', desiredState: 'Running', transition: null, zoneId: 'z1',
+        { id: 'vm-1', name: 'web-01', currentState: 'Running', desiredState: 'Running', transition: null, clusterId: 'z1',
           currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null,
           ipAddress: '10.0.0.5', networkId: 'n1', vmOfferingId: 'so1',
           templateId: 't1', createdAt: '2026-01-01T00:00:00Z',
@@ -440,7 +440,7 @@ describe('VolumeListPage', () => {
   // VM Incus did not find, is not offered.
   it('offers Ready and Frozen VMs in the attach picker, not Error or not found ones', async () => {
     const pickerVm = (id: string, name: string, currentState: string | null, currentExistence = 'Exists') => ({
-      id, name, currentState, desiredState: 'Running', transition: null, zoneId: 'z1',
+      id, name, currentState, desiredState: 'Running', transition: null, clusterId: 'z1',
       currentExistence, desiredExistence: 'Exists', requestFailureReason: null,
       ipAddress: null, networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', createdAt: '2026-01-01T00:00:00Z',
       publicIpv6Address: null,
