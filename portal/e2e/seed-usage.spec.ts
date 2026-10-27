@@ -31,24 +31,24 @@ test('seed: provision a VM so beta-user accrues COMPUTE usage', async ({ page })
   const api = await request.newContext({ baseURL: API, extraHTTPHeaders: { Authorization: `Bearer ${token}` } })
   const j = async (p: string) => (await api.get(p)).json()
 
-  const zones = await j('/v1/zones')
+  const clusters = await j('/v1/clusters')
   const templates = await j('/v1/templates')
   const offerings = await j('/v1/vm-offerings')
-  console.log('ZONES', JSON.stringify(zones))
+  console.log('CLUSTERS', JSON.stringify(clusters))
   console.log('TEMPLATES', JSON.stringify(templates))
   console.log('OFFERINGS', JSON.stringify(offerings))
 
-  const zoneId = zones?.[0]?.id ?? zones?.[0]?.zoneId
+  const clusterId = clusters?.[0]?.id ?? clusters?.[0]?.clusterId
   const tpl = (Array.isArray(templates) ? templates : []).find((t: any) => t.externalTemplateId || /synced/i.test(t.status || '')) ?? templates?.[0]
   const off = (Array.isArray(offerings) ? offerings : [])[0]
-  console.log('PICK', JSON.stringify({ zoneId, templateId: tpl?.id, vmOfferingId: off?.id }))
-  if (!zoneId || !tpl?.id || !off?.id) throw new Error('catalog missing zone/template/offering — see logs above')
+  console.log('PICK', JSON.stringify({ clusterId, templateId: tpl?.id, vmOfferingId: off?.id }))
+  if (!clusterId || !tpl?.id || !off?.id) throw new Error('catalog missing cluster/template/offering — see logs above')
 
   // reuse an Active network or create one
   let nets = await j('/v1/tenant/networks')
   let net = (Array.isArray(nets) ? nets : []).find((n: any) => n.status === 'Active')
   if (!net) {
-    const res = await api.post('/v1/tenant/networks', { headers: { 'Idempotency-Key': crypto.randomUUID() }, data: { name: 'credtest-net', zoneId, cidr: '10.99.0.0/24' } })
+    const res = await api.post('/v1/tenant/networks', { headers: { 'Idempotency-Key': crypto.randomUUID() }, data: { name: 'credtest-net', clusterId, cidr: '10.99.0.0/24' } })
     console.log('CREATE_NET', res.status(), await res.text())
     for (let i = 0; i < 30 && !net; i++) {
       await page.waitForTimeout(4000)
@@ -63,7 +63,7 @@ test('seed: provision a VM so beta-user accrues COMPUTE usage', async ({ page })
   let vm: any = (await j('/v1/tenant/vms') as any[]).find((v: any) => v.name === 'credtest-vm')
   if (!vm) {
     const vmRes = await api.post('/v1/tenant/vms', { headers: { 'Idempotency-Key': crypto.randomUUID() },
-      data: { name: 'credtest-vm', networkId: net.id, zoneId, vmOfferingId: off.id, templateId: tpl.id, diskSizeGb: 10 },
+      data: { name: 'credtest-vm', networkId: net.id, clusterId, vmOfferingId: off.id, templateId: tpl.id, diskSizeGb: 10 },
     })
     console.log('CREATE_VM', vmRes.status(), await vmRes.text())
     for (let i = 0; i < 40 && vm?.status !== 'Running'; i++) {
@@ -84,7 +84,7 @@ test('seed: provision a VM so beta-user accrues COMPUTE usage', async ({ page })
   let vol: any = (await j('/v1/tenant/volumes') as any[]).find((v: any) => v.name === 'credtest-vol')
   if (!vol && volOff?.id) {
     const volRes = await api.post('/v1/tenant/volumes', { headers: { 'Idempotency-Key': crypto.randomUUID() },
-      data: { name: 'credtest-vol', volumeOfferingId: volOff.id, zoneId, sizeGb: 500 },
+      data: { name: 'credtest-vol', volumeOfferingId: volOff.id, clusterId, sizeGb: 500 },
     })
     console.log('CREATE_VOL', volRes.status(), await volRes.text())
     for (let i = 0; i < 30 && !['Available', 'Ready', 'Attached'].includes(vol?.status); i++) {

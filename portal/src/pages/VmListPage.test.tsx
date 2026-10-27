@@ -26,13 +26,13 @@ const deleting = (currentState: string) => ({ ...st(currentState, 'Running', 'De
 const vm = (overrides = {}) => ({
   id: 'vm-1', name: 'web-01', ...st('Running'), ipAddress: '10.0.0.5',
   networkId: 'n1', vmOfferingId: 'so1', templateId: 't1',
-  zoneId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z',
+  clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z',
   publicIpv6Address: null,
   ...overrides,
 })
 
-// The VM form sends only once zone, network, template and size are chosen, and network and template open after the
-// zone: pick the first option of every choice, then again for the ones the zone opened.
+// The VM form sends only once cluster, network, template and size are chosen, and network and template open after the
+// cluster: pick the first option of every choice, then again for the ones the cluster opened.
 async function chooseEveryFirstOption() {
   for (let pass = 0; pass < 2; pass++) {
     for (const select of screen.getAllByRole('combobox') as HTMLSelectElement[]) {
@@ -267,8 +267,8 @@ describe('VmListPage', () => {
   it('the create VM form has no public IPv6 box and sends no enablePublicIpv6', async () => {
     let capturedBody: Record<string, unknown> = {}
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
-      http.get('*/v1/zones', () => HttpResponse.json([{ id: 'z1', name: 'Zone 1' }])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
+      http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
       http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
       http.post('*/v1/tenant/vms', async ({ request }) => {
@@ -290,8 +290,8 @@ describe('VmListPage', () => {
   // AT-P15 — create success toast
   it('shows success toast after VM created', async () => {
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
-      http.get('*/v1/zones', () => HttpResponse.json([{ id: 'z1', name: 'Zone 1' }])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
+      http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
       http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
       http.post('*/v1/tenant/vms', () => HttpResponse.json({ id: 'vm-new' }, { status: 202 })),

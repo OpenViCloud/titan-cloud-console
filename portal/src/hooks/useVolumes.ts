@@ -16,7 +16,7 @@ export interface Volume {
   transition: string | null
   requestFailureReason: string | null
   requestFailedAt: string | null
-  zoneId: string
+  clusterId: string
   volumeOfferingId: string
   sizeGb: number
   createdAt: string
@@ -25,7 +25,7 @@ export interface Volume {
 interface CreateVolumeRequest {
   name: string
   volumeOfferingId: string
-  zoneId: string
+  clusterId: string
   sizeGb: number
 }
 

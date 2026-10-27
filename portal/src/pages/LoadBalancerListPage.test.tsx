@@ -11,7 +11,7 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() }, Toaster:
 import { toast } from 'sonner'
 
 const lb = (extra = {}) => ({
-  id: 'lb-1', name: 'web-lb', networkId: 'net-6', zoneId: 'z1', vip: '2001:db8:0:d401::1:1',
+  id: 'lb-1', name: 'web-lb', networkId: 'net-6', clusterId: 'z1', vip: '2001:db8:0:d401::1:1',
   listeners: [{ protocol: 'TCP', port: 80, targetPort: 8080 }, { protocol: 'UDP', port: 53, targetPort: 53 }],
   backends: [{ vmId: 'vm-a' }, { vmId: 'vm-b' }],
   currentExistence: 'Exists', desiredExistence: 'Exists', transition: null as string | null,
@@ -20,7 +20,7 @@ const lb = (extra = {}) => ({
 const net = {
   id: 'net-6', name: 'six', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists',
   transition: null, requestFailureReason: null, requestFailedAt: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1',
-  publicIpv6Subnet: '2001:db8:0:d401::/64', zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z',
+  publicIpv6Subnet: '2001:db8:0:d401::/64', clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z',
 }
 
 function serve(rows: object[]) {

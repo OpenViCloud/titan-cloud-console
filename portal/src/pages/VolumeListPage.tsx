@@ -20,7 +20,7 @@ import {
   type VolumeSnapshot,
 } from '@/hooks/useVolumeSnapshots'
 import { useVolumeOfferingMap } from '@/hooks/useVolumeOfferings'
-import { useZoneMap } from '@/hooks/useZones'
+import { useClusterMap } from '@/hooks/useClusters'
 import type { BadgeProps } from '@/components/ui/badge'
 import {
   volumeLabel,
@@ -316,7 +316,7 @@ function AttachVolumeDialog({
   const t = useT()
 
   const eligibleVms = vms.filter(
-    vm => canAttachVolume(vm) && vm.zoneId === volume?.zoneId
+    vm => canAttachVolume(vm) && vm.clusterId === volume?.clusterId
   )
 
   async function handleAttach() {
@@ -385,7 +385,7 @@ export function VolumeListPage() {
   const { data: vms = [] } = useVms()
   const deleteVolume = useDeleteVolume()
   const detachVolume = useDetachVolume()
-  const zoneMap = useZoneMap()
+  const clusterMap = useClusterMap()
   const offeringMap = useVolumeOfferingMap()
   const t = useT()
   const f = useFormat()
@@ -484,7 +484,7 @@ export function VolumeListPage() {
                         )}
                       </div>
                       <p className="mt-0.5 truncate text-[12.5px] text-faint">
-                        {offeringMap.get(volume.volumeOfferingId)?.name ?? volume.volumeOfferingId} · {zoneMap.get(volume.zoneId) ?? volume.zoneId} · {t.volumes.createdOn(f.date(volume.createdAt))}
+                        {offeringMap.get(volume.volumeOfferingId)?.name ?? volume.volumeOfferingId} · {clusterMap.get(volume.clusterId) ?? volume.clusterId} · {t.volumes.createdOn(f.date(volume.createdAt))}
                       </p>
                     </div>
                     <div className="col-start-2 min-w-0 md:col-start-auto">

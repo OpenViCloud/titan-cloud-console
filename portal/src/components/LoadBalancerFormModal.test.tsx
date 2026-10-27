@@ -11,11 +11,11 @@ import type { LoadBalancer } from '@/hooks/useLoadBalancers'
 const net = (id: string, name: string, extra = {}) => ({
   id, name, currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null,
   requestFailureReason: null, requestFailedAt: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1',
-  publicIpv6Subnet: '2001:db8:0:d401::/64' as string | null, zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z', ...extra,
+  publicIpv6Subnet: '2001:db8:0:d401::/64' as string | null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z', ...extra,
 })
 const vm = (id: string, name: string, networkId: string, extra = {}) => ({
   id, name, networkId, currentState: 'Running', desiredState: 'Running', currentExistence: 'Exists',
-  desiredExistence: 'Exists', transition: null, requestFailureReason: null, zoneId: 'z1', ...extra,
+  desiredExistence: 'Exists', transition: null, requestFailureReason: null, clusterId: 'z1', ...extra,
 })
 
 function serve(networks: object[], vms: object[]) {
@@ -26,7 +26,7 @@ function serve(networks: object[], vms: object[]) {
 }
 
 const lb = (extra: Partial<LoadBalancer> = {}): LoadBalancer => ({
-  id: 'lb-1', name: 'web-lb', networkId: 'net-6', zoneId: 'z1', vip: '2001:db8:0:d401::1:1',
+  id: 'lb-1', name: 'web-lb', networkId: 'net-6', clusterId: 'z1', vip: '2001:db8:0:d401::1:1',
   listeners: [{ protocol: 'TCP', port: 80, targetPort: 8080 }], backends: [{ vmId: 'vm-a' }],
   currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null,
   requestFailedAt: null, createdAt: '2026-01-01T00:00:00Z', ...extra,

@@ -171,15 +171,15 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
 
     // B2 — the whole point. On the previous build this returned 422 CREDIT_LIMIT_EXCEEDED.
     const custApi = await apiAs(customer.page)
-    const zones = await (await custApi.get('/v1/zones')).json()
-    const zoneId = (zones as { id: string }[])[0].id
+    const clusters = await (await custApi.get('/v1/clusters')).json()
+    const clusterId = (clusters as { id: string }[])[0].id
     const networks = await (await custApi.get('/v1/tenant/networks')).json()
     let usable = (networks as { id: string; currentState: string }[]).find(n => n.currentState === 'Active')
     if (!usable) {
       // Staging is usually empty between runs; bring a network for the VM and take it away at the end.
       const net = await custApi.post('/v1/tenant/networks', {
         headers: { 'Idempotency-Key': crypto.randomUUID() },
-        data: { name: `ceiltest-net-${Date.now().toString().slice(-6)}`, zoneId },
+        data: { name: `ceiltest-net-${Date.now().toString().slice(-6)}`, clusterId },
       })
       expect(net.status(), `POST /v1/tenant/networks -> ${net.status()}`).toBe(202)
       networkId = (await net.json()).networkId as string
@@ -199,7 +199,7 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
         networkId: usable!.id,
         vmOfferingId: (offerings as { id: string }[])[0].id,
         templateId: (templates as { id: string }[])[0].id,
-        zoneId,
+        clusterId,
         diskSizeGb: null,
       },
     })

@@ -23,7 +23,7 @@ const st = (currentState: string | null, desiredState: string = currentState ?? 
 const vm = (overrides = {}) => ({
   id: 'vm-1', name: 'web-01', ...st('Running'), ipAddress: '10.0.0.5',
   networkId: 'n1', vmOfferingId: 'm', templateId: 't1',
-  zoneId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z',
+  clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z',
   publicIpv6Address: '2001:db8::11',
   ...overrides,
 })

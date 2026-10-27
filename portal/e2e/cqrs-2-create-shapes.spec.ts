@@ -55,7 +55,7 @@ test('A-4 creating a network past the quota is refused, and the refusal is the q
   expect(active.length, 'network quota must be full for this case to mean anything').toBe(1)
 
   const res = await request.post(`${API}/v1/tenant/networks`, {
-    headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() }, data: { name: `cqrs2-quota-${Date.now()}`, zoneId: active[0].zoneId },
+    headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() }, data: { name: `cqrs2-quota-${Date.now()}`, clusterId: active[0].clusterId },
   })
   expect(res.status()).toBe(422)
   expect((await res.json()).code).toBe('NETWORK_QUOTA_EXCEEDED')
@@ -86,7 +86,7 @@ test('A-5 creating a VM answers with just an id, and the VM is really there', as
     headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
     data: {
       name, networkId: network.id, vmOfferingId: offering.id,
-      templateId: template.id, zoneId: network.zoneId,
+      templateId: template.id, clusterId: network.clusterId,
     },
   })
   expect(res.status()).toBe(202)

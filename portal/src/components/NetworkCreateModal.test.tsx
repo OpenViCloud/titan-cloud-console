@@ -6,7 +6,7 @@ import { server } from '@/test/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { NetworkCreateModal } from './NetworkCreateModal'
 
-const zone = { id: 'z1', name: 'Zone 1',  }
+const cluster = { id: 'z1', name: 'Cluster 1',  }
 
 describe('NetworkCreateModal', () => {
   it('shows validation error when name is empty', async () => {
@@ -15,11 +15,11 @@ describe('NetworkCreateModal', () => {
     expect(screen.getByText('Name is required')).toBeInTheDocument()
   })
 
-  // A request without a zone is a 400 the form showed as "Something went wrong"; the form asks for the zone itself.
-  it('asks for a zone and sends nothing when none is chosen', async () => {
+  // A request without a cluster is a 400 the form showed as "Something went wrong"; the form asks for the cluster itself.
+  it('asks for a cluster and sends nothing when none is chosen', async () => {
     let posted = false
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', () => {
         posted = true
         return HttpResponse.json({ id: 'n-new' }, { status: 202 })
@@ -30,12 +30,12 @@ describe('NetworkCreateModal', () => {
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. production/i), 'my-net')
     await userEvent.click(screen.getByRole('button', { name: /create network/i }))
 
-    expect(screen.getByText('Choose a zone')).toBeInTheDocument()
+    expect(screen.getByText('Choose a cluster')).toBeInTheDocument()
     expect(posted).toBe(false)
   })
 
   it('shows CIDR validation error for invalid format', async () => {
-    server.use(http.get('*/v1/zones', () => HttpResponse.json([zone])))
+    server.use(http.get('*/v1/clusters', () => HttpResponse.json([cluster])))
     renderWithProviders(<NetworkCreateModal open onOpenChange={vi.fn()} />)
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. production/i), 'my-net')
     await userEvent.type(screen.getByPlaceholderText(/10\.0\.0\.0/i), 'not-a-cidr')
@@ -46,7 +46,7 @@ describe('NetworkCreateModal', () => {
   it('calls POST without cidr when CIDR field is empty', async () => {
     let requestBody: unknown
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', async ({ request }) => {
         requestBody = await request.json()
         return HttpResponse.json({ id: 'n-new', name: 'staging-net', status: 'Creating' }, { status: 202 })
@@ -64,7 +64,7 @@ describe('NetworkCreateModal', () => {
 
   it('shows CIDR overlap error from API', async () => {
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', () =>
         HttpResponse.json({ status: 422, title: 'CIDR overlap', code: 'NETWORK_CIDR_OVERLAP' }, { status: 422 })
       ),
@@ -80,7 +80,7 @@ describe('NetworkCreateModal', () => {
 
   it('shows a clear suspended message on 403 TENANT_SUSPENDED — S4', async () => {
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', () =>
         HttpResponse.json({ status: 403, title: 'Suspended', code: 'TENANT_SUSPENDED' }, { status: 403 }),
       ),
@@ -96,7 +96,7 @@ describe('NetworkCreateModal', () => {
 
   it('shows a clear pending-approval message on 403 TENANT_PENDING_APPROVAL — S3', async () => {
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', () =>
         HttpResponse.json({ status: 403, title: 'Pending approval', code: 'TENANT_PENDING_APPROVAL' }, { status: 403 }),
       ),
@@ -112,7 +112,7 @@ describe('NetworkCreateModal', () => {
 
   it('falls back to generic message on an unrecognized 403 code — S3 guard', async () => {
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', () =>
         HttpResponse.json({ status: 403, title: 'Forbidden', code: 'SOME_OTHER_CODE' }, { status: 403 }),
       ),
@@ -142,7 +142,7 @@ describe('NetworkCreateModal', () => {
   it('asks for public IPv6 only when the box is ticked, and it starts unticked', async () => {
     const bodies: Record<string, unknown>[] = []
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', async ({ request }) => {
         bodies.push(await request.json() as Record<string, unknown>)
         return HttpResponse.json({ id: 'n-new' }, { status: 202 })
@@ -167,7 +167,7 @@ describe('NetworkCreateModal', () => {
     'with public IPv6, refuses %s before sending: it is not inside a private range', async cidr => {
     let posted = false
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', () => {
         posted = true
         return HttpResponse.json({ id: 'n-new' }, { status: 202 })
@@ -183,7 +183,7 @@ describe('NetworkCreateModal', () => {
     'with public IPv6, sends %s: it is inside a private range', async cidr => {
     let requestBody: Record<string, unknown> = {}
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', async ({ request }) => {
         requestBody = await request.json() as Record<string, unknown>
         return HttpResponse.json({ id: 'n-new' }, { status: 202 })
@@ -198,7 +198,7 @@ describe('NetworkCreateModal', () => {
   it('without public IPv6, a CIDR outside the private ranges is sent', async () => {
     let requestBody: Record<string, unknown> = {}
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', async ({ request }) => {
         requestBody = await request.json() as Record<string, unknown>
         return HttpResponse.json({ id: 'n-new' }, { status: 202 })
@@ -210,12 +210,12 @@ describe('NetworkCreateModal', () => {
   })
 
   it.each([
-    [422, 'IPV6_NOT_AVAILABLE', 'Public IPv6 is not available in this zone'],
+    [422, 'IPV6_NOT_AVAILABLE', 'Public IPv6 is not available in this cluster'],
     [422, 'IPV6_QUOTA_EXCEEDED', 'Public IPv6 quota exceeded — delete a network with public IPv6 first'],
     [409, 'IPV6_ALLOCATION_CONFLICT', 'Another network took the same IPv6 range at the same moment — submit again'],
   ])('shows what %i %s means', async (status, code, message) => {
     server.use(
-      http.get('*/v1/zones', () => HttpResponse.json([zone])),
+      http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', () => HttpResponse.json({ status, title: code, code }, { status })),
     )
     renderWithProviders(<NetworkCreateModal open onOpenChange={vi.fn()} />)

@@ -31,7 +31,7 @@ const vmSt = (currentState: string | null, currentExistence = 'Exists') =>
 
 const net = (overrides = {}) => ({
   id: 'net-1', name: 'prod-net', ...st('Created'), cidr: '10.0.0.0/24',
-  gateway: '10.0.0.1', publicIpv6Subnet: null as string | null, zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z',
+  gateway: '10.0.0.1', publicIpv6Subnet: null as string | null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z',
   ...overrides,
 })
 
@@ -249,7 +249,7 @@ describe('NetworkListPage', () => {
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
         { id: 'vm-1', name: 'web-01', networkId: 'net-1', ...vmSt('Running'),
           ipAddress: '10.0.0.5', vmOfferingId: 'so-1', templateId: 't-1',
-          zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
+          clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
       ])),
     )
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
@@ -266,7 +266,7 @@ describe('NetworkListPage', () => {
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
         { id: 'vm-2', name: 'err-vm', networkId: 'net-1', ...vmSt('Error'),
           ipAddress: null, vmOfferingId: 'so-1', templateId: 't-1',
-          zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
+          clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
       ])),
     )
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
@@ -280,10 +280,10 @@ describe('NetworkListPage', () => {
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
         { id: 'vm-1', name: 'lost-vm', networkId: 'net-1', ...vmSt(null, 'NotFound'),
           ipAddress: null, vmOfferingId: 'so-1', templateId: 't-1',
-          zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
+          clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
         { id: 'vm-2', name: 'refused-vm', networkId: 'net-1', ...vmSt(null, 'NotCreated'), requestFailureReason: 'refused',
           ipAddress: null, vmOfferingId: 'so-1', templateId: 't-1',
-          zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
+          clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
       ])),
     )
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
@@ -604,7 +604,7 @@ describe('NetworkListPage', () => {
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
         { id: 'vm-3', name: 'other-vm', networkId: 'net-2', ...vmSt('Running'),
           ipAddress: '10.0.1.5', vmOfferingId: 'so-1', templateId: 't-1',
-          zoneId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
+          clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
       ])),
     )
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)

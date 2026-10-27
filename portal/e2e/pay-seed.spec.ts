@@ -41,20 +41,20 @@ test('seed: provision a live VM + volume so beta-user accrues usage', async ({ p
   const api = await request.newContext({ baseURL: API, extraHTTPHeaders: { Authorization: `Bearer ${token}` } })
   const j = async (p: string) => (await api.get(p)).json()
 
-  const zones = await j('/v1/zones')
+  const clusters = await j('/v1/clusters')
   const templates = await j('/v1/templates')
   const offerings = await j('/v1/vm-offerings')
-  const zoneId = zones?.[0]?.id ?? zones?.[0]?.zoneId
+  const clusterId = clusters?.[0]?.id ?? clusters?.[0]?.clusterId
   const tpl = (Array.isArray(templates) ? templates : []).find((t: any) => t.externalTemplateId) ?? templates?.[0]
   const off = (Array.isArray(offerings) ? offerings : [])[0]
-  console.log('PICK', JSON.stringify({ zoneId, templateId: tpl?.id, vmOfferingId: off?.id, price: off?.pricePerHour }))
-  if (!zoneId || !tpl?.id || !off?.id) throw new Error('catalog missing zone/template/offering')
+  console.log('PICK', JSON.stringify({ clusterId, templateId: tpl?.id, vmOfferingId: off?.id, price: off?.pricePerHour }))
+  if (!clusterId || !tpl?.id || !off?.id) throw new Error('catalog missing cluster/template/offering')
 
   let nets = await j('/v1/tenant/networks')
   let net = (Array.isArray(nets) ? nets : []).find((n: any) => n.status === 'Active')
   if (!net) {
     console.log('CREATE_NET', (await api.post('/v1/tenant/networks', { headers: { 'Idempotency-Key': crypto.randomUUID() },
-      data: { name: 'paytest-net', zoneId, cidr: '10.98.0.0/24' },
+      data: { name: 'paytest-net', clusterId, cidr: '10.98.0.0/24' },
     })).status())
     for (let i = 0; i < 30 && !net; i++) {
       await page.waitForTimeout(4000)
@@ -69,7 +69,7 @@ test('seed: provision a live VM + volume so beta-user accrues usage', async ({ p
   let vm: any = (await j('/v1/tenant/vms') as any[]).find((v: any) => v.name === 'paytest-vm' && LIVE_VM.includes(v.status))
   if (!vm) {
     const res = await api.post('/v1/tenant/vms', { headers: { 'Idempotency-Key': crypto.randomUUID() },
-      data: { name: 'paytest-vm', networkId: net.id, zoneId, vmOfferingId: off.id, templateId: tpl.id, diskSizeGb: 10 },
+      data: { name: 'paytest-vm', networkId: net.id, clusterId, vmOfferingId: off.id, templateId: tpl.id, diskSizeGb: 10 },
     })
     console.log('CREATE_VM', res.status(), await res.text())
     for (let i = 0; i < 40 && vm?.status !== 'Running'; i++) {
@@ -86,7 +86,7 @@ test('seed: provision a live VM + volume so beta-user accrues usage', async ({ p
   let vol: any = (await j('/v1/tenant/volumes') as any[]).find((v: any) => v.name === 'paytest-vol' && LIVE_VOL.includes(v.status))
   if (!vol && volOff?.id) {
     const res = await api.post('/v1/tenant/volumes', { headers: { 'Idempotency-Key': crypto.randomUUID() },
-      data: { name: 'paytest-vol', volumeOfferingId: volOff.id, zoneId, sizeGb: 500 },
+      data: { name: 'paytest-vol', volumeOfferingId: volOff.id, clusterId, sizeGb: 500 },
     })
     console.log('CREATE_VOL', res.status(), await res.text())
     for (let i = 0; i < 30 && !['Available', 'Ready', 'Attached'].includes(vol?.status); i++) {
