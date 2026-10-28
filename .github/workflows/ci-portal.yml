@@ -2,7 +2,7 @@ name: CI — Portal
 
 on:
   # Every push to main publishes titan-cloud-console. Which tag an environment runs is decided outside this repository:
-  # dev by scripts/pull-images.py of OpenViCloud/titan-local-cluster, staging by a release of OpenViCloud/titan-ops.
+  # dev by scripts/pull-images.py of OpenViCloud/titan-local-cluster, the other environments by a release of OpenViCloud/titan-ops.
   push:
     branches: [main]
   pull_request:

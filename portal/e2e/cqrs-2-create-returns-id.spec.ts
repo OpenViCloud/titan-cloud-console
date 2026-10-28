@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22).
+// UI regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22).
 //
 // What changed: every create endpoint now answers with the identity it just minted and nothing
 // else. Two of those creates sit on the money path, and one of them is why this spec exists.
@@ -23,7 +24,7 @@ const PASSWORD = process.env.BETA_USER_PASSWORD
 
 const EVIDENCE = process.env.RESULTS_DIR || 'test-results/evidence'
 
-// Measured from the staging DB immediately before this run (regression-plan §Precondition).
+// Measured from the environment's database immediately before this run (regression-plan §Precondition).
 // Stored as 509842 (long VND, docs/architecture/money-and-wallet.md#money-is-long-vnd); the portal renders it grouped with a ₫ suffix — assert the
 // way it DISPLAYS, not the way it is stored.
 const WALLET_BALANCE = /509,842\s*₫/
@@ -35,7 +36,7 @@ const TOPUP_AMOUNT = 137000
 const TOPUP_AMOUNT_DISPLAY = /137,000\s*₫/
 
 async function login(page: Page) {
-  // 'domcontentloaded' not 'load': the staging edge is intermittently slow on secondary assets,
+  // 'domcontentloaded' not 'load': the edge is intermittently slow on secondary assets,
   // and waiting for every one of them turns a slow CDN into a false failure of the screen.
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   const signIn = page.getByRole('button', { name: /sign in|log ?in|đăng nhập/i }).first()
@@ -46,7 +47,7 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
   await page.getByRole('navigation').or(page.getByRole('heading').first()).first()
     .waitFor({ state: 'visible', timeout: 45_000 })
 }
@@ -55,7 +56,7 @@ test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       'BETA_USER_PASSWORD is not set. Inject at run time:\n' +
-      "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-staging get secret beta-user-credentials " +
+      "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-<env> get secret beta-user-credentials " +
       "-o jsonpath='{.data.password}' | base64 -d) npx playwright test",
     )
   }

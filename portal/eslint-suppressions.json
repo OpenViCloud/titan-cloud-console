@@ -4,16 +4,6 @@
       "count": 6
     }
   },
-  "e2e/pay-seed.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 14
-    }
-  },
-  "e2e/seed-usage.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 13
-    }
-  },
   "src/components/ui/badge.tsx": {
     "react-refresh/only-export-components": {
       "count": 1

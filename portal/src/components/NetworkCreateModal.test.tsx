@@ -49,13 +49,13 @@ describe('NetworkCreateModal', () => {
       http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
       http.post('*/v1/tenant/networks', async ({ request }) => {
         requestBody = await request.json()
-        return HttpResponse.json({ id: 'n-new', name: 'staging-net', status: 'Creating' }, { status: 202 })
+        return HttpResponse.json({ id: 'n-new', name: 'second-net', status: 'Creating' }, { status: 202 })
       }),
     )
     const onOpenChange = vi.fn()
     renderWithProviders(<NetworkCreateModal open onOpenChange={onOpenChange} />)
     await waitFor(() => expect(screen.getAllByRole('combobox').length).toBeGreaterThan(0))
-    await userEvent.type(screen.getByPlaceholderText(/e\.g\. production/i), 'staging-net')
+    await userEvent.type(screen.getByPlaceholderText(/e\.g\. production/i), 'second-net')
     await userEvent.selectOptions(screen.getAllByRole('combobox')[0], 'z1')
     await userEvent.click(screen.getByRole('button', { name: /create network/i }))
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))

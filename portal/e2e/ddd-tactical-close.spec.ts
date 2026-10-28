@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — docs/architecture/money-and-wallet.md#rate-value-object + docs/architecture/code-structure.md#tenant-typed-edge.
+// UI regression — docs/architecture/money-and-wallet.md#rate-value-object + docs/architecture/code-structure.md#tenant-typed-edge.
 //
 // What these prove that the 933 module tests cannot: the numbers on the page came out of the real
 // database, through the real Rate/Money value converters, out of the real DTO boundary, after the
@@ -13,7 +14,7 @@ const PASSWORD = process.env.BETA_USER_PASSWORD
 
 const EVIDENCE = process.env.RESULTS_DIR || 'test-results/evidence'
 
-// ── Oracles, read from the staging database BEFORE the browser opened ─────────
+// ── Oracles, read from the environment's database BEFORE the browser opened ─────────
 //
 // core.wallets.available_amount   = 509841.5070000000
 // core.invoices (2026-09)         = 158.4930000000, SettledByWallet
@@ -48,7 +49,7 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
 
   // Landing on the portal origin is NOT being logged in. The OIDC callback arrives as
   // `/?state=…&code=…` and the SPA exchanges it afterwards; navigating during that window gets
@@ -61,7 +62,7 @@ test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       'BETA_USER_PASSWORD is not set. Inject at run time:\n' +
-        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-staging get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test ddd-tactical-close",
+        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-<env> get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test ddd-tactical-close",
     )
   }
 })
@@ -156,7 +157,7 @@ test('U3 — wallet balance survives the Money wiring [ddd-tactical-close]', asy
 
 // ── U6 — the VM list renders the state the API actually returned ─────────────
 //
-// ⚠️ HONEST SCOPE. Every VM on staging is `Destroyed`, and `VmRepository.ListByTenantAsync` filters
+// ⚠️ HONEST SCOPE. When this was written every VM was `Destroyed`, and `VmRepository.ListByTenantAsync` filters
 // `Status != Destroyed`, so the list is legitimately EMPTY. The precondition for "rows render with a
 // concrete status" is therefore FALSE on this environment, and per the precondition rule that branch
 // is INCONCLUSIVE here — not a pass, and not a fail. It is covered by useVms.test.ts (4 → 11 tests,
@@ -184,7 +185,7 @@ test('U6 — VM list agrees with the API it read [ddd-tactical-close]', async ({
     // The empty state, asserted as CONTENT — not as "a table exists".
     await expect(page.getByText('No virtual machines')).toBeVisible({ timeout: 20_000 })
   } else {
-    // If staging ever has a live VM again, this branch measures the real thing: every row carries a
+    // If the environment ever has a live VM again, this branch measures the real thing: every row carries a
     // concrete status, which is what pendingTarget returning undefined would break.
     const table = page.locator('table').first()
     await expect(table.getByText(String(vms[0].name)).first()).toBeVisible({ timeout: 30_000 })
@@ -204,7 +205,7 @@ test('U6 — VM list agrees with the API it read [ddd-tactical-close]', async ({
 // PREVIOUS network's name. One network, or one open, cannot see it — the stale value and the correct
 // value are the same string. It needs two DIFFERENT renamable networks.
 //
-// ⚠️ That precondition is IMPOSSIBLE on staging, and the reason is worth writing down: beta-user has
+// ⚠️ That precondition is IMPOSSIBLE on the environment it was written for, and the reason is worth writing down: beta-user has
 // `max_networks = 1`. Trying to create a second one returns 422 NETWORK_QUOTA_EXCEEDED — correctly.
 // The stack trace of that refusal is, incidentally, the only LIVE evidence of docs/architecture/code-structure.md#tenant-typed-edge:
 //

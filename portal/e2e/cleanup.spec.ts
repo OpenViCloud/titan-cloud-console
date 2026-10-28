@@ -1,10 +1,11 @@
 import { test, request } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
 // One-off cleanup for the seed resources (credtest-vm / credtest-vol / credtest-net) so they stop
 // accruing usage. The generated invoice + the consumed credit stay (immutable) as evidence.
 const USERNAME = process.env.BETA_USER_USERNAME || 'beta-user'
 const PASSWORD = process.env.BETA_USER_PASSWORD
-const API = process.env.API_BASE_URL || 'https://api-titan-staging.openvicloud.com'
+const API = requiredHost('API_BASE_URL')
 
 test('cleanup: delete seed VM/volume/network', async ({ page }) => {
   if (!PASSWORD) throw new Error('BETA_USER_PASSWORD not set')
@@ -16,7 +17,7 @@ test('cleanup: delete seed VM/volume/network', async ({ page }) => {
   await u.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
   await page.waitForTimeout(2500)
   const token = await page.evaluate(() => {
     const key = Object.keys(sessionStorage).find(k => k.startsWith('oidc.user:'))

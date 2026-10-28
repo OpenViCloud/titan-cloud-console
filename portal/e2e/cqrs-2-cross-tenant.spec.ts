@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging API regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22).
+// API regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22).
 //
 // CQRS-2 folded six ownership helpers into ComputeOwnership and, doing so, fixed a real leak:
 // VolumeService answered 403 for a volume belonging to another tenant while the five other helpers
@@ -11,12 +12,12 @@ import { test, expect, type Page } from '@playwright/test'
 // turns that into. Program.cs maps ForbiddenException -> 403 and NotFoundException -> 404, and it is
 // the mapped status the customer actually sees. Only a real request over the wire measures that.
 //
-// It runs as a Playwright spec because the staging Keycloak client has direct access grants
+// It runs as a Playwright spec because the Keycloak client has direct access grants
 // disabled (POST /token with grant_type=password -> 400 unauthorized_client, measured), so a browser
 // login is the only way to hold a real token. The password comes from BETA_USER_PASSWORD.
 const USERNAME = process.env.BETA_USER_USERNAME || 'beta-user'
 const PASSWORD = process.env.BETA_USER_PASSWORD
-const API = process.env.API_BASE_URL || 'https://api-titan-staging.openvicloud.com'
+const API = requiredHost('API_BASE_URL')
 
 // A volume id that belongs to no one on this environment. A caller must not be able to tell this
 // apart from a volume owned by someone else — that indistinguishability IS the fix.
@@ -31,7 +32,7 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
   await page.getByRole('navigation').or(page.getByRole('heading').first()).first()
     .waitFor({ state: 'visible', timeout: 45_000 })
 }

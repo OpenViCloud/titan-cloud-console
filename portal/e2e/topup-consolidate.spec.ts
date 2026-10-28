@@ -1,10 +1,11 @@
 import { test, expect, type Page } from '@playwright/test'
+import { requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — US-TOPUP-CONSOLIDATE.
+// UI regression — US-TOPUP-CONSOLIDATE.
 //
 // The TopUp lifecycle is consolidated behind one TopUpService and the unified /topups routes
 // (breaking: the old /v1/admin/promotional-credits + /v1/tenant/wallet/topups are 404). This proves,
-// against the real deployed staging (admin portal + tenant portal + new backend), that the admin
+// against a real deployed environment (admin portal + tenant portal + new backend), that the admin
 // promo grant still works END TO END through the NEW route (admin portal hook now POSTs
 // /v1/admin/topups/grant and GETs /v1/admin/topups?source=PromotionalCredit), and the credit reaches
 // the tenant wallet. If the route hard-cut had broken the wiring, the grant would 404 and neither
@@ -17,8 +18,8 @@ import { test, expect, type Page } from '@playwright/test'
 // assertions key on THIS run's row, never on absolute balance (admin-test already carries a 500.000 ₫
 // promo from US-PROMO-01). Grant is permanent (docs/architecture/money-and-wallet.md#credit-is-money); known-state.md is updated after this run.
 
-const ADMIN_HOST = process.env.ADMIN_BASE_URL || 'https://admin-titan-staging.openvicloud.com'
-const PORTAL_HOST = process.env.PORTAL_BASE_URL || 'https://portal-titan-staging.openvicloud.com'
+const ADMIN_HOST = requiredHost('ADMIN_BASE_URL')
+const PORTAL_HOST = requiredHost('PORTAL_BASE_URL')
 const USERNAME = process.env.ADMIN_TEST_USERNAME || 'admin-test'
 const PASSWORD = process.env.ADMIN_TEST_PASSWORD
 const TENANT_NAME = 'admin-test'
@@ -44,7 +45,7 @@ test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       'ADMIN_TEST_PASSWORD is not set. Inject at run time:\n' +
-        "  ADMIN_TEST_PASSWORD=$(kubectl -n titan-auth-staging get secret admin-test-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test topup-consolidate",
+        "  ADMIN_TEST_PASSWORD=$(kubectl -n titan-auth-<env> get secret admin-test-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test topup-consolidate",
     )
   }
 })

@@ -1,9 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
+import { requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — US-PROMO-01.
+// UI regression — US-PROMO-01.
 //
 // The admin now GRANTS promotional credit directly (no tenant request / approval queue). This proves,
-// against the real deployed staging (admin portal + tenant portal + real backend + migrated DB), that:
+// against a real deployed environment (admin portal + tenant portal + real backend + migrated DB), that:
 //   UI-1 — an admin grants credit to a tenant and sees it in the grant history, and
 //   UI-2 — that tenant's wallet shows the credit as a `Promo` statement line with the new balance.
 //
@@ -16,8 +17,8 @@ import { test, expect, type Page } from '@playwright/test'
 // whose 509.842 ₫ oracle wallet-single-balance.spec.ts asserts. Grant is permanent (refund is manual,
 // docs/architecture/money-and-wallet.md#credit-is-money); known-state.md is updated after this run.
 
-const ADMIN_HOST = process.env.ADMIN_BASE_URL || 'https://admin-titan-staging.openvicloud.com'
-const PORTAL_HOST = process.env.PORTAL_BASE_URL || 'https://portal-titan-staging.openvicloud.com'
+const ADMIN_HOST = requiredHost('ADMIN_BASE_URL')
+const PORTAL_HOST = requiredHost('PORTAL_BASE_URL')
 const USERNAME = process.env.ADMIN_TEST_USERNAME || 'admin-test'
 const PASSWORD = process.env.ADMIN_TEST_PASSWORD
 const TENANT_NAME = 'admin-test'
@@ -42,7 +43,7 @@ test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       'ADMIN_TEST_PASSWORD is not set. Inject at run time:\n' +
-        "  ADMIN_TEST_PASSWORD=$(kubectl -n titan-auth-staging get secret admin-test-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test promotional-credit",
+        "  ADMIN_TEST_PASSWORD=$(kubectl -n titan-auth-<env> get secret admin-test-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test promotional-credit",
     )
   }
 })
@@ -77,7 +78,7 @@ test('tenant wallet shows the granted credit as a Promo line [UI-2]', async ({ p
   await page.waitForLoadState('networkidle')   // let the OAuth code exchange settle before a full nav
 
   // Legal consent gate (docs/features/legal/design.md#consent-gate-per-user, click-wrap TOS) — admin-test has not accepted TOS on the tenant
-  // portal, and the wallet sits behind it. Tôn Chủ approved accepting the (placeholder) staging TOS
+  // portal, and the wallet sits behind it. Tôn Chủ approved accepting the (placeholder) TOS
   // for this test account so the wallet is reachable.
   const consent = page.getByRole('checkbox', { name: /đã đọc và đồng ý|read and agree/i }).first()
   if (await consent.isVisible().catch(() => false)) {

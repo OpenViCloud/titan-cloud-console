@@ -43,12 +43,12 @@ describe('NetworkListPage', () => {
   })
 
   it('shows only networks matching ?q from the top-bar search, and Clear shows all again', async () => {
-    server.use(http.get('*/v1/tenant/networks', () => HttpResponse.json([net(), net({ id: 'n2', name: 'staging-net' })])))
+    server.use(http.get('*/v1/tenant/networks', () => HttpResponse.json([net(), net({ id: 'n2', name: 'second-net' })])))
     renderWithProviders(<MemoryRouter initialEntries={['/networks?q=PROD']}><NetworkListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('prod-net')).toBeInTheDocument())
-    expect(screen.queryByText('staging-net')).not.toBeInTheDocument()
+    expect(screen.queryByText('second-net')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Clear' }))
-    expect(screen.getByText('staging-net')).toBeInTheDocument()
+    expect(screen.getByText('second-net')).toBeInTheDocument()
   })
 
   it('shows network row with name and status badge', async () => {
@@ -149,7 +149,7 @@ describe('NetworkListPage', () => {
   // passes the test above and fails this one.
   it('rename dialog prefills the current name on a second, different network', async () => {
     server.use(http.get('*/v1/tenant/networks', () => HttpResponse.json([
-      net(), net({ id: 'net-2', name: 'staging-net' }),
+      net(), net({ id: 'net-2', name: 'second-net' }),
     ])))
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('prod-net')).toBeInTheDocument())
@@ -162,7 +162,7 @@ describe('NetworkListPage', () => {
     await waitFor(() => expect(screen.queryByLabelText('Name')).not.toBeInTheDocument())
 
     await userEvent.click(screen.getAllByRole('button', { name: /rename/i })[1])
-    expect(screen.getByLabelText('Name')).toHaveValue('staging-net')
+    expect(screen.getByLabelText('Name')).toHaveValue('second-net')
   })
 
   it('calls PATCH with the new name and shows it in the row', async () => {
@@ -180,11 +180,11 @@ describe('NetworkListPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /rename/i }))
     const input = screen.getByLabelText('Name')
     await userEvent.clear(input)
-    await userEvent.type(input, 'staging-net')
+    await userEvent.type(input, 'second-net')
     await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
-    await waitFor(() => expect(patched?.name).toBe('staging-net'))
+    await waitFor(() => expect(patched?.name).toBe('second-net'))
     // Cache invalidated → the row reflects the rename without a page reload.
-    await waitFor(() => expect(screen.getByText('staging-net')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('second-net')).toBeInTheDocument())
   })
 
   it('save is disabled while the name is unchanged or empty', async () => {

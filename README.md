@@ -31,7 +31,7 @@ Every push to `main` publishes the `linux/arm64` and `linux/amd64` image `ghcr.i
 the Actions cache; only the push job of a push to `main` may write packages, once the tests pass. Pull requests run the
 tests and build the image without pushing it. Which tag an environment runs is decided outside this repository: dev by
 `scripts/pull-images.py` of [OpenViCloud/titan-local-cluster](https://github.com/OpenViCloud/titan-local-cluster),
-staging by a release of [OpenViCloud/titan-ops](https://github.com/OpenViCloud/titan-ops).
+the other environments by a release of [OpenViCloud/titan-ops](https://github.com/OpenViCloud/titan-ops).
 
 ## License
 

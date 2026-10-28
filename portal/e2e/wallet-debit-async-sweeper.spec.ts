@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — docs/architecture/money-and-wallet.md#single-writer-outbox S5+S6.
+// UI regression — docs/architecture/money-and-wallet.md#single-writer-outbox S5+S6.
 //
 // S5 moved the wallet DEBIT out of the request and into the single-writer consumer, and changed
 // POST /v1/tenant/billing/invoices/{id}/pay from 200 to 202. S6 added the sweeper that makes a
@@ -17,7 +18,7 @@ const PASSWORD = process.env.BETA_USER_PASSWORD
 
 const EVIDENCE = process.env.RESULTS_DIR || 'test-results/evidence'
 
-// Oracles read from the staging database BEFORE this run (regression-plan D-1..D-4):
+// Oracles read from the environment's database BEFORE this run (regression-plan D-1..D-4):
 //   available_amount = 509842, 3 ledger rows, SUM(amount) == balance, 0 outstanding commands.
 //
 // The portal ROUNDS VND, so what a customer reads is not the stored value verbatim — the lesson
@@ -35,14 +36,14 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
 }
 
 test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       'BETA_USER_PASSWORD is not set. Inject at run time:\n' +
-        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-staging get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test wallet-debit-async-sweeper",
+        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-<env> get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test wallet-debit-async-sweeper",
     )
   }
 })
@@ -115,7 +116,7 @@ test('invoices: page renders, and the new paymentState field is on the wire [U-3
   if (rows.length === 0) {
     test.info().annotations.push({
       type: 'observation',
-      description: 'U-4: tenant has no invoices on staging, so the paymentState field could not be observed on the wire. Not a failure — an unmeasured case.',
+      description: 'U-4: tenant has no invoices on this environment, so the paymentState field could not be observed on the wire. Not a failure — an unmeasured case.',
     })
     return
   }

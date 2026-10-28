@@ -560,6 +560,7 @@ export const vi: Messages = {
     afterPayment: 'Sau khi thanh toán',
     notEnoughCredit: (amount: string) => `Ví không đủ tiền — cần thêm ${amount}.`,
     walletInsufficient: 'Ví không còn đủ tiền để trả hoá đơn này. Nạp tiền rồi thử lại.',
+    walletInsufficientNoTopUp: 'Ví không còn đủ tiền để trả hoá đơn này. Liên hệ OpenViCloud để được cộng thêm tiền vào ví, rồi thử lại.',
     alreadySettled: 'Hoá đơn này đã được thanh toán.',
     conflict: 'Không bắt đầu được lần thanh toán này, hoặc đang có một lần thanh toán khác. Chưa trừ đồng nào — kiểm tra hoá đơn trước khi thử lại.',
     failed: 'Thanh toán thất bại. Chưa trừ đồng nào — vui lòng thử lại.',

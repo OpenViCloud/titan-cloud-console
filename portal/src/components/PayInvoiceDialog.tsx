@@ -11,6 +11,7 @@ import {
 import { usePayInvoiceFromWallet, type Invoice } from '@/hooks/useInvoices'
 import { useWallet } from '@/hooks/useWallet'
 import { useT, useFormat } from '@/i18n/LanguageContext'
+import { getConfig } from '@/lib/config'
 
 // docs/architecture/money-and-wallet.md#human-confirmed-debit — money leaves the wallet only when a person presses this button. Titan used to do it by
 // itself (on top-up, and again when an invoice was generated); it no longer does, so this dialog is
@@ -63,7 +64,11 @@ export function PayInvoiceDialog({
         const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code
         setError(
           code === 'INVOICE_WALLET_INSUFFICIENT'
-            ? t.payInvoice.walletInsufficient
+            ? // Without top-up the customer has no way to add credit themselves
+              // (docs/features/billing/topup/design.md#topup-portal).
+              getConfig().topUpEnabled === true
+              ? t.payInvoice.walletInsufficient
+              : t.payInvoice.walletInsufficientNoTopUp
             : code === 'INVOICE_INVALID_STATE'
               ? t.payInvoice.alreadySettled
               : code === 'INVOICE_PAYMENT_CONFLICT'
