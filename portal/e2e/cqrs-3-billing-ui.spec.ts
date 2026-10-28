@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Locator } from '@playwright/test'
+import { requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — CQRS-3 / docs/architecture/http-contract.md#commands-return-no-data (2026-09-23).
+// UI regression — CQRS-3 / docs/architecture/http-contract.md#commands-return-no-data (2026-09-23).
 //
 // The portal hooks stopped reading bodies that docs/architecture/http-contract.md#commands-return-no-data removed (pay/settle → 202, mark-paid/quota/
 // debt-ceiling/rename → 204). These walk the screens a customer and an admin actually use, against
@@ -10,8 +11,8 @@ import { test, expect, type Page, type Locator } from '@playwright/test'
 // Rules this file follows (regression-test §Phase 3): wait for REAL content, assert what is DISPLAYED,
 // and scope every locator to the row being acted on — a page-wide .first() matched a history row
 // once (CQRS-2 U-1). The ~100ms Processing state is never asserted; only the settled end state is.
-const PORTAL = process.env.PORTAL_BASE_URL || 'https://portal-titan-staging.openvicloud.com'
-const ADMIN = process.env.ADMIN_BASE_URL || 'https://admin-titan-staging.openvicloud.com'
+const PORTAL = requiredHost('PORTAL_BASE_URL')
+const ADMIN = requiredHost('ADMIN_BASE_URL')
 const EVIDENCE = process.env.RESULTS_DIR || 'test-results/evidence'
 const need = (k: string) => {
   const v = process.env[k]

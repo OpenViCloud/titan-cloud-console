@@ -1,6 +1,7 @@
 import { test, expect, request, type Page, type APIRequestContext, type Browser } from '@playwright/test'
+import { requiredHost } from './hosts'
 
-// Stage-3 staging regression — debt ceiling is a REFERENCE field for the admin (Tôn Chủ 2026-09-04).
+// Regression — debt ceiling is a REFERENCE field for the admin (Tôn Chủ 2026-09-04).
 // Plan: cases A1–A4, B1–B3, C1–C5 of the iteration's regression plan.
 //
 // The assertion this file exists for is B2: a tenant whose debt ceiling is ZERO can still create a
@@ -10,9 +11,9 @@ import { test, expect, request, type Page, type APIRequestContext, type Browser 
 // Keycloak has direct-grant DISABLED for both clients, so API calls borrow the browser session's
 // access token out of sessionStorage — the same token the UI uses. Passwords come from env (injected
 // from k8s secrets) and never enter a log or an artifact.
-const ADMIN_URL = process.env.ADMIN_BASE_URL || 'https://admin-titan-staging.openvicloud.com'
-const PORTAL_URL = process.env.PORTAL_BASE_URL || 'https://portal-titan-staging.openvicloud.com'
-const API = process.env.API_BASE_URL || 'https://api-titan-staging.openvicloud.com'
+const ADMIN_URL = requiredHost('ADMIN_BASE_URL')
+const PORTAL_URL = requiredHost('PORTAL_BASE_URL')
+const API = requiredHost('API_BASE_URL')
 
 const ADMIN_USER = process.env.ADMIN_TEST_USERNAME || 'admin-test'
 const ADMIN_PASSWORD = process.env.ADMIN_TEST_PASSWORD
@@ -176,7 +177,7 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
     const networks = await (await custApi.get('/v1/tenant/networks')).json()
     let usable = (networks as { id: string; currentState: string }[]).find(n => n.currentState === 'Active')
     if (!usable) {
-      // Staging is usually empty between runs; bring a network for the VM and take it away at the end.
+      // The environment is usually empty between runs; bring a network for the VM and take it away at the end.
       const net = await custApi.post('/v1/tenant/networks', {
         headers: { 'Idempotency-Key': crypto.randomUUID() },
         data: { name: `ceiltest-net-${Date.now().toString().slice(-6)}`, clusterId },

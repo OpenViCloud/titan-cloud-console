@@ -2,7 +2,7 @@
 // URL — no server call needed. The memo carries the TopUp's PaymentRef so the SePay webhook can match
 // the transfer back to the purchase. Bank account/code come from build-time env; sensible placeholders
 // keep the page from breaking in dev/preview where they are unset (A-CSP: the portal CSP img-src must
-// allow qr.sepay.vn on staging).
+// allow qr.sepay.vn on every deployed environment).
 export function vietQrUrl(amount: number, paymentRef: string): string {
   const acc = import.meta.env.VITE_SEPAY_ACC ?? '0000000000'
   const bank = import.meta.env.VITE_SEPAY_BANK ?? 'MBBank'

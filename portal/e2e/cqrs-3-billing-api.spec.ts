@@ -1,6 +1,7 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
+import { requiredHost } from './hosts'
 
-// Stage-3 staging API regression — CQRS-3 / docs/architecture/http-contract.md#commands-return-no-data (2026-09-23).
+// API regression — CQRS-3 / docs/architecture/http-contract.md#commands-return-no-data (2026-09-23).
 //
 // Billing was split into 19 handlers. FastEndpoints builds an endpoint WITH its constructor
 // dependencies on every request, so any answer at all — even a 404 or a 422 — proves the handler's
@@ -10,9 +11,9 @@ import { test, expect, type Page, type APIRequestContext } from '@playwright/tes
 // paths run in the UI spec against seeded invoices.
 //
 // Secrets arrive as env vars injected from the k8s secret store at run time; none is printed.
-const API = process.env.API_BASE_URL || 'https://api-titan-staging.openvicloud.com'
-const PORTAL = process.env.PORTAL_BASE_URL || 'https://portal-titan-staging.openvicloud.com'
-const ADMIN = process.env.ADMIN_BASE_URL || 'https://admin-titan-staging.openvicloud.com'
+const API = requiredHost('API_BASE_URL')
+const PORTAL = requiredHost('PORTAL_BASE_URL')
+const ADMIN = requiredHost('ADMIN_BASE_URL')
 const need = (k: string) => {
   const v = process.env[k]
   if (!v) throw new Error(`${k} is not set — inject it at run time`)
@@ -113,7 +114,7 @@ test('A-1..A-5 every Billing route answers on the real host; commands write noth
   const run = JSON.parse(await expectCode(await request.post(`${API}/internal/billing/invoices/run`,
     { headers: internal, data: { year: 2020, month: 1 } }), 200))
   expect(run).toEqual({ generated: 0, skipped: 0 })
-  // Staging carries no SePay key (control-plane-secrets has none) → 401 by design. The endpoint and
+  // An environment without a SePay key (control-plane-secrets has none) → 401 by design. The endpoint and
   // its handler are constructed before the key check, so this still proves the handler resolves.
   await expectCode(await request.post(`${API}/internal/payments/sepay/webhook`,
     { headers: { Authorization: 'Apikey probe' }, data: { id: 1, transferType: 'out', transferAmount: 1 } }), 401)

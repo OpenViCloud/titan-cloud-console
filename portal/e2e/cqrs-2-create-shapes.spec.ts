@@ -1,10 +1,11 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging API regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22): the create endpoints answer with
+// API regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22): the create endpoints answer with
 // an id and nothing else, measured against the DEPLOYED API rather than the committed spec.
 const USERNAME = process.env.BETA_USER_USERNAME || 'beta-user'
 const PASSWORD = process.env.BETA_USER_PASSWORD
-const API = process.env.API_BASE_URL || 'https://api-titan-staging.openvicloud.com'
+const API = requiredHost('API_BASE_URL')
 
 async function login(page: Page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' })
@@ -15,7 +16,7 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
   await page.getByRole('navigation').or(page.getByRole('heading').first()).first()
     .waitFor({ state: 'visible', timeout: 45_000 })
 }

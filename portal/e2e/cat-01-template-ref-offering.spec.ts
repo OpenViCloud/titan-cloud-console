@@ -1,6 +1,7 @@
 import { test, expect, request, type Page, type Browser } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging regression for CAT-01 / docs/features/catalog/design.md#template-borrows-sizing — VmTemplate borrows its sizing from VmOffering.
+// Regression for CAT-01 / docs/features/catalog/design.md#template-borrows-sizing — VmTemplate borrows its sizing from VmOffering.
 // Plan: cases U1–U6 of the iteration's regression plan.
 //
 // Two things this file proves that no unit test can:
@@ -14,9 +15,10 @@ import { test, expect, request, type Page, type Browser } from '@playwright/test
 // access token out of sessionStorage. Passwords come from env (injected from k8s secrets / git
 // history for the dead one) and never enter a log or an artifact — trace/video/screenshot are off
 // by default in playwright.config.ts and the password field renders masked.
-const ADMIN_URL = process.env.ADMIN_BASE_URL || 'https://admin-titan-staging.openvicloud.com'
-const PORTAL_URL = process.env.PORTAL_BASE_URL || 'https://portal-titan-staging.openvicloud.com'
-const API = process.env.API_BASE_URL || 'https://api-titan-staging.openvicloud.com'
+const ADMIN_URL = requiredHost('ADMIN_BASE_URL')
+const PORTAL_URL = requiredHost('PORTAL_BASE_URL')
+const API = requiredHost('API_BASE_URL')
+const AUTH_URL = requiredHost('AUTH_BASE_URL')
 
 const ADMIN_USER = process.env.ADMIN_TEST_USERNAME || 'admin-test'
 const ADMIN_PASSWORD = process.env.ADMIN_TEST_PASSWORD
@@ -91,7 +93,7 @@ test('U1 — the OLD admin-test password is REJECTED by Keycloak', async ({ brow
   // a page that never loaded, so the host is asserted too.
   const error = page.locator('#input-error, .alert-error, [id*="input-error"]').first()
   await expect(error, 'Keycloak must reject the rotated-away password').toBeVisible({ timeout: 45_000 })
-  await expect(page).toHaveURL(/auth-titan-staging\.openvicloud\.com/)
+  await expect(page).toHaveURL(hostPattern(AUTH_URL))
 
   // And it must NOT have reached the admin app.
   await expect(page.getByText(/dashboard/i)).toHaveCount(0)

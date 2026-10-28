@@ -1,11 +1,12 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { server } from '@/test/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { InvoicesPage } from './InvoicesPage'
+import { getConfig, setConfig } from '@/lib/config'
 
 const invoice = (overrides = {}) => ({
   id: 'inv-1',
@@ -177,6 +178,45 @@ describe('InvoicesPage — pay from wallet', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Pay 300/ }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/no longer covers/i)
+  })
+
+  // With top-up off (docs/features/billing/topup/design.md#topup-portal) the customer cannot buy credit, so the
+  // rejection points them to OpenViCloud instead of to a button that is not there.
+  it('tells a customer who cannot buy credit to ask OpenViCloud for it', async () => {
+    server.use(http.get('*/v1/tenant/billing/invoices', () => HttpResponse.json([vnd()])))
+    stubWallet(500000)
+    server.use(http.post('*/v1/tenant/billing/invoices/:id/pay', () =>
+      HttpResponse.json({ status: 422, title: 'short', code: 'INVOICE_WALLET_INSUFFICIENT' }, { status: 422 })))
+
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: /pay from wallet/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^Pay 300/ }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Your wallet no longer covers this invoice. Contact OpenViCloud to add credit, then try again.')
+    expect(alert).not.toHaveTextContent(/top up/i)
+  })
+
+  describe('with top-up on', () => {
+    let loaded: ReturnType<typeof getConfig>
+    beforeEach(() => {
+      loaded = getConfig()
+      setConfig({ ...loaded, topUpEnabled: true })
+    })
+    afterEach(() => setConfig(loaded))
+
+    it('tells the customer to top up', async () => {
+      server.use(http.get('*/v1/tenant/billing/invoices', () => HttpResponse.json([vnd()])))
+      stubWallet(500000)
+      server.use(http.post('*/v1/tenant/billing/invoices/:id/pay', () =>
+        HttpResponse.json({ status: 422, title: 'short', code: 'INVOICE_WALLET_INSUFFICIENT' }, { status: 422 })))
+
+      renderPage()
+      await userEvent.click(await screen.findByRole('button', { name: /pay from wallet/i }))
+      await userEvent.click(screen.getByRole('button', { name: /^Pay 300/ }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Your wallet no longer covers this invoice. Top up and try again.')
+    })
   })
 
   // A 409 is not proof that someone else paid: it also answers a payment that could not start. The

@@ -1,9 +1,10 @@
 import { test, expect, request } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// RM-BC1 staging verification (S-3/S-4/S-5). Read-only: only GETs, nothing is created.
+// RM-BC1 verification (S-3/S-4/S-5). Read-only: only GETs, nothing is created.
 //
 // What this proves: the DEPLOYED read path still serves a currency and does not throw. What it does
-// NOT prove: that the currency comes from the constant rather than the rows — every row on staging
+// NOT prove: that the currency comes from the constant rather than the rows — every row it read
 // is already VND, so both the old rule and the new one return VND. That distinction is owned by the
 // mutation test in the unit suite, not by this.
 //
@@ -11,7 +12,7 @@ import { test, expect, request } from '@playwright/test'
 // video and screenshots are off by default in the config so it cannot land in an artifact.
 const USERNAME = process.env.BETA_USER_USERNAME || 'beta-user'
 const PASSWORD = process.env.BETA_USER_PASSWORD
-const API = process.env.API_BASE_URL || 'https://api-titan-staging.openvicloud.com'
+const API = requiredHost('API_BASE_URL')
 const BILLED_MONTH = process.env.BILL_MONTH || '2026-09'   // month that HAS usage
 const EMPTY_MONTH = process.env.EMPTY_MONTH || '2026-01'   // month that has none
 
@@ -24,7 +25,7 @@ test('RM-BC1: deployed read path reports VND and survives an empty period', asyn
   await u.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
 
   const token = await page.evaluate(async () => {
     for (let i = 0; i < 30; i++) {

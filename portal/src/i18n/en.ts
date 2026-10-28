@@ -568,6 +568,7 @@ export const en = {
     afterPayment: 'After payment',
     notEnoughCredit: (amount: string) => `Not enough credit — you need ${amount} more.`,
     walletInsufficient: 'Your wallet no longer covers this invoice. Top up and try again.',
+    walletInsufficientNoTopUp: 'Your wallet no longer covers this invoice. Contact OpenViCloud to add credit, then try again.',
     alreadySettled: 'This invoice has already been settled.',
     conflict: 'This payment could not start, or one is already in progress. Nothing was charged — check the invoice before trying again.',
     failed: 'Payment failed. Nothing was charged — please try again.',

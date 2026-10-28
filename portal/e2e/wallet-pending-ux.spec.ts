@@ -1,13 +1,16 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — docs/architecture/money-and-wallet.md#single-writer-outbox S7.
+const API = requiredHost('API_BASE_URL')
+
+// UI regression — docs/architecture/money-and-wallet.md#single-writer-outbox S7.
 //
 // What S5 left behind and S7 fixes: paying an invoice returns 202 with the money still in flight.
 // The portal invalidated its cache at that moment — one refetch, taken while nothing had changed yet
 // — and then sat still. The row said unpaid, the button stayed live, and a customer could press it
 // again on money already moving.
 //
-// Why this has to run on staging and not against MSW: the portal's unit tests hand themselves a
+// Why this has to run on a deployed environment and not against MSW: the portal's unit tests hand themselves a
 // paymentState and check the component reacts. They cannot show that the deployed API emits that
 // field, that the value arrives as the string the portal branches on, or that the poll actually
 // stops. Each of those is a separate way for a green unit suite to sit on top of a broken screen.
@@ -28,7 +31,7 @@ const PERIOD = process.env.TEST_INVOICE_PERIOD || 'Jul 2026'
 const TEST_INVOICE_TOTAL = /5,000\s*₫/
 
 async function login(page: Page) {
-  // 'domcontentloaded' not 'load': the staging edge is intermittently slow on secondary assets,
+  // 'domcontentloaded' not 'load': the edge is intermittently slow on secondary assets,
   // and waiting for every one of them turns a slow CDN into a false failure of the screen.
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   const signIn = page.getByRole('button', { name: /sign in|log ?in|đăng nhập/i }).first()
@@ -39,7 +42,7 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
   // Waiting for the URL only proves the OAuth redirect landed; the SPA still has to exchange the
   // code and mount. Waiting for real rendered content is what makes the next navigation reliable —
   // the first version of this spec navigated into a page that was still on the callback URL.
@@ -58,7 +61,7 @@ test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       'BETA_USER_PASSWORD is not set. Inject at run time:\n' +
-        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-staging get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test wallet-pending-ux",
+        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-<env> get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test wallet-pending-ux",
     )
   }
 })
@@ -72,7 +75,7 @@ test('U-0 — the deployed API serves paymentState on the invoice contract', asy
   // still "pass" by rendering the old status — the failure would look like nothing happened, which is
   // the exact shape S7 exists to remove.
   const res = await page.request.get(
-    'https://api-titan-staging.openvicloud.com/v1/tenant/billing/invoices',
+    `${API}/v1/tenant/billing/invoices`,
   ).catch(() => null)
 
   if (res && res.ok()) {

@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — docs/architecture/money-and-wallet.md#wallet-one-balance.
+// UI regression — docs/architecture/money-and-wallet.md#wallet-one-balance.
 //
 // The wallet stopped being a pile of credit lots and became one balance plus a signed ledger. The
 // customer's screen is meant to be UNCHANGED — which is exactly why it has to be checked: "the UI did
@@ -39,14 +40,14 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
 }
 
 test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       'BETA_USER_PASSWORD is not set. Inject at run time:\n' +
-        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-staging get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test wallet-single-balance",
+        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-<env> get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test wallet-single-balance",
     )
   }
 })

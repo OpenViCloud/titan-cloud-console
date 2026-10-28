@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { hostPattern, requiredHost } from './hosts'
 
-// Stage-3 staging UI regression — legal click-wrap consent:
+// UI regression — legal click-wrap consent:
 // public /legal/terms page (anon), the consent gate for a signed-in user who has not accepted, accepting
 // it, and the footer link. Login is automated; the password comes from BETA_USER_PASSWORD (injected from
 // the k8s secret `beta-user-credentials`) — never hard-coded or hand-entered.
@@ -21,14 +22,14 @@ async function login(page: Page) {
   await username.fill(USERNAME)
   await page.locator('#password, input[name="password"]').first().fill(PASSWORD!)
   await page.locator('#kc-login, button[type="submit"], input[type="submit"]').first().click()
-  await page.waitForURL(/portal-titan-staging\.openvicloud\.com/, { timeout: 45_000 })
+  await page.waitForURL(hostPattern(requiredHost('PORTAL_BASE_URL')), { timeout: 45_000 })
 }
 
 test.beforeAll(() => {
   if (!PASSWORD) {
     throw new Error(
       "BETA_USER_PASSWORD is not set. Inject at run time:\n" +
-        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-staging get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test legal-consent",
+        "  BETA_USER_PASSWORD=$(kubectl -n titan-auth-<env> get secret beta-user-credentials -o jsonpath='{.data.password}' | base64 -d) npx playwright test legal-consent",
     )
   }
 })
