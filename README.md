@@ -15,7 +15,7 @@ Node 22.
 ```
 
 `npm run dev` needs a running OpenViCloud dev cluster: it sends `/v1` to `http://api.localhost:8080` and takes
-`/config.json` from `http://portal.localhost:8080`. The cluster is set up by `mac/` in
+`/config.json` from `http://portal.localhost:8080`. The cluster is set up by `lima/scripts/up.sh` (macOS or Ubuntu) in
 [OpenViCloud/titan-local-cluster](https://github.com/OpenViCloud/titan-local-cluster).
 
 ## Test

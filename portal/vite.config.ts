@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-// `npm run dev` runs against the dev cluster (local-mac), never against a mock: the API is proxied so the
+// `npm run dev` runs against the dev cluster (local), never against a mock: the API is proxied so the
 // browser stays on one origin, and /config.json is the cluster's own, with the API made relative
 // (docs/features/cloud-console/design.md#portal-config-and-deploy).
 const DEV_API = 'http://api.localhost:8080'
@@ -24,7 +24,7 @@ function devClusterConfig(): Plugin {
           res.end(JSON.stringify(config))
         } catch (error) {
           res.statusCode = 502
-          res.end(`dev cluster unreachable at ${app}/config.json — start it with mac/ of OpenViCloud/titan-local-cluster (${String(error)})`)
+          res.end(`dev cluster unreachable at ${app}/config.json — start it with lima/scripts/up.sh of OpenViCloud/titan-local-cluster (${String(error)})`)
         }
       })
     },

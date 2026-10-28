@@ -4,7 +4,7 @@ This template provides a minimal setup to get React working in Vite with HMR and
 
 ## Dev against the dev cluster
 
-`npm run dev` runs the portal (`/`) against the dev cluster (`local-mac`, set up by `mac/` in
+`npm run dev` runs the portal (`/`) against the dev cluster (`local`, set up by `lima/scripts/up.sh` in
 [OpenViCloud/titan-local-cluster](https://github.com/OpenViCloud/titan-local-cluster)). There is no mock backend:
 `vite.config.ts` proxies `/v1` to `http://api.localhost:8080` and serves the cluster's own `/config.json` with the API
 made relative, so sign-in is the cluster's Keycloak.
