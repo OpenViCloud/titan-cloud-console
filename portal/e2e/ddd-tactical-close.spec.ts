@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { hostPattern, requiredHost } from './hosts'
 
-// UI regression — docs/architecture/money-and-wallet.md#rate-value-object + docs/architecture/code-structure.md#tenant-typed-edge.
+// UI regression — titan-ops architecture/money-and-wallet.md#rate-value-object + titan-ops architecture/code-structure.md#tenant-typed-edge.
 //
 // What these prove that the 933 module tests cannot: the numbers on the page came out of the real
 // database, through the real Rate/Money value converters, out of the real DTO boundary, after the
@@ -207,7 +207,7 @@ test('U6 — VM list agrees with the API it read [ddd-tactical-close]', async ({
 //
 // ⚠️ That precondition is IMPOSSIBLE on the environment it was written for, and the reason is worth writing down: beta-user has
 // `max_networks = 1`. Trying to create a second one returns 422 NETWORK_QUOTA_EXCEEDED — correctly.
-// The stack trace of that refusal is, incidentally, the only LIVE evidence of docs/architecture/code-structure.md#tenant-typed-edge:
+// The stack trace of that refusal is, incidentally, the only LIVE evidence of titan-ops architecture/code-structure.md#tenant-typed-edge:
 //
 //   Tenant.Refuse → Tenant.EnsureCanCreateNetwork(activeNetworkCount)
 //                 → Network.Create(Tenant tenant, Int32 activeNetworkCount, …)

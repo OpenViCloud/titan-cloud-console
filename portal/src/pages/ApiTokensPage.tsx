@@ -20,7 +20,7 @@ const MAX_NAME_LENGTH = 64
 const DEFAULT_LIFETIME = '90'
 const NEVER = 'never'
 
-// The server's answer to a create, in words (docs/features/public-api/design.md#api-token).
+// The server's answer to a create, in words (titan-ops features/public-api/design.md#api-token).
 function createErrorText(err: unknown, t: Messages): string {
   const res = (err as AxiosError<{ code?: string }>).response
   if (res === undefined) {

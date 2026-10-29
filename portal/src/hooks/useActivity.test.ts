@@ -10,7 +10,7 @@ describe('formatActivityAction', () => {
     expect(formatActivityAction('network.deleted', en)).toBe('Deleted network')
   })
 
-  // docs/architecture/intent-and-observation.md#intent-has-identity — the request and its outcome are two rows; the feed must never make a request read
+  // titan-ops architecture/intent-and-observation.md#intent-has-identity — the request and its outcome are two rows; the feed must never make a request read
   // like the thing already happened.
   it('labels every request event as a request, distinct from its outcome', () => {
     const requests: Record<string, string> = {

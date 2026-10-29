@@ -1,9 +1,9 @@
 import { test, expect, type Page, type Locator } from '@playwright/test'
 import { requiredHost } from './hosts'
 
-// UI regression — CQRS-3 / docs/architecture/http-contract.md#commands-return-no-data (2026-09-23).
+// UI regression — CQRS-3 / titan-ops architecture/http-contract.md#commands-return-no-data (2026-09-23).
 //
-// The portal hooks stopped reading bodies that docs/architecture/http-contract.md#commands-return-no-data removed (pay/settle → 202, mark-paid/quota/
+// The portal hooks stopped reading bodies that titan-ops architecture/http-contract.md#commands-return-no-data removed (pay/settle → 202, mark-paid/quota/
 // debt-ceiling/rename → 204). These walk the screens a customer and an admin actually use, against
 // three 1.000 ₫ invoices seeded for beta-user (Tôn Chủ approved): 2026-06 paid by the tenant,
 // 2026-07 settled by an admin, 2026-08 marked paid by an admin. Money moves for real (−2.000 ₫).

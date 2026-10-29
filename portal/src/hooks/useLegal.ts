@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { Lang } from '@/i18n/lang'
 
-// US-LEGAL — click-wrap consent (docs/features/legal/design.md#consent-gate-per-user). Consent is per-USER (Keycloak sub), so these queries are NOT
+// US-LEGAL — click-wrap consent (titan-ops features/legal/design.md#consent-gate-per-user). Consent is per-USER (Keycloak sub), so these queries are NOT
 // keyed by tenantId — a tenant's members each accept individually.
 
 export interface ConsentStatus {
@@ -39,7 +39,7 @@ export function useAcceptTerms() {
 
 // US-LEGAL-03 — the public legal document (anonymous). Used by the /legal/terms page and linked from the
 // consent gate + footer. Both texts carry the same version, so accepting after reading either one counts
-// (docs/features/legal/design.md#legal-endpoints). The language is in the key: switching shows the other text.
+// (titan-ops features/legal/design.md#legal-endpoints). The language is in the key: switching shows the other text.
 export function useLegalDocument(lang: Lang) {
   return useQuery({
     queryKey: ['legal-document', lang],

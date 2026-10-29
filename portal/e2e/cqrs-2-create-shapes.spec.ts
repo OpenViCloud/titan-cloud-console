@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { hostPattern, requiredHost } from './hosts'
 
-// API regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22): the create endpoints answer with
+// API regression — CQRS-2 / titan-ops architecture/http-contract.md#create-returns-id (2026-09-22): the create endpoints answer with
 // an id and nothing else, measured against the DEPLOYED API rather than the committed spec.
 const USERNAME = process.env.BETA_USER_USERNAME || 'beta-user'
 const PASSWORD = process.env.BETA_USER_PASSWORD
@@ -92,7 +92,7 @@ test('A-5 creating a VM answers with just an id, and the VM is really there', as
   })
   expect(res.status()).toBe(202)
 
-  // docs/architecture/http-contract.md#create-returns-id: exactly one key, and it is the identity.
+  // titan-ops architecture/http-contract.md#create-returns-id: exactly one key, and it is the identity.
   const body = await res.json()
   expect(Object.keys(body).sort(), 'create response carries only the id').toEqual(['vmId'])
   expect(body.vmId).toMatch(/^[0-9a-f-]{36}$/)

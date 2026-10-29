@@ -16,7 +16,7 @@ import { requiredHost } from './hosts'
 //
 // GRANT TARGET IS `admin-test`. Amount is a small, DISTINCTIVE 12.345 ₫ with a unique reason so the
 // assertions key on THIS run's row, never on absolute balance (admin-test already carries a 500.000 ₫
-// promo from US-PROMO-01). Grant is permanent (docs/architecture/money-and-wallet.md#credit-is-money); known-state.md is updated after this run.
+// promo from US-PROMO-01). Grant is permanent (titan-ops architecture/money-and-wallet.md#credit-is-money); known-state.md is updated after this run.
 
 const ADMIN_HOST = requiredHost('ADMIN_BASE_URL')
 const PORTAL_HOST = requiredHost('PORTAL_BASE_URL')
@@ -78,7 +78,7 @@ test('tenant wallet shows the granted credit as a Promo line [UI-2]', async ({ p
   await login(page, PORTAL_HOST)
   await page.waitForLoadState('networkidle')
 
-  // Legal consent gate (docs/features/legal/design.md#consent-gate-per-user) — admin-test already accepted TOS (US-PROMO-01), but handle it if shown.
+  // Legal consent gate (titan-ops features/legal/design.md#consent-gate-per-user) — admin-test already accepted TOS (US-PROMO-01), but handle it if shown.
   const consent = page.getByRole('checkbox', { name: /đã đọc và đồng ý|read and agree/i }).first()
   if (await consent.isVisible().catch(() => false)) {
     await consent.check()

@@ -1,4 +1,4 @@
-// A load balancer's state as the server sends it (docs/features/load-balancer/design.md#lb-lifecycle): Incus has no
+// A load balancer's state as the server sends it (titan-ops features/load-balancer/design.md#lb-lifecycle): Incus has no
 // status word for one, so only whether Incus holds it and which request still waits.
 //   currentExistence / desiredExistence — NotCreated · Exists · NotFound · Deleted / Exists · Deleted
 //   transition                          — Creating · Updating · Deleting, derived by the server

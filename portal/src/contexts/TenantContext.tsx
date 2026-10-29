@@ -48,7 +48,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   if (tenant.status === 'PendingApproval') return <PendingApprovalPage tenantName={tenant.tenantName} />
 
   // US-LEGAL-01 — an Active tenant still passes through the click-wrap consent gate: a user
-  // who has not accepted the current terms is gated before reaching the app (per-user, docs/features/legal/design.md#consent-gate-per-user).
+  // who has not accepted the current terms is gated before reaching the app (per-user, titan-ops features/legal/design.md#consent-gate-per-user).
   return (
     <TenantContext.Provider value={tenant}>
       <ConsentGate>{children}</ConsentGate>

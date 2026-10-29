@@ -70,7 +70,7 @@ export function LoadBalancerFormModal({ open, onOpenChange, loadBalancer, onDone
   const [vmIds, setVmIds] = useState<string[]>(loadBalancer ? loadBalancer.backends.map(b => b.vmId) : [])
   const [error, setError] = useState('')
 
-  // docs/features/load-balancer/design.md#lb-needs-public-ipv6: only a network with its own /64 can carry a VIP.
+  // titan-ops features/load-balancer/design.md#lb-needs-public-ipv6: only a network with its own /64 can carry a VIP.
   const ipv6Networks = networks.filter(n => n.publicIpv6Subnet !== null && isUsableNetwork(n))
   // Editing also lists the backends it already has, even one Incus no longer holds, so it can be unticked.
   const currentBackends = new Set(loadBalancer ? loadBalancer.backends.map(b => b.vmId) : [])

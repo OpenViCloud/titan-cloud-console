@@ -172,7 +172,7 @@ describe('NetworkListPage', () => {
         HttpResponse.json([net({ name: patched?.name ?? 'prod-net' })])),
       http.patch('*/v1/tenant/networks/net-1', async ({ request }) => {
         patched = (await request.json()) as { name: string }
-        return new HttpResponse(null, { status: 204 }) // docs/architecture/http-contract.md#commands-return-no-data: the list is re-read
+        return new HttpResponse(null, { status: 204 }) // titan-ops architecture/http-contract.md#commands-return-no-data: the list is re-read
       }),
     )
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
@@ -362,7 +362,7 @@ describe('NetworkListPage', () => {
     expect(screen.queryByText(/failed to delete network/i)).not.toBeInTheDocument()
   })
 
-  // FAILURE-REASON-UI (docs/features/network/design.md): after a refused delete the badge goes back to the Incus word, so
+  // FAILURE-REASON-UI (titan-ops features/network/design.md): after a refused delete the badge goes back to the Incus word, so
   // the reason is the only thing on the row that says the delete did not happen.
   it('shows why a request on a network was refused, and not while another request waits', async () => {
     const refused = 'The network could not be deleted. Please try again or contact support.'
@@ -534,7 +534,7 @@ describe('NetworkListPage', () => {
     await waitFor(() => expect(screen.getByText('0.0.0.0/0')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /delete rule/i }))
     await waitFor(() => expect(deleted).toBe(true))
-    // docs/architecture/desired-and-current.md#forget-on-provider-confirm: the rule is removed when the provider confirms, not when the button is pressed.
+    // titan-ops architecture/desired-and-current.md#forget-on-provider-confirm: the rule is removed when the provider confirms, not when the button is pressed.
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Rule deletion requested'))
   })
 

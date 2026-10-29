@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 
 // The language choice on screens shown before the app shell (consent, waiting for approval, the public
 // terms): the account menu is not there yet, and a new user must be able to read the terms
-// in their language before accepting them (docs/features/cloud-console/design.md#portal-language).
+// in their language before accepting them (titan-ops features/cloud-console/design.md#portal-language).
 export function LanguageSwitch({ className }: { className?: string }) {
   const { lang, setLang } = useLang()
   const t = useT()

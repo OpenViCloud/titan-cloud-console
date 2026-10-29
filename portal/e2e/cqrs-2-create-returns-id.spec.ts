@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { hostPattern, requiredHost } from './hosts'
 
-// UI regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22).
+// UI regression — CQRS-2 / titan-ops architecture/http-contract.md#create-returns-id (2026-09-22).
 //
 // What changed: every create endpoint now answers with the identity it just minted and nothing
 // else. Two of those creates sit on the money path, and one of them is why this spec exists.
@@ -9,7 +9,7 @@ import { hostPattern, requiredHost } from './hosts'
 // POST /v1/tenant/topups used to hand back the whole TopUp, and WalletPage drew the VietQR straight
 // from that response. The QR carries `des=<paymentRef>` — the memo SePay matches an incoming bank
 // transfer by. The portal knows the amount (it just typed it) but CANNOT derive paymentRef; the
-// server mints it. So after docs/architecture/http-contract.md#create-returns-id the page has to read the top-up back from GET /v1/tenant/topups,
+// server mints it. So after titan-ops architecture/http-contract.md#create-returns-id the page has to read the top-up back from GET /v1/tenant/topups,
 // and there is a beat where it has an id and no memo yet.
 //
 // Why this cannot be a unit test: the portal's own suite hands itself a stubbed list and checks the
@@ -25,7 +25,7 @@ const PASSWORD = process.env.BETA_USER_PASSWORD
 const EVIDENCE = process.env.RESULTS_DIR || 'test-results/evidence'
 
 // Measured from the environment's database immediately before this run (regression-plan §Precondition).
-// Stored as 509842 (long VND, docs/architecture/money-and-wallet.md#money-is-long-vnd); the portal renders it grouped with a ₫ suffix — assert the
+// Stored as 509842 (long VND, titan-ops architecture/money-and-wallet.md#money-is-long-vnd); the portal renders it grouped with a ₫ suffix — assert the
 // way it DISPLAYS, not the way it is stored.
 const WALLET_BALANCE = /509,842\s*₫/
 
@@ -72,7 +72,7 @@ test('U-3 wallet shows the real balance', async ({ page }) => {
   await page.screenshot({ path: `${EVIDENCE}/u3-wallet-balance-pass.png`, fullPage: true })
 })
 
-// U-1 — THE gate of this iteration. After docs/architecture/http-contract.md#create-returns-id the create hands back only an id, so everything
+// U-1 — THE gate of this iteration. After titan-ops architecture/http-contract.md#create-returns-id the create hands back only an id, so everything
 // the QR needs has to come from the read-back. If the memo were missing the code would still look
 // scannable, and a customer's transfer would arrive with nothing to match it to.
 test('U-1 buying credit renders a QR carrying the real payment reference', async ({ page }) => {

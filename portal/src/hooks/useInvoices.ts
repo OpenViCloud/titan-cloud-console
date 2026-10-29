@@ -3,12 +3,12 @@ import { api } from '@/lib/api'
 import { useTenant } from '@/contexts/TenantContext'
 import { pollWhilePaymentInFlight } from './pollUntilSettled'
 
-// Settled = an invoice paid from the wallet (SettledByWallet, docs/architecture/money-and-wallet.md#human-confirmed-debit) — always the result of someone
+// Settled = an invoice paid from the wallet (SettledByWallet, titan-ops architecture/money-and-wallet.md#human-confirmed-debit) — always the result of someone
 // pressing "pay", never something Titan did on its own. The API sends the display status, so Overdue
 // and Settled arrive here as-is.
 export type InvoiceStatus = 'New' | 'Overdue' | 'Paid' | 'Settled'
 
-// docs/architecture/money-and-wallet.md#single-writer-outbox S5 — where a payment from the wallet has got to, INDEPENDENT of `status`. Right after the
+// titan-ops architecture/money-and-wallet.md#single-writer-outbox S5 — where a payment from the wallet has got to, INDEPENDENT of `status`. Right after the
 // customer presses pay the invoice is `status: New` AND `paymentState: Processing`: accepted, money
 // not moved. `null` means nobody has ever paid this invoice — not that a payment finished.
 export type PaymentState = 'Processing' | 'Settled' | 'Failed'
@@ -45,7 +45,7 @@ export function useInvoices() {
     queryKey: ['invoices', tenantId],
     queryFn: () => api.get<Invoice[]>(`/v1/tenant/billing/invoices`).then(r => r.data),
     enabled: !!tenantId,
-    // docs/architecture/money-and-wallet.md#single-writer-outbox S5 — nothing pushes the result of a payment to the browser: the wallet is debited by a
+    // titan-ops architecture/money-and-wallet.md#single-writer-outbox S5 — nothing pushes the result of a payment to the browser: the wallet is debited by a
     // background consumer after the request returned 202. Without this the list shows the invoice
     // still unpaid until the customer reloads by hand.
     refetchInterval: q => pollWhilePaymentInFlight(q.state.data),
@@ -63,7 +63,7 @@ export function useInvoice(invoiceId: string | undefined) {
   })
 }
 
-// docs/architecture/money-and-wallet.md#human-confirmed-debit PAY-1 — the tenant pays one invoice from its wallet. Invalidates everything the payment
+// titan-ops architecture/money-and-wallet.md#human-confirmed-debit PAY-1 — the tenant pays one invoice from its wallet. Invalidates everything the payment
 // moves: the invoice itself, the list, and the wallet balance with its statement. The credit-terms
 // query used to be in this list; it is gone (2026-09-04) along with the endpoint behind it.
 export function usePayInvoiceFromWallet() {
@@ -71,7 +71,7 @@ export function usePayInvoiceFromWallet() {
   const { tenantId } = useTenant()
   return useMutation({
     mutationFn: (invoiceId: string) =>
-      // docs/architecture/http-contract.md#async-actions-return-202: 202 with no body — the invoice is re-read (and polled) to see the payment land.
+      // titan-ops architecture/http-contract.md#async-actions-return-202: 202 with no body — the invoice is re-read (and polled) to see the payment land.
       api.post(`/v1/tenant/billing/invoices/${invoiceId}/pay`),
     onSuccess: () => {
       for (const key of ['invoices', 'invoice', 'wallet', 'wallet-statement'])

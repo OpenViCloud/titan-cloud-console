@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { hostPattern, requiredHost } from './hosts'
 
-// UI regression — docs/architecture/money-and-wallet.md#wallet-one-balance.
+// UI regression — titan-ops architecture/money-and-wallet.md#wallet-one-balance.
 //
 // The wallet stopped being a pile of credit lots and became one balance plus a signed ledger. The
 // customer's screen is meant to be UNCHANGED — which is exactly why it has to be checked: "the UI did
@@ -71,7 +71,7 @@ test('wallet: migrated balance, statement, unchanged layout, narrowed contract [
   await page.waitForURL(/\/wallet/, { timeout: 20_000 })
   await page.waitForLoadState('networkidle')
 
-  // U-3 — the same sections as before docs/architecture/money-and-wallet.md#wallet-one-balance. Nothing was added, nothing disappeared.
+  // U-3 — the same sections as before titan-ops architecture/money-and-wallet.md#wallet-one-balance. Nothing was added, nothing disappeared.
   await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Statement' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Receipts' })).toBeVisible()

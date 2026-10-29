@@ -12,7 +12,7 @@ import { POLL_MS } from '@/hooks/pollUntilSettled'
 
 // A network's and a firewall rule's currentState is the Incus word for word (null while Incus holds nothing), its
 // existence is a field of its own, and a command the provider gave up on is a request failure
-// (docs/architecture/desired-and-current.md#provider-state-is-verbatim).
+// (titan-ops architecture/desired-and-current.md#provider-state-is-verbatim).
 
 function row(overrides: Partial<IncusStateFields>): IncusStateFields {
   return {

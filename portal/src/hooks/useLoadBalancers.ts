@@ -3,7 +3,7 @@ import { api } from '@/lib/api'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import { pollWhileLoadBalancersWait, type ListenerFields } from '@/lib/loadBalancerState'
 
-// docs/features/load-balancer/design.md#lb-resource-model — listeners and backends are what the customer last asked
+// titan-ops features/load-balancer/design.md#lb-resource-model — listeners and backends are what the customer last asked
 // for; transition says whether Incus has it yet.
 export interface LoadBalancer {
   id: string
@@ -43,7 +43,7 @@ export function useLoadBalancers() {
 
 export function useCreateLoadBalancer() {
   const qc = useQueryClient()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (req: CreateLoadBalancerRequest) =>
       withKey(headers => api.post('/v1/tenant/load-balancers', req, { headers })),
@@ -54,7 +54,7 @@ export function useCreateLoadBalancer() {
 export function useUpdateLoadBalancer() {
   const qc = useQueryClient()
   return useMutation({
-    // The whole configuration; 204 with no body (docs/architecture/http-contract.md#commands-return-no-data).
+    // The whole configuration; 204 with no body (titan-ops architecture/http-contract.md#commands-return-no-data).
     mutationFn: ({ id, spec }: { id: string; spec: LoadBalancerSpec }) =>
       api.put(`/v1/tenant/load-balancers/${id}`, spec),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),

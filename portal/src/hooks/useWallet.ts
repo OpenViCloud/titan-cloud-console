@@ -6,8 +6,8 @@ import { useIdempotencyKey } from '@/lib/idempotency'
 export type TopUpStatus = 'Pending' | 'Confirmed' | 'Failed'
 export type StatementLineType = 'TopUp' | 'Promo' | 'Spend'
 
-// docs/architecture/money-and-wallet.md#wallet-one-balance — the wallet is one balance. The credit-lot breakdown that used to ride along in `entries`
-// is gone from the API: nothing here ever rendered it, and after docs/architecture/money-and-wallet.md#credit-is-money the lots meant nothing to
+// titan-ops architecture/money-and-wallet.md#wallet-one-balance — the wallet is one balance. The credit-lot breakdown that used to ride along in `entries`
+// is gone from the API: nothing here ever rendered it, and after titan-ops architecture/money-and-wallet.md#credit-is-money the lots meant nothing to
 // render. Movement history comes from the statement below.
 export interface Wallet {
   balance: number
@@ -70,7 +70,7 @@ export function useTopUps(poll = false) {
   })
 }
 
-// docs/architecture/http-contract.md#create-returns-id: a create answers with the id it just minted and nothing else, so this returns the id and
+// titan-ops architecture/http-contract.md#create-returns-id: a create answers with the id it just minted and nothing else, so this returns the id and
 // the caller reads the rest back with the topups query. That matters here more than elsewhere: the
 // QR the customer scans carries `paymentRef`, which SePay uses to match an incoming transfer to this
 // top-up. The portal knows the amount (it just typed it) but CANNOT know paymentRef — the server
@@ -82,7 +82,7 @@ export interface CreateTopUpResult {
 export function useCreateTopUp() {
   const qc = useQueryClient()
   const { tenantId } = useTenant()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (amount: number) =>
       withKey(headers => api.post<CreateTopUpResult>('/v1/tenant/topups', { amount }, { headers }).then(r => r.data)),

@@ -197,7 +197,7 @@ function FirewallRuleRow({ rule, networkId }: { rule: FirewallRule; networkId: s
   async function handleDelete() {
     try {
       await deleteRule.mutateAsync(rule.id)
-      // The rule stays listed as Deleting until the provider confirms (docs/architecture/desired-and-current.md#forget-on-provider-confirm).
+      // The rule stays listed as Deleting until the provider confirms (titan-ops architecture/desired-and-current.md#forget-on-provider-confirm).
       toast.success(t.firewall.deleteRequested)
     } catch {
       toast.error(t.firewall.deleteFailed)

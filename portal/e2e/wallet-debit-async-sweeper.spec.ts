@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { hostPattern, requiredHost } from './hosts'
 
-// UI regression — docs/architecture/money-and-wallet.md#single-writer-outbox S5+S6.
+// UI regression — titan-ops architecture/money-and-wallet.md#single-writer-outbox S5+S6.
 //
 // S5 moved the wallet DEBIT out of the request and into the single-writer consumer, and changed
 // POST /v1/tenant/billing/invoices/{id}/pay from 200 to 202. S6 added the sweeper that makes a

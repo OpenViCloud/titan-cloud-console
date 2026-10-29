@@ -13,7 +13,7 @@ beforeAll(() => {
   })
   server.listen({ onUnhandledRequest: 'warn' })
 })
-// docs/architecture/http-contract.md#idempotency-key guard: the server refuses a create without an Idempotency-Key, so a portal create that
+// titan-ops architecture/http-contract.md#idempotency-key guard: the server refuses a create without an Idempotency-Key, so a portal create that
 // forgets it would work in every test (MSW answers anything) and fail on the real server. Every POST
 // to one of the create routes seen during a test must carry the header, or the test fails.
 const CREATE_ROUTES = [

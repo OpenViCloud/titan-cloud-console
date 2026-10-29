@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// docs/architecture/testing.md#doubles-only-in-unit-tests — the app the browser runs talks to a real control plane;
+// titan-ops architecture/testing.md#doubles-only-in-unit-tests — the app the browser runs talks to a real control plane;
 // MSW and its switch live in unit tests only. This scan reads source text: it does not see a double built
 // without these names.
 const FORBIDDEN = [

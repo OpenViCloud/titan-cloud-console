@@ -42,7 +42,7 @@ export function VmStatusNote({ vm }: { vm: Vm }) {
 
 type ApiError = AxiosError<{ code?: string }>
 
-/** Stop / Start (Resume) / Delete as Incus allows them (docs/features/vm/design.md#requests-follow-incus). */
+/** Stop / Start (Resume) / Delete as Incus allows them (titan-ops features/vm/design.md#requests-follow-incus). */
 export function VmActions({ vm, onDeleted }: { vm: Vm; onDeleted?: () => void }) {
   const t = useT()
   const [confirmDelete, setConfirmDelete] = useState(false)

@@ -10,7 +10,7 @@
 export const POLL_MS = 5000
 
 /**
- * docs/architecture/money-and-wallet.md#single-writer-outbox S7 — refresh invoices while any payment is still being applied, then stop.
+ * titan-ops architecture/money-and-wallet.md#single-writer-outbox S7 — refresh invoices while any payment is still being applied, then stop.
  *
  * Separate from the resources' transition polls because invoices are not decided by `status`: an invoice
  * being paid stays `status: New` and moves on `paymentState` instead. The admin portal

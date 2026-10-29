@@ -16,8 +16,8 @@ import { POLL_MS } from '@/hooks/pollUntilSettled'
 
 // a VM's currentState is the Incus status word for word (null while Incus has no instance), its
 // existence is a field of its own, and a create the provider refused is a request failure
-// (docs/architecture/desired-and-current.md#provider-state-is-verbatim). What the customer may do follows what
-// Incus allows (docs/features/vm/design.md#requests-follow-incus).
+// (titan-ops architecture/desired-and-current.md#provider-state-is-verbatim). What the customer may do follows what
+// Incus allows (titan-ops features/vm/design.md#requests-follow-incus).
 
 function vm(overrides: Partial<VmStateFields>): VmStateFields {
   return {

@@ -5,7 +5,7 @@ import path from 'path'
 
 // `npm run dev` runs against the dev cluster (local), never against a mock: the API is proxied so the
 // browser stays on one origin, and /config.json is the cluster's own, with the API made relative
-// (docs/features/cloud-console/design.md#portal-config-and-deploy).
+// (titan-ops features/cloud-console/design.md#portal-config-and-deploy).
 const DEV_API = 'http://api.localhost:8080'
 const DEV_PORTAL = 'http://portal.localhost:8080'
 

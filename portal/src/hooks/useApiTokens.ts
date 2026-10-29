@@ -23,7 +23,7 @@ export interface CreateApiTokenRequest {
 
 export interface CreatedApiToken {
   apiTokenId: string
-  /** The secret, shown once: the server keeps only its hash (docs/features/public-api/design.md#api-token). */
+  /** The secret, shown once: the server keeps only its hash (titan-ops features/public-api/design.md#api-token). */
   secret: string
 }
 

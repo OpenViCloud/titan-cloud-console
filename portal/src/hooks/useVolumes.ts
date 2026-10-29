@@ -46,7 +46,7 @@ export function useVolumes() {
 export function useCreateVolume() {
   const { tenantId } = useTenant()
   const qc = useQueryClient()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (req: CreateVolumeRequest) =>
       withKey(headers => api.post(`/v1/tenant/volumes`, req, { headers })),

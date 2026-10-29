@@ -16,7 +16,7 @@ import type { Messages } from '@/i18n/en'
 
 const MAX_NAME_LENGTH = 64
 
-// The server's answer to an add, in words (docs/features/vm/design.md#ssh-key).
+// The server's answer to an add, in words (titan-ops features/vm/design.md#ssh-key).
 function addErrorText(err: unknown, t: Messages): string {
   const res = (err as AxiosError<{ code?: string }>).response
   if (res === undefined) {

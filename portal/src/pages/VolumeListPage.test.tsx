@@ -436,7 +436,7 @@ describe('VolumeListPage', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Volume attaching'))
   })
 
-  // Incus attaches a disk to a Running, Ready, Stopped or Frozen instance (docs/features/vm/design.md#requests-follow-incus); an Error VM, or a
+  // Incus attaches a disk to a Running, Ready, Stopped or Frozen instance (titan-ops features/vm/design.md#requests-follow-incus); an Error VM, or a
   // VM Incus did not find, is not offered.
   it('offers Ready and Frozen VMs in the attach picker, not Error or not found ones', async () => {
     const pickerVm = (id: string, name: string, currentState: string | null, currentExistence = 'Exists') => ({

@@ -1,7 +1,7 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
 import { requiredHost } from './hosts'
 
-// API regression — CQRS-3 / docs/architecture/http-contract.md#commands-return-no-data (2026-09-23).
+// API regression — CQRS-3 / titan-ops architecture/http-contract.md#commands-return-no-data (2026-09-23).
 //
 // Billing was split into 19 handlers. FastEndpoints builds an endpoint WITH its constructor
 // dependencies on every request, so any answer at all — even a 404 or a 422 — proves the handler's
@@ -122,7 +122,7 @@ test('A-1..A-5 every Billing route answers on the real host; commands write noth
   await expectCode(await request.patch(`${API}/internal/tenants/${ABSENT}/provision`,
     { headers: internal, data: { error: 'CQRS-3 regression probe' } }), 404)
 
-  // ── A-5 docs/architecture/http-contract.md#commands-return-no-data: PATCH answers 204 with an empty body (values unchanged) ────────────────────
+  // ── A-5 titan-ops architecture/http-contract.md#commands-return-no-data: PATCH answers 204 with an empty body (values unchanged) ────────────────────
   for (const [path, data, headers] of [
     [`/v1/tenants/${need('BETA_TENANT_ID')}/quota`, { maxVms: 10, maxNetworks: 1 }, admin],
     [`/v1/tenants/${need('BETA_TENANT_ID')}/debt-ceiling`, { debtCeiling: 500000 }, admin],

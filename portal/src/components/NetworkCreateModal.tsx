@@ -19,7 +19,7 @@ interface Props {
 const CIDR_REGEX = /^(\d{1,3}\.){3}\d{1,3}\/(\d|[1-2]\d|3[0-2])$/
 
 // The uplink of a network with public IPv6 routes only these ranges; the server refuses any other CIDR
-// (docs/features/network/design.md#ipv6-public).
+// (titan-ops features/network/design.md#ipv6-public).
 function isInsideAPrivateRange(cidr: string): boolean {
   const [address, prefixText] = cidr.split('/')
   const octets = address.split('.').map(Number)

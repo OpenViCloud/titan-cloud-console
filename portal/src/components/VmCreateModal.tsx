@@ -83,7 +83,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   // (Network.BeginVmDeployment).
   const activeNetworks = networks.filter(isUsableNetwork)
   // A VM lands on its network's cluster, so only the chosen cluster's networks are offered
-  // (docs/features/catalog/design.md#cluster-is-a-real-choice).
+  // (titan-ops features/catalog/design.md#cluster-is-a-real-choice).
   const clusterNetworks = activeNetworks.filter(n => n.clusterId === clusterId)
   const canSubmit = activeNetworks.length > 0 && !createVm.isPending
 
@@ -96,7 +96,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   }
 
   // The chosen template counts only while the chosen cluster offers it: switching cluster keeps a template synced in
-  // both, and drops one the new cluster does not have yet (docs/features/catalog/design.md#template-per-cluster).
+  // both, and drops one the new cluster does not have yet (titan-ops features/catalog/design.md#template-per-cluster).
   const templateOfferedInCluster = clusterTemplates.some(zt => zt.id === templateId)
   let chosenTemplateId = ''
   if (templateOfferedInCluster) {
@@ -220,7 +220,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
             empty={templateEmptyText}
           />
 
-          {/* Size is chosen independently of the OS template (docs/features/catalog/design.md#vm-offering-sizing) — the label spells out
+          {/* Size is chosen independently of the OS template (titan-ops features/catalog/design.md#vm-offering-sizing) — the label spells out
               vCPU/RAM so the customer sees what they are provisioning, not just a tier name. */}
           <SelectField
             label={t.vmCreate.size}

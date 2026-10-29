@@ -15,7 +15,7 @@ import { requiredHost } from './hosts'
 //
 // GRANT TARGET IS `admin-test` (balance 0, no committed spec pins it) — deliberately NOT beta-user,
 // whose 509.842 ₫ oracle wallet-single-balance.spec.ts asserts. Grant is permanent (refund is manual,
-// docs/architecture/money-and-wallet.md#credit-is-money); known-state.md is updated after this run.
+// titan-ops architecture/money-and-wallet.md#credit-is-money); known-state.md is updated after this run.
 
 const ADMIN_HOST = requiredHost('ADMIN_BASE_URL')
 const PORTAL_HOST = requiredHost('PORTAL_BASE_URL')
@@ -77,7 +77,7 @@ test('tenant wallet shows the granted credit as a Promo line [UI-2]', async ({ p
   await login(page, PORTAL_HOST)
   await page.waitForLoadState('networkidle')   // let the OAuth code exchange settle before a full nav
 
-  // Legal consent gate (docs/features/legal/design.md#consent-gate-per-user, click-wrap TOS) — admin-test has not accepted TOS on the tenant
+  // Legal consent gate (titan-ops features/legal/design.md#consent-gate-per-user, click-wrap TOS) — admin-test has not accepted TOS on the tenant
   // portal, and the wallet sits behind it. Tôn Chủ approved accepting the (placeholder) TOS
   // for this test account so the wallet is reachable.
   const consent = page.getByRole('checkbox', { name: /đã đọc và đồng ý|read and agree/i }).first()

@@ -1,4 +1,4 @@
-// A template's sync in one cluster as the server sends it (docs/features/catalog/design.md#template-state-is-existence):
+// A template's sync in one cluster as the server sends it (titan-ops features/catalog/design.md#template-state-is-existence):
 // Incus has no status word for an image alias, so there is no currentState — only whether that cluster holds
 // the alias, the sync still waiting, and why the last one gave up.
 //   currentExistence / desiredExistence — NotCreated · Exists · NotFound / Exists (sync is add-only)
