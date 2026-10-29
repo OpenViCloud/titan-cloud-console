@@ -8,7 +8,7 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { getConfig, setConfig, type AppConfig } from '@/lib/config'
 import { WalletPage } from './WalletPage'
 
-// docs/architecture/money-and-wallet.md#human-confirmed-debit — the overdue banner now links to the invoice list (topping up no longer settles anything
+// titan-ops architecture/money-and-wallet.md#human-confirmed-debit — the overdue banner now links to the invoice list (topping up no longer settles anything
 // by itself), so the page needs a router in scope like every other route-aware page here.
 function renderPage() {
   return renderWithProviders(
@@ -18,7 +18,7 @@ function renderPage() {
   )
 }
 
-// Buying credit shows only when config.json turns top-up on (docs/features/billing/topup/design.md#topup-portal).
+// Buying credit shows only when config.json turns top-up on (titan-ops features/billing/topup/design.md#topup-portal).
 // setup.ts loads a config without the flag, so the cases that buy credit or read receipts turn it on for themselves.
 function withConfig(change: Partial<AppConfig>) {
   let loaded: AppConfig
@@ -59,7 +59,7 @@ function stub(opts: {
     http.get('*/v1/tenant/wallet/statement', () => HttpResponse.json(opts.st ?? statement())),
     http.get('*/v1/tenant/topups', () => HttpResponse.json(opts.topups ?? [])),
     http.get('*/v1/tenant/billing/invoices', () => HttpResponse.json(opts.invoices ?? [])),
-    // docs/architecture/http-contract.md#create-returns-id: a create answers with the id alone. The page then reads the top-up back from the
+    // titan-ops architecture/http-contract.md#create-returns-id: a create answers with the id alone. The page then reads the top-up back from the
     // topups query above — which is where paymentRef, the memo SePay matches the transfer by,
     // actually comes from.
     http.post('*/v1/tenant/topups', () => HttpResponse.json({ topUpId: 'tu-1' }, { status: 202 })),
@@ -112,7 +112,7 @@ describe('WalletPage', () => {
     expect(screen.getAllByText(/TITAN-7F3KQ9A2/).length).toBeGreaterThan(0)
   })
 
-  // docs/architecture/http-contract.md#create-returns-id — the QR carries `des=<paymentRef>`, which SePay matches an incoming transfer by. The
+  // titan-ops architecture/http-contract.md#create-returns-id — the QR carries `des=<paymentRef>`, which SePay matches an incoming transfer by. The
   // portal knows the amount it just typed but CANNOT know paymentRef, so between creating the
   // top-up and reading it back there must be NO code on screen: one drawn with an empty memo looks
   // scannable and sends real money somewhere it cannot be matched to this top-up.
@@ -146,7 +146,7 @@ describe('WalletPage', () => {
     await waitFor(() => expect(screen.getByText(/credit added/i)).toBeInTheDocument())
   })
 
-  // docs/features/cloud-console/design.md#portal-language — the page shows 500.000 ₫ in Vietnamese, so a customer types
+  // titan-ops features/cloud-console/design.md#portal-language — the page shows 500.000 ₫ in Vietnamese, so a customer types
   // it that way; it must ask for five hundred thousand đồng, not five hundred.
   it('asks for the amount typed with the grouping mark the page shows', async () => {
     stub({ topups: [topUp({ status: 'Pending' })] })
@@ -176,7 +176,7 @@ describe('WalletPage', () => {
     expect(screen.getByRole('button', { name: /continue/i })).toBeDisabled()
   })
 
-  // docs/features/billing/topup/design.md — once the top-up is Confirmed there is nothing left to wait for.
+  // titan-ops features/billing/topup/design.md — once the top-up is Confirmed there is nothing left to wait for.
   it('stops asking for the top-up once it is confirmed', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     try {
@@ -348,7 +348,7 @@ describe('WalletPage', () => {
   })
 })
 
-// docs/architecture/money-and-wallet.md#human-confirmed-debit — the overdue reminder must offer a way out. Topping up no longer settles anything by
+// titan-ops architecture/money-and-wallet.md#human-confirmed-debit — the overdue reminder must offer a way out. Topping up no longer settles anything by
 // itself, so a banner with no link would be a dead end: "you owe money", and nothing to do about it.
 describe('WalletPage — overdue banner offers a way to pay', () => {
   beforeEach(() => vi.clearAllMocks())

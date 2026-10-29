@@ -3,7 +3,7 @@ import { hostPattern, requiredHost } from './hosts'
 
 const API = requiredHost('API_BASE_URL')
 
-// UI regression — docs/architecture/money-and-wallet.md#single-writer-outbox S7.
+// UI regression — titan-ops architecture/money-and-wallet.md#single-writer-outbox S7.
 //
 // What S5 left behind and S7 fixes: paying an invoice returns 202 with the money still in flight.
 // The portal invalidated its cache at that moment — one refetch, taken while nothing had changed yet

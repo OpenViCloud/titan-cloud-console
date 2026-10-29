@@ -1,10 +1,10 @@
 // A network's and a firewall rule's state as the server sends it
-// (docs/architecture/desired-and-current.md#provider-state-is-verbatim):
+// (titan-ops architecture/desired-and-current.md#provider-state-is-verbatim):
 //   currentState      — the Incus word for word, null while Incus holds nothing: a network status (Pending ·
 //                       Created · Errored · Unknown · Unavailable) or an ACL rule state (enabled · disabled · logged)
-//   currentExistence  — NotCreated · Exists · NotFound · Deleted (docs/architecture/desired-and-current.md#existence-axis)
+//   currentExistence  — NotCreated · Exists · NotFound · Deleted (titan-ops architecture/desired-and-current.md#existence-axis)
 //   requestFailureReason — the fixed text of a command the provider gave up on (…#request-failure)
-// The delete follows Incus (docs/features/network/design.md#network-lifecycle): whatever the word, even not found,
+// The delete follows Incus (titan-ops features/network/design.md#network-lifecycle): whatever the word, even not found,
 // Incus answers; only a request already waiting holds the button back.
 
 import { POLL_MS } from '@/hooks/pollUntilSettled'

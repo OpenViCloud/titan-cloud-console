@@ -3,7 +3,7 @@ export interface AppConfig {
   keycloakRealm: string
   keycloakClientId: string
   apiBaseUrl: string
-  // docs/features/billing/topup/design.md#topup-portal
+  // titan-ops features/billing/topup/design.md#topup-portal
   topUpEnabled?: boolean
 }
 

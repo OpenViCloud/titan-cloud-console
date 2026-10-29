@@ -94,7 +94,7 @@ describe('InvoicesPage', () => {
   })
 })
 
-// ── docs/architecture/money-and-wallet.md#human-confirmed-debit PAY-4 — paying an invoice from the wallet ───────────────────────
+// ── titan-ops architecture/money-and-wallet.md#human-confirmed-debit PAY-4 — paying an invoice from the wallet ───────────────────────
 //
 // The wallet is debited only by a button press now, so these pin the button's PRECONDITIONS (is the
 // invoice payable, does the wallet cover it) and the confirm step. Asserting real numbers, not just
@@ -115,7 +115,7 @@ describe('InvoicesPage — pay from wallet', () => {
     let paidId: string | null = null
     server.use(http.post('*/v1/tenant/billing/invoices/:id/pay', ({ params }) => {
       paidId = params.id as string
-      return new HttpResponse(null, { status: 202 }) // docs/architecture/http-contract.md#async-actions-return-202
+      return new HttpResponse(null, { status: 202 }) // titan-ops architecture/http-contract.md#async-actions-return-202
     }))
 
     renderPage()
@@ -180,7 +180,7 @@ describe('InvoicesPage — pay from wallet', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/no longer covers/i)
   })
 
-  // With top-up off (docs/features/billing/topup/design.md#topup-portal) the customer cannot buy credit, so the
+  // With top-up off (titan-ops features/billing/topup/design.md#topup-portal) the customer cannot buy credit, so the
   // rejection points them to OpenViCloud instead of to a button that is not there.
   it('tells a customer who cannot buy credit to ask OpenViCloud for it', async () => {
     server.use(http.get('*/v1/tenant/billing/invoices', () => HttpResponse.json([vnd()])))
@@ -237,7 +237,7 @@ describe('InvoicesPage — pay from wallet', () => {
   })
 })
 
-// docs/architecture/money-and-wallet.md#single-writer-outbox S7 — AC-S7.1 / AC-S7.2 / AC-S7.3 at the surface the customer actually looks at. The unit
+// titan-ops architecture/money-and-wallet.md#single-writer-outbox S7 — AC-S7.1 / AC-S7.2 / AC-S7.3 at the surface the customer actually looks at. The unit
 // tests in lib/invoice own the rule; these prove the page asks it, which is the part a refactor can
 // silently drop.
 describe('InvoicesPage — payment in flight (S7)', () => {

@@ -59,7 +59,7 @@ export function WalletPage() {
   const debt = useOutstandingDebt()
   const currency = wallet?.currency ?? debt.currency
   const [buyOpen, setBuyOpen] = useState(false)
-  // docs/features/billing/topup/design.md#topup-portal
+  // titan-ops features/billing/topup/design.md#topup-portal
   const topUpEnabled = getConfig().topUpEnabled === true
 
   return (
@@ -133,7 +133,7 @@ function StatCard({ icon, label, value, hint, emphasis, warn }: {
 // wrong, nothing has been suspended, and nothing will be. Saying "action required" here would be a
 // threat the system does not carry out.
 //
-// docs/architecture/money-and-wallet.md#human-confirmed-debit gave it the missing half: a way out. Topping up no longer settles anything by itself, so a
+// titan-ops architecture/money-and-wallet.md#human-confirmed-debit gave it the missing half: a way out. Topping up no longer settles anything by itself, so a
 // banner with no link would tell the customer they owe money and then leave them standing there.
 function OverdueBanner({ debt, currency }: { debt: OutstandingDebt; currency: string }) {
   const t = useT()
@@ -166,7 +166,7 @@ function OverdueBanner({ debt, currency }: { debt: OutstandingDebt; currency: st
   )
 }
 
-// docs/architecture/money-and-wallet.md#wallet-one-balance — promo credit has no page of its own: an admin grants it (US-PROMO-01) and it lands in
+// titan-ops architecture/money-and-wallet.md#wallet-one-balance — promo credit has no page of its own: an admin grants it (US-PROMO-01) and it lands in
 // this same wallet, appearing in the Statement below as a `Promo` line. The customer no longer requests
 // credit, so there is no request form or request list here.
 function typeBadge(t: Messages, type: StatementLine['type']) {
@@ -304,7 +304,7 @@ function BuyCreditDialog({
   const qc = useQueryClient()
   const [step, setStep] = useState<BuyStep>('amount')
   const [amount, setAmount] = useState('')
-  // docs/architecture/http-contract.md#create-returns-id: POST /topups answers with the id alone, so this holds the id and the top-up itself is
+  // titan-ops architecture/http-contract.md#create-returns-id: POST /topups answers with the id alone, so this holds the id and the top-up itself is
   // read back from the topups query below. The QR the customer scans carries `paymentRef`, which the
   // server mints and the portal cannot derive, so there is a beat between creating the top-up and
   // being able to draw the code — `live` is undefined until the query lands.

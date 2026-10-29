@@ -113,7 +113,7 @@ describe('InvoiceDetailPage', () => {
   })
 })
 
-// ── docs/architecture/money-and-wallet.md#human-confirmed-debit PAY-4 — pay from wallet, detail view ───────────────────────────
+// ── titan-ops architecture/money-and-wallet.md#human-confirmed-debit PAY-4 — pay from wallet, detail view ───────────────────────────
 describe('InvoiceDetailPage — pay from wallet', () => {
   beforeEach(() => vi.clearAllMocks())
 
@@ -137,7 +137,7 @@ describe('InvoiceDetailPage — pay from wallet', () => {
     let paid = false
     server.use(http.post('*/v1/tenant/billing/invoices/inv-1/pay', () => {
       paid = true
-      return new HttpResponse(null, { status: 202 }) // docs/architecture/http-contract.md#async-actions-return-202
+      return new HttpResponse(null, { status: 202 }) // titan-ops architecture/http-contract.md#async-actions-return-202
     }))
 
     renderPage()
@@ -168,7 +168,7 @@ describe('InvoiceDetailPage — pay from wallet', () => {
   })
 })
 
-// docs/architecture/money-and-wallet.md#single-writer-outbox S7 — the detail page is the third surface that offers payment, and it holds the invoice
+// titan-ops architecture/money-and-wallet.md#single-writer-outbox S7 — the detail page is the third surface that offers payment, and it holds the invoice
 // in local state while the dialog is open. These prove the page reads paymentState rather than
 // relying on the snapshot it captured at click time.
 describe('InvoiceDetailPage — payment in flight (S7)', () => {

@@ -1,7 +1,7 @@
 import { test, expect, request, type Page, type Browser } from '@playwright/test'
 import { hostPattern, requiredHost } from './hosts'
 
-// Regression for CAT-01 / docs/features/catalog/design.md#template-borrows-sizing — VmTemplate borrows its sizing from VmOffering.
+// Regression for CAT-01 / titan-ops features/catalog/design.md#template-borrows-sizing — VmTemplate borrows its sizing from VmOffering.
 // Plan: cases U1–U6 of the iteration's regression plan.
 //
 // Two things this file proves that no unit test can:
@@ -155,7 +155,7 @@ test('U5 — GET /v1/templates drops the sizing fields and does not publish the 
 
   // Non-empty first: an empty array satisfies every key assertion below vacuously.
   expect(Array.isArray(list) && list.length, 'templates must be non-empty').toBeGreaterThan(0)
-  // Three seeds, but customers are offered only the listed one (docs/features/catalog/design.md#template-listed).
+  // Three seeds, but customers are offered only the listed one (titan-ops features/catalog/design.md#template-listed).
   expect(list.length, 'docs/features/catalog/design.md#template-listed offers Ubuntu only').toBe(1)
 
   for (const t of list) {
@@ -194,7 +194,7 @@ test('U6 — Create VM keeps Template and Size as two independent choices', asyn
   await expect(sizeSelect.locator('option', { hasText: /Small — 1 vCPU · 2 GB/ })).toHaveCount(1)
   await expect(sizeSelect.locator('option', { hasText: /Extra Large — 8 vCPU · 16 GB/ })).toHaveCount(1)
 
-  // Choosing a template must NOT constrain the size list (docs/features/catalog/design.md#template-borrows-sizing: the FK is a base, not a limit).
+  // Choosing a template must NOT constrain the size list (titan-ops features/catalog/design.md#template-borrows-sizing: the FK is a base, not a limit).
   await templateSelect.selectOption({ index: 1 })
   await expect(sizeSelect.locator('option'), 'size list unchanged by template choice').toHaveCount(5)
 

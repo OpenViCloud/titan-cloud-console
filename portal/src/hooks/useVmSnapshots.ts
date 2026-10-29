@@ -35,7 +35,7 @@ export function useVmSnapshots(vmId: string, enabled = true) {
 export function useCreateVmSnapshot(vmId: string) {
   const { tenantId } = useTenant()
   const qc = useQueryClient()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (name: string) =>
       withKey(headers => api.post(`/v1/tenant/vms/${vmId}/snapshots`, { name }, { headers })),

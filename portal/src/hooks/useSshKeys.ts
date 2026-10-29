@@ -28,7 +28,7 @@ export function useSshKeys() {
 export function useAddSshKey() {
   const { tenantId } = useTenant()
   const qc = useQueryClient()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (req: AddSshKeyRequest) =>
       withKey(headers => api.post<{ id: string }>('/v1/tenant/ssh-keys', req, { headers }).then(r => r.data)),

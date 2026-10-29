@@ -13,7 +13,7 @@ export function useTemplates() {
 }
 
 // What a VM in this cluster can be created from: each cluster holds its own copy of a template, and one not
-// synced there yet is not offered (docs/features/catalog/design.md#template-per-cluster). Waits for a cluster.
+// synced there yet is not offered (titan-ops features/catalog/design.md#template-per-cluster). Waits for a cluster.
 export function useClusterTemplates(clusterId: string) {
   return useQuery({
     queryKey: ['templates', clusterId],

@@ -1,9 +1,9 @@
-// A VM's state as the server sends it (docs/architecture/desired-and-current.md#provider-state-is-verbatim):
+// A VM's state as the server sends it (titan-ops architecture/desired-and-current.md#provider-state-is-verbatim):
 //   currentState      — the Incus status word for word (Running · Ready · Stopped · Frozen · Error), null while
 //                       Incus has no instance
-//   currentExistence  — NotCreated · Exists · NotFound · Deleted (docs/architecture/desired-and-current.md#existence-axis)
+//   currentExistence  — NotCreated · Exists · NotFound · Deleted (titan-ops architecture/desired-and-current.md#existence-axis)
 //   requestFailureReason — the fixed text of a create the provider refused (…#request-failure)
-// What the customer may do follows what Incus allows (docs/features/vm/design.md#requests-follow-incus).
+// What the customer may do follows what Incus allows (titan-ops features/vm/design.md#requests-follow-incus).
 
 import { POLL_MS } from '@/hooks/pollUntilSettled'
 
@@ -19,7 +19,7 @@ export interface VmStateFields {
 // Statuses with a qemu process that runs a guest; Ready is a running guest that also told Incus it is ready.
 const RUNNING_STATUSES = new Set(['Running', 'Ready'])
 const STOPPABLE_STATUSES = new Set(['Running', 'Ready', 'Frozen', 'Error'])
-// Frozen: Incus `start` resumes it (docs/features/vm/design.md#requests-follow-incus).
+// Frozen: Incus `start` resumes it (titan-ops features/vm/design.md#requests-follow-incus).
 const STARTABLE_STATUSES = new Set(['Stopped', 'Frozen'])
 const SNAPSHOT_AND_ATTACH_STATUSES = new Set(['Running', 'Ready', 'Stopped', 'Frozen'])
 
@@ -88,7 +88,7 @@ export function canStartVm(vm: VmStateFields): boolean {
 /**
  * Every state but a delete already waiting (delete wins over a waiting stop or start), and but a create that has no
  * instance yet: the server refuses that delete because the create may still instantiate
- * (docs/features/vm/design.md#requests-follow-incus).
+ * (titan-ops features/vm/design.md#requests-follow-incus).
  */
 export function canDeleteVm(vm: VmStateFields): boolean {
   if (vm.transition === 'Deleting') {

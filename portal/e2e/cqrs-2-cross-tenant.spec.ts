@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { hostPattern, requiredHost } from './hosts'
 
-// API regression — CQRS-2 / docs/architecture/http-contract.md#create-returns-id (2026-09-22).
+// API regression — CQRS-2 / titan-ops architecture/http-contract.md#create-returns-id (2026-09-22).
 //
 // CQRS-2 folded six ownership helpers into ComputeOwnership and, doing so, fixed a real leak:
 // VolumeService answered 403 for a volume belonging to another tenant while the five other helpers

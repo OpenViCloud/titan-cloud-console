@@ -10,7 +10,7 @@ const IN_PROGRESS_MAX_ASKS = 20
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
-// docs/architecture/http-contract.md#idempotency-key: the server refuses a create without an Idempotency-Key, and replays the stored answer when
+// titan-ops architecture/http-contract.md#idempotency-key: the server refuses a create without an Idempotency-Key, and replays the stored answer when
 // the same key comes back. One key covers ONE logical submission:
 //   - kept while the outcome is unknown (the request is in flight, or the network failed before any
 //     response), so a double-click or a retry replays the first answer instead of creating twice;

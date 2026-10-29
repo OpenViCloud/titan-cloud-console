@@ -6,7 +6,7 @@ import { useIdempotencyKey } from '@/lib/idempotency'
 export interface Network {
   id: string
   name: string
-  // docs/architecture/desired-and-current.md#provider-state-is-verbatim — see lib/networkState.ts
+  // titan-ops architecture/desired-and-current.md#provider-state-is-verbatim — see lib/networkState.ts
   currentState: string | null
   currentExistence: string
   desiredExistence: string
@@ -15,7 +15,7 @@ export interface Network {
   requestFailedAt: string | null
   cidr: string | null
   gateway: string | null
-  // The network's public /64; null when it has no public IPv6 (docs/features/network/design.md#ipv6-public).
+  // The network's public /64; null when it has no public IPv6 (titan-ops features/network/design.md#ipv6-public).
   publicIpv6Subnet: string | null
   clusterId: string
   createdAt: string
@@ -38,7 +38,7 @@ export function useNetworks() {
 
 export function useCreateNetwork() {
   const qc = useQueryClient()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (req: CreateNetworkRequest) =>
       withKey(headers => api.post('/v1/tenant/networks', req, { headers })),
@@ -52,7 +52,7 @@ export function useRenameNetwork() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ networkId, name }: { networkId: string; name: string }) =>
-      // docs/architecture/http-contract.md#commands-return-no-data: 204 with no body — the list is re-read.
+      // titan-ops architecture/http-contract.md#commands-return-no-data: 204 with no body — the list is re-read.
       api.patch(`/v1/tenant/networks/${networkId}`, { name }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['networks'] }),
   })

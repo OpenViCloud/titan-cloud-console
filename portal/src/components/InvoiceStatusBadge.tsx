@@ -10,7 +10,7 @@ const statusClasses: Record<InvoiceStatus, string> = {
   Settled: 'bg-ok-soft text-ok border border-ok-border',
 }
 
-// docs/architecture/money-and-wallet.md#single-writer-outbox S7 — a payment being applied is its own visual state, not a variant of New. Amber rather
+// titan-ops architecture/money-and-wallet.md#single-writer-outbox S7 — a payment being applied is its own visual state, not a variant of New. Amber rather
 // than red: nothing is wrong, the money is simply on its way. A failed payment IS a problem the
 // customer has to act on (top up, retry), so it takes the red the eye already reads as "your turn".
 const paymentClasses = {

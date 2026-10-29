@@ -13,7 +13,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { useT, useFormat } from '@/i18n/LanguageContext'
 import { getConfig } from '@/lib/config'
 
-// docs/architecture/money-and-wallet.md#human-confirmed-debit — money leaves the wallet only when a person presses this button. Titan used to do it by
+// titan-ops architecture/money-and-wallet.md#human-confirmed-debit — money leaves the wallet only when a person presses this button. Titan used to do it by
 // itself (on top-up, and again when an invoice was generated); it no longer does, so this dialog is
 // the customer's whole payment flow and has to be unambiguous about what is about to happen.
 //
@@ -55,7 +55,7 @@ export function PayInvoiceDialog({
     if (!invoice) return
     setError(null)
     pay.mutate(invoice.id, {
-      // docs/architecture/money-and-wallet.md#single-writer-outbox S5 — 202: accepted, money NOT moved yet. Closing here (what this did before) left
+      // titan-ops architecture/money-and-wallet.md#single-writer-outbox S5 — 202: accepted, money NOT moved yet. Closing here (what this did before) left
       // the customer looking at a row that still said unpaid, with no way to tell whether the click
       // had registered. Hold the dialog on an explicit "accepted" state instead; the list behind it
       // polls and the badge turns Processing → Settled on its own.
@@ -65,7 +65,7 @@ export function PayInvoiceDialog({
         setError(
           code === 'INVOICE_WALLET_INSUFFICIENT'
             ? // Without top-up the customer has no way to add credit themselves
-              // (docs/features/billing/topup/design.md#topup-portal).
+              // (titan-ops features/billing/topup/design.md#topup-portal).
               getConfig().topUpEnabled === true
               ? t.payInvoice.walletInsufficient
               : t.payInvoice.walletInsufficientNoTopUp

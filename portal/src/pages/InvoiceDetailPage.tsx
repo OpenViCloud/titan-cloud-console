@@ -12,7 +12,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { useT, useFormat, type Format } from '@/i18n/LanguageContext'
 
 // Render a minus before the amount (−900.000 ₫, not "-900.000 ₫") so a negative reads
-// cleanly rather than as a typo. Invoices issued after docs/architecture/money-and-wallet.md#human-confirmed-debit are all-usage and never negative; this
+// cleanly rather than as a typo. Invoices issued after titan-ops architecture/money-and-wallet.md#human-confirmed-debit are all-usage and never negative; this
 // stays because the formatter must not produce nonsense for anything that predates that.
 function formatLineAmount(f: Format, currency: string, amount: number): string {
   if (currency === 'VND') {

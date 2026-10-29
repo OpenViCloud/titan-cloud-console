@@ -27,9 +27,9 @@ export function useActivity(limit = 10) {
 // Falls back to a Title-cased "{verb} {resource}" for any action not enumerated here, so a new
 // event type still reads sensibly before this map is updated.
 //
-// docs/architecture/intent-and-observation.md#intent-has-identity: every asynchronous action records TWO events — "*_requested" when someone presses the
+// titan-ops architecture/intent-and-observation.md#intent-has-identity: every asynchronous action records TWO events — "*_requested" when someone presses the
 // button, and the past-tense outcome when the provider has actually done it. Rows written before
-// docs/architecture/intent-and-observation.md#intent-has-identity used the outcome names for the request; they keep these same labels (no data rewrite).
+// titan-ops architecture/intent-and-observation.md#intent-has-identity used the outcome names for the request; they keep these same labels (no data rewrite).
 const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'vm.create_requested': 'vmCreateRequested',
   'vm.stop_requested': 'vmStopRequested',

@@ -44,7 +44,7 @@ export function useFirewallRules(networkId: string, enabled = true) {
 
 export function useCreateFirewallRule(networkId: string) {
   const qc = useQueryClient()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (req: CreateFirewallRuleRequest) =>
       withKey(headers => api.post<FirewallRule>(`/v1/tenant/networks/${networkId}/firewall-rules`, req, { headers }).then(r => r.data)),

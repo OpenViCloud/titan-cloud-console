@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isPayable, isPaymentInFlight } from './invoice'
 
-// docs/architecture/money-and-wallet.md#single-writer-outbox S7 — the rule these tests own: an invoice whose payment is already being applied is NOT
+// titan-ops architecture/money-and-wallet.md#single-writer-outbox S7 — the rule these tests own: an invoice whose payment is already being applied is NOT
 // payable again. Before S5 that could not happen, because the money moved inside the request; the
 // button was only ever offered on an invoice nobody had paid. Now `pay` returns 202 with the money
 // still in flight, so `status` alone stops being enough to decide.
@@ -33,7 +33,7 @@ describe('isPayable', () => {
     expect(isPayable({ status: 'Overdue', paymentState: 'Processing' })).toBe(false)
   })
 
-  // The failed case has to come back, or a customer whose wallet ran short mid-apply (docs/architecture/money-and-wallet.md#single-writer-outbox)
+  // The failed case has to come back, or a customer whose wallet ran short mid-apply (titan-ops architecture/money-and-wallet.md#single-writer-outbox)
   // could never retry: the invoice would sit unpaid with the button off forever.
   it('a failed payment leaves the invoice payable again', () => {
     expect(isPayable({ status: 'New', paymentState: 'Failed' })).toBe(true)

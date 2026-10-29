@@ -113,7 +113,7 @@ describe('VmCreateModal', () => {
     expect((requestBody as { templateId: string }).templateId).toBe('t1')
   })
 
-  // docs/features/vm/design.md#ssh-key — picked keys travel as sshKeyIds; with none saved the form points to the
+  // titan-ops features/vm/design.md#ssh-key — picked keys travel as sshKeyIds; with none saved the form points to the
   // SSH keys page instead.
   const laptopKey = { id: 'k1', name: 'laptop', type: 'ssh-ed25519', fingerprint: 'SHA256:iruZOXrf', createdAt: '2026-10-13T00:00:00Z' }
   const desktopKey = { id: 'k2', name: 'desktop', type: 'ssh-rsa', fingerprint: 'SHA256:k7BYeTgd', createdAt: '2026-10-13T00:00:00Z' }
@@ -177,7 +177,7 @@ describe('VmCreateModal', () => {
     expect(await screen.findByText('A picked SSH key no longer exists — pick again')).toBeInTheDocument()
   })
 
-  // docs/features/catalog/design.md#template-per-cluster — each cluster holds its own copy of a template; the
+  // titan-ops features/catalog/design.md#template-per-cluster — each cluster holds its own copy of a template; the
   // form offers only the ones synced in the cluster picked.
   const clusterTwo = { id: 'z2', name: 'Cluster 2' }
   const debian = { id: 't2', name: 'Debian 12', os: 'Debian' }
@@ -283,7 +283,7 @@ describe('VmCreateModal', () => {
     expect(await screen.findByText(/not available in this cluster yet/i)).toBeInTheDocument()
   })
 
-  // docs/features/catalog/design.md#cluster-is-a-real-choice — a VM lands on its network's cluster, so the form
+  // titan-ops features/catalog/design.md#cluster-is-a-real-choice — a VM lands on its network's cluster, so the form
   // offers only the networks of the cluster the customer picked.
   it('opens the network list only after a cluster is picked, and lists only that cluster’s networks', async () => {
     const otherClusterNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', clusterId: 'z2' }

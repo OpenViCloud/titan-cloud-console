@@ -1,4 +1,4 @@
-// A volume's and a snapshot's state as the server sends it (docs/features/volume/design.md#volume-state-is-existence):
+// A volume's and a snapshot's state as the server sends it (titan-ops features/volume/design.md#volume-state-is-existence):
 // Incus has no status word for a custom volume, a volume snapshot or an instance snapshot, so there is no
 // currentState — only whether Incus holds it and, for a volume, which instance uses it.
 //   currentExistence / desiredExistence — NotCreated · Exists · NotFound · Deleted / Exists · Deleted

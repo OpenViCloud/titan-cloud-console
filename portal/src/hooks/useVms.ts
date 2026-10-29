@@ -7,7 +7,7 @@ import { useIdempotencyKey } from '@/lib/idempotency'
 export interface Vm {
   id: string
   name: string
-  // docs/architecture/desired-and-current.md#provider-state-is-verbatim — see lib/vmState.ts
+  // titan-ops architecture/desired-and-current.md#provider-state-is-verbatim — see lib/vmState.ts
   currentState: string | null
   desiredState: string
   currentExistence: string
@@ -50,7 +50,7 @@ export function useVms() {
 export function useCreateVm() {
   const { tenantId } = useTenant()
   const qc = useQueryClient()
-  const withKey = useIdempotencyKey() // docs/architecture/http-contract.md#idempotency-key: one key per submission
+  const withKey = useIdempotencyKey() // titan-ops architecture/http-contract.md#idempotency-key: one key per submission
   return useMutation({
     mutationFn: (req: CreateVmRequest) =>
       withKey(headers => api.post(`/v1/tenant/vms`, req, { headers })),

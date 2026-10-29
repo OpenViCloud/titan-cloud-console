@@ -86,7 +86,7 @@ describe('VmListPage', () => {
   })
 
   // The server refuses a delete while the create waits and Incus has no instance yet (it may still instantiate), so the
-  // button is held back like for every other waiting request (docs/features/vm/design.md#requests-follow-incus).
+  // button is held back like for every other waiting request (titan-ops features/vm/design.md#requests-follow-incus).
   it('holds Delete back while the create has no instance yet', async () => {
     server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st(null, 'Running', 'Creating'))])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
@@ -104,7 +104,7 @@ describe('VmListPage', () => {
     expect(screen.getByRole('button', { name: /delete/i })).toBeEnabled()
   })
 
-  // Delete wins over a waiting stop or start (docs/features/vm/design.md#requests-follow-incus).
+  // Delete wins over a waiting stop or start (titan-ops features/vm/design.md#requests-follow-incus).
   it('offers Delete while a start waits', async () => {
     server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Stopped', 'Running', 'Starting'))])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
@@ -263,7 +263,7 @@ describe('VmListPage', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
   })
 
-  // Public IPv6 is asked for on the network (docs/features/network/design.md#ipv6-public): the VM form has no box for it
+  // Public IPv6 is asked for on the network (titan-ops features/network/design.md#ipv6-public): the VM form has no box for it
   it('the create VM form has no public IPv6 box and sends no enablePublicIpv6', async () => {
     let capturedBody: Record<string, unknown> = {}
     server.use(
@@ -335,7 +335,7 @@ describe('VmListPage', () => {
     expect(screen.queryByRole('button', { name: /^start$/i })).not.toBeInTheDocument()
   })
 
-  // Incus stops a frozen instance and `start` resumes it (docs/features/vm/design.md#requests-follow-incus): both are offered.
+  // Incus stops a frozen instance and `start` resumes it (titan-ops features/vm/design.md#requests-follow-incus): both are offered.
   it('shows a Frozen VM with Stop and Resume', async () => {
     let started = false
     server.use(
