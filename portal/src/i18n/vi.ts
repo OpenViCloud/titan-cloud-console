@@ -340,7 +340,6 @@ export const vi: Messages = {
     quotaExceeded: 'Đã vượt hạn mức mạng',
     ipv6QuotaExceeded: 'Đã vượt hạn mức IPv6 công khai — xoá bớt một mạng có IPv6 công khai trước',
     ipv6NotAvailable: 'Cluster này chưa có IPv6 công khai',
-    ipv6Conflict: 'Một mạng khác vừa lấy cùng dải IPv6 — hãy gửi lại',
     suspended: 'Tài khoản đang bị tạm ngưng — liên hệ hỗ trợ để tạo tài nguyên',
     pendingApproval: 'Tài khoản đang chờ quản trị viên duyệt — bạn có thể xem nhưng chưa tạo được tài nguyên',
     genericError: 'Đã có lỗi xảy ra. Vui lòng thử lại.',

@@ -344,7 +344,6 @@ export const en = {
     quotaExceeded: 'Network quota exceeded',
     ipv6QuotaExceeded: 'Public IPv6 quota exceeded — delete a network with public IPv6 first',
     ipv6NotAvailable: 'Public IPv6 is not available in this cluster',
-    ipv6Conflict: 'Another network took the same IPv6 range at the same moment — submit again',
     suspended: 'Your account is suspended — contact support to create resources',
     pendingApproval: 'Your account is awaiting admin approval — you can browse but can’t create resources yet',
     genericError: 'Something went wrong. Please try again.',

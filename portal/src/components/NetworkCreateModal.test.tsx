@@ -212,7 +212,6 @@ describe('NetworkCreateModal', () => {
   it.each([
     [422, 'IPV6_NOT_AVAILABLE', 'Public IPv6 is not available in this cluster'],
     [422, 'IPV6_QUOTA_EXCEEDED', 'Public IPv6 quota exceeded — delete a network with public IPv6 first'],
-    [409, 'IPV6_ALLOCATION_CONFLICT', 'Another network took the same IPv6 range at the same moment — submit again'],
   ])('shows what %i %s means', async (status, code, message) => {
     server.use(
       http.get('*/v1/clusters', () => HttpResponse.json([cluster])),

@@ -88,9 +88,7 @@ export function NetworkCreateModal({ open, onOpenChange, onCreated }: Props) {
     } catch (err) {
       const res = (err as AxiosError<{ code?: string }>).response
       const code = res?.data?.code
-      if (res?.status === 409 && code === 'IPV6_ALLOCATION_CONFLICT') {
-        setApiError(t.networkCreate.ipv6Conflict)
-      } else if (res?.status === 409) {
+      if (res?.status === 409) {
         setApiError(t.networkCreate.nameTaken)
       } else if (res?.status === 422 && code === 'IPV6_QUOTA_EXCEEDED') {
         setApiError(t.networkCreate.ipv6QuotaExceeded)
