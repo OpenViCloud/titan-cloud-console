@@ -698,6 +698,8 @@ export const vi: Messages = {
     volumeDetachFailed: 'Gỡ ổ đĩa thất bại',
     volumeDeleteFailed: 'Xoá ổ đĩa thất bại',
     volumeSnapshotDeleteFailed: 'Xoá snapshot ổ đĩa thất bại',
+    networkDeleteFailed: 'Xoá mạng thất bại',
+    firewallRuleDeleteFailed: 'Xoá quy tắc tường lửa thất bại',
     loadBalancerCreateRequested: 'Yêu cầu tạo load balancer',
     loadBalancerUpdateRequested: 'Yêu cầu sửa load balancer',
     loadBalancerDeleteRequested: 'Yêu cầu xoá load balancer',

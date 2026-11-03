@@ -709,6 +709,8 @@ export const en = {
     volumeDetachFailed: 'Volume detach failed',
     volumeDeleteFailed: 'Volume delete failed',
     volumeSnapshotDeleteFailed: 'Volume snapshot delete failed',
+    networkDeleteFailed: 'Network delete failed',
+    firewallRuleDeleteFailed: 'Firewall rule delete failed',
     loadBalancerCreateRequested: 'Requested load balancer creation',
     loadBalancerUpdateRequested: 'Requested load balancer change',
     loadBalancerDeleteRequested: 'Requested load balancer deletion',
