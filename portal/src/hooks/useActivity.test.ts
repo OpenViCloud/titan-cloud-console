@@ -91,6 +91,13 @@ describe('formatActivityAction', () => {
     expect(formatActivityAction('vm_snapshot.delete_failed', viMessages)).toBe('Xoá snapshot VM thất bại')
   })
 
+  it('labels a failed load balancer change and a failed load balancer delete, in both languages', () => {
+    expect(formatActivityAction('load_balancer.update_failed', en)).toBe('Load balancer change failed')
+    expect(formatActivityAction('load_balancer.delete_failed', en)).toBe('Load balancer delete failed')
+    expect(formatActivityAction('load_balancer.update_failed', viMessages)).toBe('Sửa load balancer thất bại')
+    expect(formatActivityAction('load_balancer.delete_failed', viMessages)).toBe('Xoá load balancer thất bại')
+  })
+
   // An SSH session is a request with no outcome row: the session leaves nothing behind on the VM.
   it('labels an SSH session request in both languages', () => {
     expect(formatActivityAction('vm.ssh_requested', en)).toBe('Requested SSH session')

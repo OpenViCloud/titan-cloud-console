@@ -9,7 +9,7 @@ import { LoadBalancerFormModal } from '@/components/LoadBalancerFormModal'
 import { useLoadBalancers, useDeleteLoadBalancer, type LoadBalancer } from '@/hooks/useLoadBalancers'
 import { useNetworks } from '@/hooks/useNetworks'
 import {
-  canDeleteLoadBalancer, canEditLoadBalancer, listenerLabel, loadBalancerLabel,
+  canDeleteLoadBalancer, canEditLoadBalancer, listenerLabel, loadBalancerLabel, loadBalancerRequestFailureNote,
 } from '@/lib/loadBalancerState'
 import { useT, useFormat } from '@/i18n/LanguageContext'
 
@@ -102,6 +102,9 @@ export function LoadBalancerListPage() {
                     <p className="mt-0.5 truncate text-[12.5px] text-faint">
                       {networkNames.get(lb.networkId) ?? lb.networkId} · {t.networks.createdOn(f.date(lb.createdAt))}
                     </p>
+                    {loadBalancerRequestFailureNote(lb) !== null && (
+                      <p className="mt-0.5 text-[11px] text-bad">{loadBalancerRequestFailureNote(lb)}</p>
+                    )}
                   </div>
                   <div className="col-start-2 min-w-0 md:col-start-auto">
                     <div className="flex flex-wrap items-center gap-1.5">

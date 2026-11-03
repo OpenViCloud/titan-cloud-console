@@ -94,6 +94,8 @@ const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'firewall_rule.delete_failed': 'firewallRuleDeleteFailed',
   'vm_snapshot.revert_failed': 'vmSnapshotRevertFailed',
   'vm_snapshot.delete_failed': 'vmSnapshotDeleteFailed',
+  'load_balancer.update_failed': 'loadBalancerUpdateFailed',
+  'load_balancer.delete_failed': 'loadBalancerDeleteFailed',
 }
 
 // The fallback is built from the raw API identifiers, so it reads the same in every language.
