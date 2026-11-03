@@ -28,16 +28,22 @@ export function VmStatusBadge({ vm }: { vm: Vm }) {
   return <Badge variant={stateVariant[label] ?? 'default'}>{label}</Badge>
 }
 
-/** What the badge alone does not say: a VM resting away from what was asked, or why a create was refused. */
+/** What the badge alone does not say: why the last request gave up, and a VM resting away from its desired state. */
 export function VmStatusNote({ vm }: { vm: Vm }) {
   const t = useT()
-  if (isVmDrift(vm)) {
-    return <span className="text-[11px] text-faint">{t.vmActions.requested(vm.desiredState)}</span>
+  // Both can hold: a stop that gave up on a Frozen VM is also drift, and it must still say why
+  // (titan-ops architecture/resource-lifecycle.md#invariants).
+  const reason = vm.transition === null ? vm.requestFailureReason : null
+  const drift = isVmDrift(vm)
+  if (reason === null && !drift) {
+    return null
   }
-  if (vm.requestFailureReason !== null && vm.transition === null) {
-    return <span className="text-[11px] text-bad">{vm.requestFailureReason}</span>
-  }
-  return null
+  return (
+    <span className="flex flex-col">
+      {reason !== null && <span className="text-[11px] text-bad">{reason}</span>}
+      {drift && <span className="text-[11px] text-faint">{t.vmActions.requested(vm.desiredState)}</span>}
+    </span>
+  )
 }
 
 type ApiError = AxiosError<{ code?: string }>

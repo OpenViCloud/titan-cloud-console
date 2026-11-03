@@ -704,6 +704,7 @@ export const en = {
     apiTokenDeleted: 'Deleted API token',
     vmStopFailed: 'VM stop failed',
     vmStartFailed: 'VM start failed',
+    vmDeleteFailed: 'VM delete failed',
     loadBalancerCreateRequested: 'Requested load balancer creation',
     loadBalancerUpdateRequested: 'Requested load balancer change',
     loadBalancerDeleteRequested: 'Requested load balancer deletion',

@@ -12,7 +12,7 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() }, Toaster:
 import { toast } from 'sonner'
 
 // currentState is the Incus status word for word, null while Incus has no instance; existence and a
-// refused create are fields of their own (lib/vmState.ts).
+// request that gave up are fields of their own (lib/vmState.ts).
 const st = (currentState: string | null, desiredState: string = currentState ?? 'Running', transition: string | null = null) =>
   ({
     currentState, desiredState, transition,
