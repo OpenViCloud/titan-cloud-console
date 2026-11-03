@@ -6,7 +6,7 @@ import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 import type { Vm } from '@/hooks/useVms'
-import { snapshotLabel, canUseStoredSnapshot, canDeleteStoredSnapshot } from '@/lib/storageState'
+import { snapshotLabel, canUseStoredSnapshot, canDeleteStoredSnapshot, requestFailureNote } from '@/lib/storageState'
 import { canSnapshotVm } from '@/lib/vmState'
 import {
   useVmSnapshots,
@@ -132,6 +132,11 @@ export function VmSnapshotPanel({ vm }: { vm: Vm }) {
               <Badge variant={snapshotStateVariant[snapshotLabel(snap)] ?? 'default'} className="text-[10px]">
                 {snapshotLabel(snap)}
               </Badge>
+              {requestFailureNote(snap) !== null && (
+                <span className="min-w-0 max-w-[40%] truncate text-[10px] text-bad" title={requestFailureNote(snap) ?? undefined}>
+                  {requestFailureNote(snap)}
+                </span>
+              )}
               <span className="text-[10px] text-faint">
                 {f.shortDate(snap.createdAt)}
               </span>

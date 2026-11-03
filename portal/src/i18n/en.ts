@@ -711,6 +711,8 @@ export const en = {
     volumeSnapshotDeleteFailed: 'Volume snapshot delete failed',
     networkDeleteFailed: 'Network delete failed',
     firewallRuleDeleteFailed: 'Firewall rule delete failed',
+    vmSnapshotRevertFailed: 'VM snapshot revert failed',
+    vmSnapshotDeleteFailed: 'VM snapshot delete failed',
     loadBalancerCreateRequested: 'Requested load balancer creation',
     loadBalancerUpdateRequested: 'Requested load balancer change',
     loadBalancerDeleteRequested: 'Requested load balancer deletion',
