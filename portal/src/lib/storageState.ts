@@ -63,6 +63,14 @@ export function snapshotLabel(snapshot: StoredSnapshotFields): string {
   return 'Available'
 }
 
+/**
+ * Why the last request gave up, while nothing waits: a desired state put back to what Incus holds must say why
+ * (titan-ops architecture/resource-lifecycle.md#invariants). Server text, shown as sent.
+ */
+export function requestFailureNote(resource: StoredSnapshotFields): string | null {
+  return resource.transition === null ? resource.requestFailureReason : null
+}
+
 function restsOnIncus(resource: StoredSnapshotFields): boolean {
   return resource.transition === null
     && resource.currentExistence === 'Exists'

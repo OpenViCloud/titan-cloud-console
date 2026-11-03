@@ -108,6 +108,34 @@ describe('VolumeListPage', () => {
     expect(screen.queryByRole('button', { name: /^attach$/i })).not.toBeInTheDocument()
   })
 
+  // A request that gave up put the desired state back to what Incus holds; the page says why
+  // (titan-ops architecture/resource-lifecycle.md#invariants), and not while a new request waits.
+  it('says why the last volume request gave up, under the badge, until a new request waits', async () => {
+    const reason = 'Attaching the volume failed due to a system error. Please try again or contact support.'
+    server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([
+      vol({ requestFailureReason: reason }),
+      vol({ id: 'vol-2', name: 'data-vol-2', transition: 'Attaching', desiredAttachedVmId: 'vm-1', requestFailureReason: 'an older failure' }),
+    ])))
+    renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
+    expect(screen.getByText(reason)).toBeInTheDocument()
+    expect(screen.getByText('Available')).toBeInTheDocument()
+    expect(screen.queryByText('an older failure')).not.toBeInTheDocument()
+  })
+
+  it('says why a snapshot delete gave up, next to the snapshot', async () => {
+    const reason = 'Snapshot deletion failed due to a system error. Please try again or contact support.'
+    server.use(
+      http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol()])),
+      http.get('*/v1/tenant/volumes/vol-1/snapshots', () => HttpResponse.json([snap({ requestFailureReason: reason })])),
+    )
+    renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /^snapshots$/i }))
+    await waitFor(() => expect(screen.getByText('before-update')).toBeInTheDocument())
+    expect(screen.getByText(reason)).toBeInTheDocument()
+  })
+
   // A snapshot whose delete is waiting shows it, and offers no restore or delete over it.
   it('shows a snapshot delete in flight and offers no action on it', async () => {
     server.use(

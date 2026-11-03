@@ -65,6 +65,18 @@ describe('formatActivityAction', () => {
     expect(formatActivityAction('vm.start_failed', en)).toBe('VM start failed')
   })
 
+  // A volume or volume snapshot request that gave up: an unmapped name would read "Attach_failed volume".
+  it('labels a failed volume attach, detach or delete and a failed snapshot delete, in both languages', () => {
+    expect(formatActivityAction('volume.attach_failed', en)).toBe('Volume attach failed')
+    expect(formatActivityAction('volume.detach_failed', en)).toBe('Volume detach failed')
+    expect(formatActivityAction('volume.delete_failed', en)).toBe('Volume delete failed')
+    expect(formatActivityAction('volume_snapshot.delete_failed', en)).toBe('Volume snapshot delete failed')
+    expect(formatActivityAction('volume.attach_failed', viMessages)).toBe('Gắn ổ đĩa thất bại')
+    expect(formatActivityAction('volume.detach_failed', viMessages)).toBe('Gỡ ổ đĩa thất bại')
+    expect(formatActivityAction('volume.delete_failed', viMessages)).toBe('Xoá ổ đĩa thất bại')
+    expect(formatActivityAction('volume_snapshot.delete_failed', viMessages)).toBe('Xoá snapshot ổ đĩa thất bại')
+  })
+
   // An SSH session is a request with no outcome row: the session leaves nothing behind on the VM.
   it('labels an SSH session request in both languages', () => {
     expect(formatActivityAction('vm.ssh_requested', en)).toBe('Requested SSH session')
