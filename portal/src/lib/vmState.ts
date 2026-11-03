@@ -2,7 +2,7 @@
 //   currentState      — the Incus status word for word (Running · Ready · Stopped · Frozen · Error), null while
 //                       Incus has no instance
 //   currentExistence  — NotCreated · Exists · NotFound · Deleted (titan-ops architecture/desired-and-current.md#existence-axis)
-//   requestFailureReason — the fixed text of a create the provider refused (…#request-failure)
+//   requestFailureReason — the fixed text of a request whose command gave up (titan-ops architecture/resource-lifecycle.md#callback-routes)
 // What the customer may do follows what Incus allows (titan-ops features/vm/design.md#requests-follow-incus).
 
 import { POLL_MS } from '@/hooks/pollUntilSettled'
@@ -55,8 +55,8 @@ export function vmLabel(vm: VmStateFields): string {
 }
 
 /**
- * Drift: nothing waits, yet the VM rests somewhere other than what was asked — a guest that shut itself down
- * (Stopped, asked Running), a VM paused outside Titan (Frozen), or a stop Incus never carried out. Ready satisfies
+ * Drift: nothing waits, yet the VM rests somewhere other than its desired state — for example a guest that shut itself
+ * down (Stopped, asked Running) or a VM paused outside Titan (Frozen). Ready satisfies
  * Running. Error and no instance at all are not drift: the badge already says what is wrong.
  */
 export function isVmDrift(vm: VmStateFields): boolean {

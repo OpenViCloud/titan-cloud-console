@@ -693,6 +693,7 @@ export const vi: Messages = {
     apiTokenDeleted: 'Đã xoá token API',
     vmStopFailed: 'Tắt VM thất bại',
     vmStartFailed: 'Bật VM thất bại',
+    vmDeleteFailed: 'Xoá VM thất bại',
     loadBalancerCreateRequested: 'Yêu cầu tạo load balancer',
     loadBalancerUpdateRequested: 'Yêu cầu sửa load balancer',
     loadBalancerDeleteRequested: 'Yêu cầu xoá load balancer',

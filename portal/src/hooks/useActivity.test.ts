@@ -57,10 +57,11 @@ describe('formatActivityAction', () => {
     expect(formatActivityAction('load_balancer.updated', viMessages)).toBe('Đã sửa load balancer')
   })
 
-  // INTENT-4 S-C — a stop/start the provider refused is the request's outcome too; it must not
-  // fall back to the generic "Stop_failed vm", and must not read like the success.
-  it('labels a failed stop or start as a failure', () => {
+  // A stop, start or delete whose command gave up has an outcome too; it must not fall back to the generic
+  // "Stop_failed vm", and must not read like the success.
+  it('labels a failed stop, start or delete as a failure', () => {
     expect(formatActivityAction('vm.stop_failed', en)).toBe('VM stop failed')
+    expect(formatActivityAction('vm.delete_failed', en)).toBe('VM delete failed')
     expect(formatActivityAction('vm.start_failed', en)).toBe('VM start failed')
   })
 
@@ -107,6 +108,7 @@ describe('activity labels in Vietnamese', () => {
     expect(formatActivityAction('vm.created', viMessages)).toBe('Đã tạo VM')
     expect(formatActivityAction('vm.delete_requested', viMessages)).toBe('Yêu cầu xoá VM')
     expect(formatActivityAction('vm.stop_failed', viMessages)).toBe('Tắt VM thất bại')
+    expect(formatActivityAction('vm.delete_failed', viMessages)).toBe('Xoá VM thất bại')
     // An unmapped action is built from raw identifiers, so it is the same in both languages.
     expect(formatActivityAction('vm.rebooted', viMessages)).toBe('Rebooted vm')
     const now = new Date('2026-08-23T12:00:00Z')

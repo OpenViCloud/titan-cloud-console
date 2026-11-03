@@ -82,9 +82,10 @@ const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'load_balancer.created': 'loadBalancerCreated',
   'load_balancer.updated': 'loadBalancerUpdated',
   'load_balancer.deleted': 'loadBalancerDeleted',
-  // INTENT-4 S-C: the provider refused the stop/start on every retry; the VM is free for a new request.
+  // The command gave up, at once or after its last retry; the VM is free for a new request.
   'vm.stop_failed': 'vmStopFailed',
   'vm.start_failed': 'vmStartFailed',
+  'vm.delete_failed': 'vmDeleteFailed',
 }
 
 // The fallback is built from the raw API identifiers, so it reads the same in every language.
