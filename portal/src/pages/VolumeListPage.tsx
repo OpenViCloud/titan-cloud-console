@@ -31,6 +31,7 @@ import {
   canSnapshotStoredVolume,
   canUseStoredSnapshot,
   canDeleteStoredSnapshot,
+  requestFailureNote,
 } from '@/lib/storageState'
 import { canAttachVolume, vmLabel } from '@/lib/vmState'
 import { useT, useFormat } from '@/i18n/LanguageContext'
@@ -248,6 +249,11 @@ function SnapshotPanel({ volume }: { volume: Volume }) {
               <Badge variant={snapshotStateVariant[snapshotLabel(snap)] ?? 'default'} className="text-[10px]">
                 {snapshotLabel(snap)}
               </Badge>
+              {requestFailureNote(snap) !== null && (
+                <span className="min-w-0 max-w-[40%] truncate text-[10px] text-bad" title={requestFailureNote(snap) ?? undefined}>
+                  {requestFailureNote(snap)}
+                </span>
+              )}
               <span className="text-[10px] text-faint">
                 {f.shortDate(snap.createdAt)}
               </span>
@@ -483,6 +489,9 @@ export function VolumeListPage() {
                           <span className="text-[11px] text-faint">{attachmentDrift(volume, vmNameMap, t)}</span>
                         )}
                       </div>
+                      {requestFailureNote(volume) !== null && (
+                        <p className="mt-0.5 text-[11px] text-bad">{requestFailureNote(volume)}</p>
+                      )}
                       <p className="mt-0.5 truncate text-[12.5px] text-faint">
                         {offeringMap.get(volume.volumeOfferingId)?.name ?? volume.volumeOfferingId} · {clusterMap.get(volume.clusterId) ?? volume.clusterId} · {t.volumes.createdOn(f.date(volume.createdAt))}
                       </p>
