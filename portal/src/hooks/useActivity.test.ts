@@ -77,6 +77,13 @@ describe('formatActivityAction', () => {
     expect(formatActivityAction('volume_snapshot.delete_failed', viMessages)).toBe('Xoá snapshot ổ đĩa thất bại')
   })
 
+  it('labels a failed network delete and a failed firewall rule delete, in both languages', () => {
+    expect(formatActivityAction('network.delete_failed', en)).toBe('Network delete failed')
+    expect(formatActivityAction('firewall_rule.delete_failed', en)).toBe('Firewall rule delete failed')
+    expect(formatActivityAction('network.delete_failed', viMessages)).toBe('Xoá mạng thất bại')
+    expect(formatActivityAction('firewall_rule.delete_failed', viMessages)).toBe('Xoá quy tắc tường lửa thất bại')
+  })
+
   // An SSH session is a request with no outcome row: the session leaves nothing behind on the VM.
   it('labels an SSH session request in both languages', () => {
     expect(formatActivityAction('vm.ssh_requested', en)).toBe('Requested SSH session')

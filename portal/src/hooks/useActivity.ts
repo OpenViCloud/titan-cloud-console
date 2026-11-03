@@ -90,6 +90,8 @@ const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'volume.detach_failed': 'volumeDetachFailed',
   'volume.delete_failed': 'volumeDeleteFailed',
   'volume_snapshot.delete_failed': 'volumeSnapshotDeleteFailed',
+  'network.delete_failed': 'networkDeleteFailed',
+  'firewall_rule.delete_failed': 'firewallRuleDeleteFailed',
 }
 
 // The fallback is built from the raw API identifiers, so it reads the same in every language.
