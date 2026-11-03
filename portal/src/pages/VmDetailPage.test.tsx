@@ -178,6 +178,25 @@ describe('VmDetailPage', () => {
     expect(screen.getAllByRole('button', { name: /delete snapshot/i })).toHaveLength(1)
   })
 
+  // A revert or delete that gave up puts the snapshot back as it was; the line says why, as the server sent it.
+  it('shows why the last revert or delete of a snapshot gave up, and nothing while a request waits', async () => {
+    server.use(
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+      http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
+        { id: 'snap-1', name: 'gave-up-snap', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null,
+          requestFailureReason: 'VM snapshot revert failed due to a system error.', requestFailedAt: '2026-01-03T00:00:00Z', createdAt: '2026-01-02T00:00:00Z' },
+        { id: 'snap-2', name: 'waiting-snap', currentExistence: 'Exists', desiredExistence: 'Exists', transition: 'Reverting',
+          requestFailureReason: 'An older reason.', requestFailedAt: '2026-01-03T00:00:00Z', createdAt: '2026-01-02T00:00:00Z' },
+      ])),
+    )
+    renderAt('/vms/vm-1')
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'web-01' })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('tab', { name: /snapshots/i }))
+    await waitFor(() => expect(screen.getByText('gave-up-snap')).toBeInTheDocument())
+    expect(screen.getByText('VM snapshot revert failed due to a system error.')).toBeInTheDocument()
+    expect(screen.queryByText('An older reason.')).not.toBeInTheDocument()
+  })
+
   // Delete follows Incus: a snapshot Incus no longer has, or whose create failed before Incus had it, is deletable,
   // never revertible.
   it.each([

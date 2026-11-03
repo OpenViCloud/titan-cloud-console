@@ -700,6 +700,8 @@ export const vi: Messages = {
     volumeSnapshotDeleteFailed: 'Xoá snapshot ổ đĩa thất bại',
     networkDeleteFailed: 'Xoá mạng thất bại',
     firewallRuleDeleteFailed: 'Xoá quy tắc tường lửa thất bại',
+    vmSnapshotRevertFailed: 'Quay VM về snapshot thất bại',
+    vmSnapshotDeleteFailed: 'Xoá snapshot VM thất bại',
     loadBalancerCreateRequested: 'Yêu cầu tạo load balancer',
     loadBalancerUpdateRequested: 'Yêu cầu sửa load balancer',
     loadBalancerDeleteRequested: 'Yêu cầu xoá load balancer',
