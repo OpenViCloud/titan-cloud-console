@@ -250,7 +250,9 @@ function SnapshotPanel({ volume }: { volume: Volume }) {
                 {snapshotLabel(snap)}
               </Badge>
               {requestFailureNote(snap) !== null && (
-                <span className="text-[10px] text-bad truncate">{requestFailureNote(snap)}</span>
+                <span className="min-w-0 max-w-[40%] truncate text-[10px] text-bad" title={requestFailureNote(snap) ?? undefined}>
+                  {requestFailureNote(snap)}
+                </span>
               )}
               <span className="text-[10px] text-faint">
                 {f.shortDate(snap.createdAt)}
@@ -486,10 +488,10 @@ export function VolumeListPage() {
                         {attachmentDrift(volume, vmNameMap, t) !== null && (
                           <span className="text-[11px] text-faint">{attachmentDrift(volume, vmNameMap, t)}</span>
                         )}
-                        {requestFailureNote(volume) !== null && (
-                          <span className="text-[11px] text-bad">{requestFailureNote(volume)}</span>
-                        )}
                       </div>
+                      {requestFailureNote(volume) !== null && (
+                        <p className="mt-0.5 text-[11px] text-bad">{requestFailureNote(volume)}</p>
+                      )}
                       <p className="mt-0.5 truncate text-[12.5px] text-faint">
                         {offeringMap.get(volume.volumeOfferingId)?.name ?? volume.volumeOfferingId} · {clusterMap.get(volume.clusterId) ?? volume.clusterId} · {t.volumes.createdOn(f.date(volume.createdAt))}
                       </p>

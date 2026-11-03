@@ -6,6 +6,8 @@
 //   currentAttachedElsewhere — an instance that is no Titan VM uses it (attached outside Titan)
 //   desiredAttachedVmId      — the VM the customer asked for (only requests write it)
 //   transition               — the request still waiting, derived by the server
+//   requestFailureReason     — the fixed text of the last request that gave up, shown while nothing waits
+//                              (titan-ops architecture/resource-lifecycle.md#invariants)
 // The buttons mirror the aggregates' rules, so the server's 422 is never the first thing a customer reads.
 
 import { POLL_MS } from '@/hooks/pollUntilSettled'
