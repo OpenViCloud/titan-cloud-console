@@ -5,6 +5,7 @@ import {
   isBackendCandidate,
   listenerLabel,
   loadBalancerLabel,
+  loadBalancerRequestFailureNote,
   pollWhileLoadBalancersWait,
   specProblem,
 } from './loadBalancerState'
@@ -22,6 +23,16 @@ describe('loadBalancerLabel', () => {
     expect(loadBalancerLabel(lb({ currentExistence: 'NotFound' }))).toBe('Not found')
     expect(loadBalancerLabel(lb({ currentExistence: 'NotCreated', requestFailureReason: 'x' }))).toBe('Failed')
     expect(loadBalancerLabel(lb({ currentExistence: 'Deleted', desiredExistence: 'Deleted' }))).toBe('Deleted')
+  })
+})
+
+// A request that gave up leaves the load balancer as Incus holds it; the reason shows only while nothing waits.
+describe('loadBalancerRequestFailureNote', () => {
+  it('is the server reason while nothing waits, and null while a request waits', () => {
+    expect(loadBalancerRequestFailureNote(lb({ requestFailureReason: 'Load balancer change failed.' })))
+      .toBe('Load balancer change failed.')
+    expect(loadBalancerRequestFailureNote(lb({ requestFailureReason: 'old', transition: 'Updating' }))).toBeNull()
+    expect(loadBalancerRequestFailureNote(lb())).toBeNull()
   })
 })
 

@@ -48,6 +48,14 @@ export function loadBalancerLabel(lb: LoadBalancerStateFields): string {
   return 'Active'
 }
 
+/**
+ * Why the last request gave up, while nothing waits: a desired state put back to what Incus holds must say why
+ * (titan-ops architecture/resource-lifecycle.md#invariants). Server text, shown as sent.
+ */
+export function loadBalancerRequestFailureNote(lb: LoadBalancerStateFields): string | null {
+  return lb.transition === null ? lb.requestFailureReason : null
+}
+
 /** LoadBalancer.RequestUpdate: on Incus, nothing waiting. */
 export function canEditLoadBalancer(lb: LoadBalancerStateFields): boolean {
   return lb.transition === null

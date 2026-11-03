@@ -104,6 +104,13 @@ describe('LoadBalancerListPage', () => {
       'The load balancer is still being created or deleted — try again in a moment'))
   })
 
+  it('shows why the last change or delete gave up, as the server sent it', async () => {
+    serve([lb({ requestFailureReason: 'Load balancer change failed due to a system error.', requestFailedAt: '2026-01-02T00:00:00Z' })])
+    page()
+    const row = await screen.findByRole('listitem')
+    expect(within(row).getByText('Load balancer change failed due to a system error.')).toBeInTheDocument()
+  })
+
   it('opens the create form', async () => {
     serve([])
     page()

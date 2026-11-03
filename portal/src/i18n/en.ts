@@ -719,6 +719,8 @@ export const en = {
     loadBalancerCreated: 'Created load balancer',
     loadBalancerUpdated: 'Changed load balancer',
     loadBalancerDeleted: 'Deleted load balancer',
+    loadBalancerUpdateFailed: 'Load balancer change failed',
+    loadBalancerDeleteFailed: 'Load balancer delete failed',
   },
 }
 

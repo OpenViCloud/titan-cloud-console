@@ -708,5 +708,7 @@ export const vi: Messages = {
     loadBalancerCreated: 'Đã tạo load balancer',
     loadBalancerUpdated: 'Đã sửa load balancer',
     loadBalancerDeleted: 'Đã xoá load balancer',
+    loadBalancerUpdateFailed: 'Sửa load balancer thất bại',
+    loadBalancerDeleteFailed: 'Xoá load balancer thất bại',
   },
 }
