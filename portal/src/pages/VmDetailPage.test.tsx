@@ -178,8 +178,9 @@ describe('VmDetailPage', () => {
     expect(screen.getAllByRole('button', { name: /delete snapshot/i })).toHaveLength(1)
   })
 
-  // A revert or delete that gave up puts the snapshot back as it was; the line says why, as the server sent it.
-  it('shows why the last revert or delete of a snapshot gave up, and nothing while a request waits', async () => {
+  // A request that gave up (create, revert or delete) leaves the snapshot as Incus holds it; the line says why, as the
+  // server sent it.
+  it('shows why the last request of a snapshot gave up, and nothing while a request waits', async () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
