@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { occupiesQuota } from './quota'
 
-// One case per branch of the server rule, e.g. VmRepository.CountActiveByTenantAsync:
+// One case per branch of the server rule, e.g. Vm.OccupiesQuota:
 // desired Exists ∧ (Exists ∨ (NotCreated ∧ a waiting request)). Networks and volumes use the same rule.
 const base = { desiredExistence: 'Exists', currentExistence: 'Exists', transition: null as string | null }
 
