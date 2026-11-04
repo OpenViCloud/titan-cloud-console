@@ -76,7 +76,7 @@ describe('listenerLabel', () => {
   })
 })
 
-// Vm.BeginLoadBalancerBackend: on the load balancer's network, on Incus, not being deleted.
+// Vm.ProviderIdForLoadBalancerBackend: on the load balancer's network, on Incus, not being deleted.
 describe('isBackendCandidate', () => {
   const vm = (extra = {}) => ({ networkId: 'net-6', currentExistence: 'Exists', desiredExistence: 'Exists', ...extra })
   it('takes a VM of the network that Incus holds and nobody is deleting', () => {

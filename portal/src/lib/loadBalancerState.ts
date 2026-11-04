@@ -86,7 +86,7 @@ export function listenerLabel(listener: ListenerFields): string {
   return `${listener.protocol} ${listener.port} → ${listener.targetPort}`
 }
 
-/** Vm.BeginLoadBalancerBackend: on the load balancer's network, on Incus, not being deleted. */
+/** Vm.ProviderIdForLoadBalancerBackend: on the load balancer's network, on Incus, not being deleted. */
 export function isBackendCandidate(vm: BackendCandidateFields, networkId: string): boolean {
   return vm.networkId === networkId
     && vm.currentExistence === 'Exists'

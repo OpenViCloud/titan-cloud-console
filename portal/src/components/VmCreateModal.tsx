@@ -80,7 +80,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const pickedSshKeyIds = sshKeyIds.filter(id => sshKeys.some(key => key.id === id))
 
   // A network whose delete is waiting still reads Created on Incus, and the server refuses a VM on it
-  // (Network.BeginVmDeployment).
+  // (Network.ProviderIdForVm).
   const activeNetworks = networks.filter(isUsableNetwork)
   // A VM lands on its network's cluster, so only the chosen cluster's networks are offered
   // (titan-ops features/catalog/design.md#cluster-is-a-real-choice).

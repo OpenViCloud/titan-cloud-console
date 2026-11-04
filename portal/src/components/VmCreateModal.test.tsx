@@ -302,7 +302,7 @@ describe('VmCreateModal', () => {
     expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'default'])
   })
 
-  // Same rule as Network.BeginVmDeployment: Incus reports it Created and nothing waits on it. A network whose delete
+  // Same rule as Network.ProviderIdForVm: Incus reports it Created and nothing waits on it. A network whose delete
   // waits still reads Created on Incus.
   it('lists only the networks a VM can be created on', async () => {
     const usable = (id: string, name: string, extra = {}) => ({ ...activeNetwork, id, name, ...extra })
