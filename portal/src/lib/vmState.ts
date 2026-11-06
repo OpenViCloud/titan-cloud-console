@@ -1,7 +1,7 @@
 // A VM has one status (titan-ops features/vm/design.md#requests-follow-incus):
 //   Creating · Starting · Stopping · Deleting — a request waits on its command
 //   Running · Ready · Stopped · Frozen · Error — the Incus word, at rest
-//   Unknown  — the create ended but its report could not read the instance; the next observation replaces it
+//   Unknown  — a request ended but its report could not read the instance; the next observation replaces it
 //   NotFound — the reconciler sees no instance
 //   Failed   — the create gave up before Incus made an instance
 //   Deleted  — gone; the API no longer lists it
@@ -16,7 +16,7 @@ export type VmStatus =
   | 'Unknown' | 'NotFound' | 'Failed' | 'Deleted'
 
 export interface VmStateFields {
-  // A string, not VmStatus: a status this portal was not taught still renders, and offers no action.
+  // A string, not VmStatus: a status this portal was not taught still renders, and offers only Delete.
   status: string
   requestFailureReason: string | null
 }
@@ -27,7 +27,8 @@ const RUNNING_STATUSES = new Set(['Running', 'Ready'])
 const STOPPABLE_STATUSES = new Set(['Running', 'Ready', 'Frozen', 'Error'])
 // Frozen: Incus `start` resumes it.
 const STARTABLE_STATUSES = new Set(['Stopped', 'Frozen'])
-// A waiting start still leaves the instance Stopped on Incus; a waiting stop or delete would race its command.
+// A waiting start still leaves the instance Stopped (or Frozen) on Incus; a waiting stop or delete would race its
+// command.
 const SNAPSHOT_AND_ATTACH_STATUSES = new Set(['Running', 'Ready', 'Stopped', 'Frozen', 'Starting'])
 // A create that may still instantiate is refused by the server, so the button does not offer it.
 const NOT_DELETABLE_STATUSES = new Set(['Creating', 'Deleting', 'Deleted'])

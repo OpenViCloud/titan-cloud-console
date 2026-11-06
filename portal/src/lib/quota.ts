@@ -19,7 +19,7 @@ export function occupiesQuota(resource: QuotaFields): boolean {
   return resource.currentExistence === 'NotCreated' && resource.transition !== null
 }
 
-// A VM has one status: it counts unless its delete was asked, or Incus has no instance of it
+// A VM has one status: it counts while its create waits or Incus holds its instance, until its delete is asked
 // (titan-ops features/vm/design.md#counting-and-billing).
 const VM_STATUSES_OUTSIDE_QUOTA = new Set(['Deleting', 'Deleted', 'NotFound', 'Failed'])
 

@@ -24,8 +24,9 @@ export interface BackendCandidateFields {
   status: string
 }
 
-// Any status whose instance is on Incus and whose delete was not pressed: the health check takes a stopped VM out of
-// rotation (titan-ops features/load-balancer/design.md#lb-and-vm-network).
+// Any status whose instance is on Incus and whose delete was not pressed: a stopped VM is still a backend
+// (titan-ops features/load-balancer/design.md#backend-address), the health check takes it out of rotation
+// (titan-ops features/load-balancer/design.md#health-check).
 const BACKEND_STATUSES = new Set(['Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Starting', 'Stopping'])
 
 // The limits and the name rule of the server's validators (Endpoints/LoadBalancer/LoadBalancerSpecRules.cs).

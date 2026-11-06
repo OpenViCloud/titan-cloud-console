@@ -91,7 +91,7 @@ describe('VmListPage', () => {
     expect(screen.getByRole('button', { name: /delete/i })).toBeDisabled()
   })
 
-  // The create ended but its report could not read the instance: the next observation replaces Unknown. The instance
+  // A request ended but its report could not read the instance: the next observation replaces Unknown. The instance
   // exists, so Delete is the way out; nothing else is offered until Incus has a word for it.
   it('shows an Unknown VM with Delete and neither Stop nor Start', async () => {
     server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ ...st('Unknown'), ipAddress: null })])))
@@ -112,7 +112,7 @@ describe('VmListPage', () => {
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeEnabled()
   })
 
-  // The list is a few seconds old and another tab already deleted the VM: the server refuses, the toast says it failed.
+  // A refusal the portal has no copy for gets the generic toast: it says the delete failed.
   it('says the delete failed when the server refuses it with VM_INVALID_STATUS', async () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),

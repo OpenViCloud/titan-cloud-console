@@ -31,7 +31,7 @@ describe('occupiesQuota', () => {
   })
 
   it('counts something Incus holds while another request waits on it', () => {
-    expect(occupiesQuota({ ...base, transition: 'Stopping' })).toBe(true)
+    expect(occupiesQuota({ ...base, transition: 'Attaching' })).toBe(true)
   })
 })
 
@@ -43,7 +43,7 @@ describe('vmOccupiesQuota', () => {
     }
   })
 
-  it('stops counting as soon as delete is pressed, and never counts a VM Incus has no instance of', () => {
+  it('stops counting as soon as delete is pressed, and does not count a VM whose instance is gone or never came', () => {
     for (const status of ['Deleting', 'Deleted', 'NotFound', 'Failed']) {
       expect(vmOccupiesQuota({ status }), status).toBe(false)
     }

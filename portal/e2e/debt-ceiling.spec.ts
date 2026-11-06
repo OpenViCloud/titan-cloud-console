@@ -143,7 +143,7 @@ test('A3+A4 — /wallet shows two cards, and Outstanding matches the invoice API
 // ── B. AC-3: the gate is dead on the real environment ───────────────────────
 
 test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ browser }) => {
-  // playwright.config.ts sets 90s per test. A VM's Starting→Running→Destroyed round trip needs far
+  // playwright.config.ts sets 90s per test. A VM's Creating→Running→Deleted round trip needs far
   // more, and on 2026-09-04 the 90s cap killed this test INSIDE its own finally block: the ceiling
   // was left at 0 and a VM was left Running. A cleanup that can be cut off is not a cleanup.
   test.setTimeout(1_800_000)
@@ -216,7 +216,7 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
     // B3 — clean up whatever happened above, in both directions.
     //
     // This block LEAKED TWO RUNNING VMs on 2026-09-04: DELETE was fired immediately after create,
-    // while the VM was still `Starting`, which is not a legal delete state (VM_INVALID_STATUS) — and
+    // while the VM's create still waited, which the server refuses (VM_INVALID_STATUS) — and
     // the `.catch(() => {})` swallowed the 422 so the run reported PASS with two VMs burning real
     // infrastructure. Two lessons encoded here: wait for a deletable state, and never swallow the
     // result of a cleanup call. A cleanup whose failure is invisible is not cleanup.
