@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { occupiesQuota } from './quota'
+import { occupiesQuota, vmOccupiesQuota } from './quota'
 
-// One case per branch of the server rule, e.g. Vm.OccupiesQuota:
-// desired Exists ∧ (Exists ∨ (NotCreated ∧ a waiting request)). Networks and volumes use the same rule.
+// One case per branch of the server rule Network.OccupiesQuota / Volume.OccupiesQuota:
+// desired Exists ∧ (Exists ∨ (NotCreated ∧ a waiting request)).
 const base = { desiredExistence: 'Exists', currentExistence: 'Exists', transition: null as string | null }
 
 describe('occupiesQuota', () => {
@@ -32,5 +32,20 @@ describe('occupiesQuota', () => {
 
   it('counts something Incus holds while another request waits on it', () => {
     expect(occupiesQuota({ ...base, transition: 'Stopping' })).toBe(true)
+  })
+})
+
+// Vm.OccupiesQuota: status not in Deleting, Deleted, NotFound, Failed.
+describe('vmOccupiesQuota', () => {
+  it('counts a VM with an instance or a create waiting, whatever else waits on it', () => {
+    for (const status of ['Creating', 'Starting', 'Stopping', 'Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Unknown']) {
+      expect(vmOccupiesQuota({ status }), status).toBe(true)
+    }
+  })
+
+  it('stops counting as soon as delete is pressed, and never counts a VM Incus has no instance of', () => {
+    for (const status of ['Deleting', 'Deleted', 'NotFound', 'Failed']) {
+      expect(vmOccupiesQuota({ status }), status).toBe(false)
+    }
   })
 })

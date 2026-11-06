@@ -76,14 +76,17 @@ describe('listenerLabel', () => {
   })
 })
 
-// Vm.ProviderIdForLoadBalancerBackend: on the load balancer's network, on Incus, not being deleted.
+// Vm.EnsureLoadBalancerCanSendTo: on the load balancer's network, on Incus, not being deleted.
 describe('isBackendCandidate', () => {
-  const vm = (extra = {}) => ({ networkId: 'net-6', currentExistence: 'Exists', desiredExistence: 'Exists', ...extra })
+  const vm = (extra = {}) => ({ networkId: 'net-6' as string | null, status: 'Running', ...extra })
   it('takes a VM of the network that Incus holds and nobody is deleting', () => {
-    expect(isBackendCandidate(vm(), 'net-6')).toBe(true)
+    for (const status of ['Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Starting', 'Stopping']) {
+      expect(isBackendCandidate(vm({ status }), 'net-6')).toBe(true)
+    }
+    for (const status of ['Creating', 'Deleting', 'Unknown', 'NotFound', 'Failed', 'Deleted']) {
+      expect(isBackendCandidate(vm({ status }), 'net-6')).toBe(false)
+    }
     expect(isBackendCandidate(vm({ networkId: 'net-other' }), 'net-6')).toBe(false)
-    expect(isBackendCandidate(vm({ currentExistence: 'NotCreated' }), 'net-6')).toBe(false)
-    expect(isBackendCandidate(vm({ desiredExistence: 'Deleted' }), 'net-6')).toBe(false)
     expect(isBackendCandidate(vm({ networkId: null }), 'net-6')).toBe(false)
   })
 })

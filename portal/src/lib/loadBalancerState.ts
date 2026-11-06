@@ -21,9 +21,12 @@ export interface ListenerFields {
 
 export interface BackendCandidateFields {
   networkId: string | null
-  currentExistence: string
-  desiredExistence: string
+  status: string
 }
+
+// Any status whose instance is on Incus and whose delete was not pressed: the health check takes a stopped VM out of
+// rotation (titan-ops features/load-balancer/design.md#lb-and-vm-network).
+const BACKEND_STATUSES = new Set(['Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Starting', 'Stopping'])
 
 // The limits and the name rule of the server's validators (Endpoints/LoadBalancer/LoadBalancerSpecRules.cs).
 export const MAX_LISTENERS = 10
@@ -86,11 +89,9 @@ export function listenerLabel(listener: ListenerFields): string {
   return `${listener.protocol} ${listener.port} → ${listener.targetPort}`
 }
 
-/** Vm.ProviderIdForLoadBalancerBackend: on the load balancer's network, on Incus, not being deleted. */
+/** Vm.EnsureLoadBalancerCanSendTo: on the load balancer's network, on Incus, not being deleted. */
 export function isBackendCandidate(vm: BackendCandidateFields, networkId: string): boolean {
-  return vm.networkId === networkId
-    && vm.currentExistence === 'Exists'
-    && vm.desiredExistence === 'Exists'
+  return vm.networkId === networkId && BACKEND_STATUSES.has(vm.status)
 }
 
 export type SpecProblem =

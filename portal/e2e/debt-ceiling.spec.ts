@@ -233,19 +233,19 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
 
     if (vmId) {
       const cleanup = await apiAs(customer.page)
-      // Starting → Running is driven by the reconciler; delete is only legal once it lands.
+      // Delete is refused while the create waits; wait until it settles.
       await expect
-        .poll(async () => (await (await cleanup.get(`/v1/tenant/vms/${vmId}`)).json()).currentState,
+        .poll(async () => (await (await cleanup.get(`/v1/tenant/vms/${vmId}`)).json()).status,
               { timeout: 900_000, intervals: [10_000] })
-        .toMatch(/Running|Error/)
+        .not.toBe('Creating')
       const del = await cleanup.delete(`/v1/tenant/vms/${vmId}`)
       expect([200, 202, 204], `cleanup DELETE ${vmId} -> ${del.status()} ${(await del.text()).slice(0, 200)}`)
         .toContain(del.status())
-      // 202 means "accepted", not "gone" — the workflow does the work. Prove it actually left.
+      // 202 means "accepted", not "gone" — the worker does the work. Prove it actually left.
       await expect
-        .poll(async () => (await (await cleanup.get(`/v1/tenant/vms/${vmId}`)).json()).currentState,
+        .poll(async () => (await (await cleanup.get(`/v1/tenant/vms/${vmId}`)).json()).status,
               { timeout: 300_000, intervals: [10_000] })
-        .toBe('Destroyed')
+        .toBe('Deleted')
       await cleanup.dispose()
     }
     if (networkId) {

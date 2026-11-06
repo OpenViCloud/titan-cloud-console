@@ -11,11 +11,9 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() }, Toaster:
 
 import { toast } from 'sonner'
 
-const st = (currentState: string | null, desiredState: string = currentState ?? 'Running', transition: string | null = null) =>
+const st = (status: string) =>
   ({
-    currentState, desiredState, transition,
-    currentExistence: currentState === null ? 'NotCreated' : 'Exists',
-    desiredExistence: 'Exists',
+    status,
     requestFailureReason: null as string | null,
     requestFailedAt: null as string | null,
   })
@@ -233,10 +231,11 @@ describe('VmDetailPage', () => {
   })
 
   // US-VMSNAP — create snapshot
-  // Incus snapshots Running, Ready, Stopped and Frozen instances (titan-ops features/vm/design.md#requests-follow-incus), not Error.
-  it.each([['Frozen', true], ['Stopped', true], ['Error', false]])('offers New Snapshot on a %s VM: %s', async (status, offered) => {
+  // Incus snapshots Running, Ready, Stopped and Frozen instances, and one whose start still waits (still Stopped on
+  // Incus) (titan-ops features/vm/design.md#requests-follow-incus); not Error, not while a stop waits.
+  it.each([['Frozen', true], ['Stopped', true], ['Starting', true], ['Error', false], ['Stopping', false]])('offers New Snapshot on a %s VM: %s', async (status, offered) => {
     server.use(
-      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st(status, 'Running'))])),
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st(status))])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([])),
     )
     renderAt('/vms/vm-1')

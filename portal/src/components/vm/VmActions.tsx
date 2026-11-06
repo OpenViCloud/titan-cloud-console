@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 import { useDeleteVm, useStartVm, useStopVm, type Vm } from '@/hooks/useVms'
-import { canDeleteVm, canStartVm, canStopVm, isVmDrift, vmLabel } from '@/lib/vmState'
+import { canDeleteVm, canStartVm, canStopVm, isVmInTransition, vmLabel } from '@/lib/vmState'
 import { useT } from '@/i18n/LanguageContext'
 
-// Keys are what vmLabel() returns: an Incus status, the move a waiting request makes, or why Incus has no status.
+// Keys are what vmLabel() returns: the VM's status, NotFound spelled 'Not found'.
 const stateVariant: Record<string, BadgeProps['variant']> = {
   Running:     'success',
   Ready:       'success',
@@ -21,6 +21,7 @@ const stateVariant: Record<string, BadgeProps['variant']> = {
   Error:       'destructive',
   'Not found': 'destructive',
   Failed:      'destructive',
+  Unknown:     'gray',
 }
 
 export function VmStatusBadge({ vm }: { vm: Vm }) {
@@ -28,22 +29,12 @@ export function VmStatusBadge({ vm }: { vm: Vm }) {
   return <Badge variant={stateVariant[label] ?? 'default'}>{label}</Badge>
 }
 
-/** What the badge alone does not say: why the last request gave up, and a VM resting away from its desired state. */
+/** What the badge alone does not say: why the last request gave up, once no newer request waits. */
 export function VmStatusNote({ vm }: { vm: Vm }) {
-  const t = useT()
-  // Both can hold: a stop that gave up on a Frozen VM is also drift, and it must still say why
-  // (titan-ops architecture/resource-lifecycle.md#invariants).
-  const reason = vm.transition === null ? vm.requestFailureReason : null
-  const drift = isVmDrift(vm)
-  if (reason === null && !drift) {
+  if (isVmInTransition(vm) || vm.requestFailureReason === null) {
     return null
   }
-  return (
-    <span className="flex flex-col">
-      {reason !== null && <span className="text-[11px] text-bad">{reason}</span>}
-      {drift && <span className="text-[11px] text-faint">{t.vmActions.requested(vm.desiredState)}</span>}
-    </span>
-  )
+  return <span className="text-[11px] text-bad">{vm.requestFailureReason}</span>
 }
 
 type ApiError = AxiosError<{ code?: string }>
@@ -91,13 +82,10 @@ export function VmActions({ vm, onDeleted }: { vm: Vm; onDeleted?: () => void })
       }
     } catch (err) {
       const res = (err as ApiError).response
-      const stillBeingCreated = vm.transition === 'Creating'
       if (res?.status === 422 && res.data?.code === 'VM_SNAPSHOT_IN_PROGRESS') {
         toast.error(t.vmActions.snapshotInProgress)
       } else if (res?.status === 422 && res.data?.code === 'VM_IS_LOAD_BALANCER_BACKEND') {
         toast.error(t.vmActions.isLoadBalancerBackend)
-      } else if (res?.status === 422 && res.data?.code === 'VM_INVALID_STATUS' && stillBeingCreated) {
-        toast.error(t.vmActions.stillBeingCreated)
       } else {
         toast.error(t.vmActions.deleteFailed)
       }
@@ -106,9 +94,9 @@ export function VmActions({ vm, onDeleted }: { vm: Vm; onDeleted?: () => void })
 
   return (
     <>
-      {vm.transition !== null && (
+      {isVmInTransition(vm) && (
         <Button variant="ghost" size="sm" disabled className="text-xs text-faint">
-          {`${vm.transition}…`}
+          {`${vm.status}…`}
         </Button>
       )}
       {canStopVm(vm) && (
@@ -118,7 +106,7 @@ export function VmActions({ vm, onDeleted }: { vm: Vm; onDeleted?: () => void })
       )}
       {canStartVm(vm) && (
         <Button variant="outline" size="sm" className="text-xs" onClick={handleStart} disabled={startVm.isPending}>
-          {vm.currentState === 'Frozen' ? t.vmActions.resume : t.vmActions.start}
+          {vm.status === 'Frozen' ? t.vmActions.resume : t.vmActions.start}
         </Button>
       )}
       <Button

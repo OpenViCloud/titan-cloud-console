@@ -17,12 +17,13 @@ describe('QuotaCard', () => {
     server.use(
       http.get('*/v1/tenant', () => HttpResponse.json(tenant)),
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
-        { id: 'a', ...live },
+        { id: 'a', status: 'Running' },
         // a create still waiting counts
-        { id: 'b', ...live, currentExistence: 'NotCreated', transition: 'Creating' },
-        // a refused create and a VM whose delete was pressed do not count
-        { id: 'c', ...live, currentExistence: 'NotCreated' },
-        { id: 'd', ...live, desiredExistence: 'Deleted', transition: 'Deleting' },
+        { id: 'b', status: 'Creating' },
+        // a refused create, a VM Incus no longer has and a VM whose delete was pressed do not count
+        { id: 'c', status: 'Failed' },
+        { id: 'd', status: 'Deleting' },
+        { id: 'e', status: 'NotFound' },
       ])),
       // Public IPv6 counts networks holding a /64, the way Networks counts networks
       http.get('*/v1/tenant/networks', () => HttpResponse.json([

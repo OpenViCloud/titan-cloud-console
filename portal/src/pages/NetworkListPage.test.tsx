@@ -25,9 +25,8 @@ const rule = (id: string, cidr: string, externalId: string | null, state: object
   id, direction: 'Ingress', protocol: 'TCP', startPort: 22, endPort: 22, cidr, externalId, ...state,
   createdAt: '2026-01-01T00:00:00Z',
 })
-// A VM's state (lib/vmState.ts): the Incus status, null while Incus has no instance, and an existence of its own.
-const vmSt = (currentState: string | null, currentExistence = 'Exists') =>
-  ({ currentState, desiredState: 'Running', transition: null, currentExistence, desiredExistence: 'Exists', requestFailureReason: null })
+// A VM has one status (lib/vmState.ts).
+const vmSt = (status: string) => ({ status, requestFailureReason: null })
 
 const net = (overrides = {}) => ({
   id: 'net-1', name: 'prod-net', ...st('Created'), cidr: '10.0.0.0/24',
@@ -278,10 +277,10 @@ describe('NetworkListPage', () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([net()])),
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
-        { id: 'vm-1', name: 'lost-vm', networkId: 'net-1', ...vmSt(null, 'NotFound'),
+        { id: 'vm-1', name: 'lost-vm', networkId: 'net-1', ...vmSt('NotFound'),
           ipAddress: null, vmOfferingId: 'so-1', templateId: 't-1',
           clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
-        { id: 'vm-2', name: 'refused-vm', networkId: 'net-1', ...vmSt(null, 'NotCreated'), requestFailureReason: 'refused',
+        { id: 'vm-2', name: 'refused-vm', networkId: 'net-1', ...vmSt('Failed'), requestFailureReason: 'refused',
           ipAddress: null, vmOfferingId: 'so-1', templateId: 't-1',
           clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
       ])),
