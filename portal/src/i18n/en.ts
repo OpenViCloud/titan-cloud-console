@@ -250,7 +250,6 @@ export const en = {
     invalidStatus: 'VM is not in a valid state for this action',
     actionFailed: 'Action failed. Please try again.',
     deleted: 'Virtual machine deleted',
-    snapshotInProgress: 'Cannot delete: a snapshot operation is in progress for this VM',
     isLoadBalancerBackend: 'Cannot delete: a load balancer sends traffic to this VM — remove it from the load balancer first',
     deleteFailed: 'Failed to delete VM. Please try again.',
     stop: 'Stop',

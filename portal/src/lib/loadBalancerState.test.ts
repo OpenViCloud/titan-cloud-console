@@ -80,7 +80,7 @@ describe('listenerLabel', () => {
 describe('isBackendCandidate', () => {
   const vm = (extra = {}) => ({ networkId: 'net-6' as string | null, status: 'Running', ...extra })
   it('takes a VM of the network that Incus holds and nobody is deleting', () => {
-    for (const status of ['Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Starting', 'Stopping']) {
+    for (const status of ['Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Starting', 'Stopping', 'Snapshotting']) {
       expect(isBackendCandidate(vm({ status }), 'net-6')).toBe(true)
     }
     for (const status of ['Creating', 'Deleting', 'Unknown', 'NotFound', 'Failed', 'Deleted']) {

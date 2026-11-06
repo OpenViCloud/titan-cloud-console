@@ -1,5 +1,6 @@
 // A VM has one status (titan-ops features/vm/design.md#requests-follow-incus):
 //   Creating · Starting · Stopping · Deleting — a request waits on its command
+//   Snapshotting — a snapshot create or revert runs on the instance; only its report moves the status on
 //   Running · Ready · Stopped · Frozen · Error — the Incus word, at rest
 //   Unknown  — a request ended but its report could not read the instance; the next observation replaces it
 //   NotFound — the reconciler sees no instance
@@ -11,7 +12,7 @@
 import { POLL_MS } from '@/hooks/pollUntilSettled'
 
 export type VmStatus =
-  | 'Creating' | 'Starting' | 'Stopping' | 'Deleting'
+  | 'Creating' | 'Starting' | 'Stopping' | 'Deleting' | 'Snapshotting'
   | 'Running' | 'Ready' | 'Stopped' | 'Frozen' | 'Error'
   | 'Unknown' | 'NotFound' | 'Failed' | 'Deleted'
 
@@ -21,17 +22,18 @@ export interface VmStateFields {
   requestFailureReason: string | null
 }
 
-const IN_TRANSITION = new Set(['Creating', 'Starting', 'Stopping', 'Deleting'])
+const IN_TRANSITION = new Set(['Creating', 'Starting', 'Stopping', 'Deleting', 'Snapshotting'])
 // Ready is a running guest that also told Incus it is ready.
 const RUNNING_STATUSES = new Set(['Running', 'Ready'])
 const STOPPABLE_STATUSES = new Set(['Running', 'Ready', 'Frozen', 'Error'])
 // Frozen: Incus `start` resumes it.
 const STARTABLE_STATUSES = new Set(['Stopped', 'Frozen'])
-// A waiting start still leaves the instance Stopped (or Frozen) on Incus; a waiting stop or delete would race its
-// command.
-const SNAPSHOT_AND_ATTACH_STATUSES = new Set(['Running', 'Ready', 'Stopped', 'Frozen', 'Starting'])
-// A create that may still instantiate is refused by the server, so the button does not offer it.
-const NOT_DELETABLE_STATUSES = new Set(['Creating', 'Deleting', 'Deleted'])
+// A waiting start still leaves the instance Stopped (or Frozen) on Incus, so a volume may attach; a snapshot may not
+// (its report would find the VM Snapshotting and be dropped). A waiting stop, delete or snapshot would race the command.
+const SNAPSHOT_STATUSES = new Set(['Running', 'Ready', 'Stopped', 'Frozen'])
+const ATTACH_STATUSES = new Set(['Running', 'Ready', 'Stopped', 'Frozen', 'Starting'])
+// A create that may still instantiate, and a snapshot running, are refused by the server, so the button does not offer it.
+const NOT_DELETABLE_STATUSES = new Set(['Creating', 'Deleting', 'Deleted', 'Snapshotting'])
 const WITHOUT_AN_INSTANCE = new Set(['Deleted', 'NotFound', 'Failed'])
 
 /** A request waits on its command: the list keeps refreshing and the badge names the move. */
@@ -60,17 +62,17 @@ export function canStartVm(vm: VmStateFields): boolean {
   return STARTABLE_STATUSES.has(vm.status)
 }
 
-/** Every status but a delete already waiting or done, and but a create still waiting. */
+/** Every status but a delete already waiting or done, a snapshot running, and a create still waiting. */
 export function canDeleteVm(vm: VmStateFields): boolean {
   return !NOT_DELETABLE_STATUSES.has(vm.status)
 }
 
 export function canSnapshotVm(vm: VmStateFields): boolean {
-  return SNAPSHOT_AND_ATTACH_STATUSES.has(vm.status)
+  return SNAPSHOT_STATUSES.has(vm.status)
 }
 
 export function canAttachVolume(vm: VmStateFields): boolean {
-  return SNAPSHOT_AND_ATTACH_STATUSES.has(vm.status)
+  return ATTACH_STATUSES.has(vm.status)
 }
 
 /**
