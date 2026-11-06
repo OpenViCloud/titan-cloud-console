@@ -8,39 +8,27 @@ const reason = 'The VM could not be stopped. Please try again or contact support
 
 const vm = (fields: Partial<Vm>) =>
   ({
-    currentState: 'Running',
-    desiredState: 'Running',
-    currentExistence: 'Exists',
-    desiredExistence: 'Exists',
-    transition: null,
+    status: 'Running',
     requestFailureReason: null,
     ...fields,
   }) as Vm
 
 describe('VmStatusNote', () => {
-  it('says why the request gave up and names the desired state, on a VM that also rests away from it', () => {
-    renderWithProviders(<VmStatusNote vm={vm({ currentState: 'Frozen', requestFailureReason: reason })} />)
+  it('says why the request gave up, beside the status Incus left the VM in', () => {
+    renderWithProviders(<VmStatusNote vm={vm({ status: 'Frozen', requestFailureReason: reason })} />)
 
     expect(screen.getByText(reason)).toBeInTheDocument()
-    expect(screen.getByText(/requested.*Running/i)).toBeInTheDocument()
   })
 
-  it('says only why, on a VM at its desired state', () => {
-    renderWithProviders(<VmStatusNote vm={vm({ requestFailureReason: reason })} />)
+  it('says nothing on a VM with no failed request, whatever its status', () => {
+    const { container } = renderWithProviders(<VmStatusNote vm={vm({ status: 'Stopped' })} />)
 
-    expect(screen.getByText(reason)).toBeInTheDocument()
-    expect(screen.queryByText(/requested/i)).not.toBeInTheDocument()
-  })
-
-  it('names the desired state on a VM that drifted with no failure', () => {
-    renderWithProviders(<VmStatusNote vm={vm({ currentState: 'Stopped' })} />)
-
-    expect(screen.getByText(/Running/)).toBeInTheDocument()
+    expect(container).toHaveTextContent('')
   })
 
   it('stays silent on a reason while a new request waits', () => {
     const { container } = renderWithProviders(
-      <VmStatusNote vm={vm({ transition: 'Stopping', requestFailureReason: reason })} />,
+      <VmStatusNote vm={vm({ status: 'Stopping', requestFailureReason: reason })} />,
     )
 
     expect(container).toHaveTextContent('')

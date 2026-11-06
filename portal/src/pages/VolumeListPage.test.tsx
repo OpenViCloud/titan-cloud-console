@@ -247,8 +247,7 @@ describe('VolumeListPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([attached()])),
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
-        { id: 'vm-1', name: 'api-gateway-01', currentState: 'Running', desiredState: 'Running', transition: null, clusterId: 'z1',
-          currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null,
+        { id: 'vm-1', name: 'api-gateway-01', status: 'Running', clusterId: 'z1', requestFailureReason: null,
           ipAddress: '10.0.0.5', networkId: 'n1', vmOfferingId: 'so1',
           templateId: 't1', createdAt: '2026-01-01T00:00:00Z',
           publicIpv6Address: null },
@@ -441,8 +440,7 @@ describe('VolumeListPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol()])),
       http.get('*/v1/tenant/vms', () => HttpResponse.json([
-        { id: 'vm-1', name: 'web-01', currentState: 'Running', desiredState: 'Running', transition: null, clusterId: 'z1',
-          currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null,
+        { id: 'vm-1', name: 'web-01', status: 'Running', clusterId: 'z1', requestFailureReason: null,
           ipAddress: '10.0.0.5', networkId: 'n1', vmOfferingId: 'so1',
           templateId: 't1', createdAt: '2026-01-01T00:00:00Z',
           publicIpv6Address: null },
@@ -464,12 +462,12 @@ describe('VolumeListPage', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Volume attaching'))
   })
 
-  // Incus attaches a disk to a Running, Ready, Stopped or Frozen instance (titan-ops features/vm/design.md#requests-follow-incus); an Error VM, or a
-  // VM Incus did not find, is not offered.
-  it('offers Ready and Frozen VMs in the attach picker, not Error or not found ones', async () => {
-    const pickerVm = (id: string, name: string, currentState: string | null, currentExistence = 'Exists') => ({
-      id, name, currentState, desiredState: 'Running', transition: null, clusterId: 'z1',
-      currentExistence, desiredExistence: 'Exists', requestFailureReason: null,
+  // Incus attaches a disk to a Running, Ready, Stopped or Frozen instance, and to one whose start still waits
+  // (titan-ops features/vm/design.md#requests-follow-incus); an Error VM, a VM whose stop waits, or a VM Incus did not
+  // find, is not offered.
+  it('offers Ready, Frozen and Starting VMs in the attach picker, not Error, Stopping or not found ones', async () => {
+    const pickerVm = (id: string, name: string, status: string) => ({
+      id, name, status, clusterId: 'z1', requestFailureReason: null,
       ipAddress: null, networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', createdAt: '2026-01-01T00:00:00Z',
       publicIpv6Address: null,
     })
@@ -479,7 +477,9 @@ describe('VolumeListPage', () => {
         pickerVm('vm-1', 'ready-vm', 'Ready'),
         pickerVm('vm-2', 'frozen-vm', 'Frozen'),
         pickerVm('vm-3', 'broken-vm', 'Error'),
-        pickerVm('vm-4', 'lost-vm', null, 'NotFound'),
+        pickerVm('vm-4', 'lost-vm', 'NotFound'),
+        pickerVm('vm-5', 'starting-vm', 'Starting'),
+        pickerVm('vm-6', 'stopping-vm', 'Stopping'),
       ])),
     )
     renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
@@ -487,7 +487,7 @@ describe('VolumeListPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /^attach$/i }))
     const picker = await screen.findByRole('combobox', { name: /select vm/i })
     const offered = Array.from(picker.querySelectorAll('option')).map(o => o.textContent)
-    expect(offered).toEqual(['Select VM…', 'ready-vm (Ready)', 'frozen-vm (Frozen)'])
+    expect(offered).toEqual(['Select VM…', 'ready-vm (Ready)', 'frozen-vm (Frozen)', 'starting-vm (Starting)'])
   })
 
   // US-VOLSNAP-01 — VOLUME_SNAPSHOT_QUOTA_EXCEEDED in create form

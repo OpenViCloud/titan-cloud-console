@@ -14,8 +14,7 @@ const net = (id: string, name: string, extra = {}) => ({
   publicIpv6Subnet: '2001:db8:0:d401::/64' as string | null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z', ...extra,
 })
 const vm = (id: string, name: string, networkId: string, extra = {}) => ({
-  id, name, networkId, currentState: 'Running', desiredState: 'Running', currentExistence: 'Exists',
-  desiredExistence: 'Exists', transition: null, requestFailureReason: null, clusterId: 'z1', ...extra,
+  id, name, networkId, status: 'Running', requestFailureReason: null, clusterId: 'z1', ...extra,
 })
 
 function serve(networks: object[], vms: object[]) {
@@ -58,8 +57,8 @@ describe('LoadBalancerFormModal — create', () => {
       vm('vm-a', 'web-a', 'net-6'),
       vm('vm-b', 'web-b', 'net-6'),
       vm('vm-other', 'other', 'net-7'),
-      vm('vm-gone', 'going', 'net-6', { desiredExistence: 'Deleted', transition: 'Deleting' }),
-      vm('vm-new', 'fresh', 'net-6', { currentState: null, currentExistence: 'NotCreated', transition: 'Creating' }),
+      vm('vm-gone', 'going', 'net-6', { status: 'Deleting' }),
+      vm('vm-new', 'fresh', 'net-6', { status: 'Creating' }),
     ])
     server.use(http.post('*/v1/tenant/load-balancers', async ({ request }) => {
       body = await request.json()
@@ -209,7 +208,7 @@ describe('LoadBalancerFormModal — edit', () => {
 
   it('still lists a backend that can no longer take traffic, so it can be unticked', async () => {
     let body: unknown
-    serve([net('net-6', 'six')], [vm('vm-a', 'web-a', 'net-6'), vm('vm-b', 'web-b', 'net-6', { currentState: null, currentExistence: 'NotFound' })])
+    serve([net('net-6', 'six')], [vm('vm-a', 'web-a', 'net-6'), vm('vm-b', 'web-b', 'net-6', { status: 'NotFound' })])
     server.use(http.put('*/v1/tenant/load-balancers/lb-1', async ({ request }) => {
       body = await request.json()
       return new HttpResponse(null, { status: 204 })

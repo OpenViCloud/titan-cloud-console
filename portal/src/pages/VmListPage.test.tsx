@@ -11,17 +11,13 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() }, Toaster:
 
 import { toast } from 'sonner'
 
-// currentState is the Incus status word for word, null while Incus has no instance; existence and a
-// request that gave up are fields of their own (lib/vmState.ts).
-const st = (currentState: string | null, desiredState: string = currentState ?? 'Running', transition: string | null = null) =>
+// A VM has one status (lib/vmState.ts); a request that gave up is a field of its own.
+const st = (status: string) =>
   ({
-    currentState, desiredState, transition,
-    currentExistence: currentState === null ? 'NotCreated' : 'Exists',
-    desiredExistence: 'Exists',
+    status,
     requestFailureReason: null as string | null,
     requestFailedAt: null as string | null,
   })
-const deleting = (currentState: string) => ({ ...st(currentState, 'Running', 'Deleting'), desiredExistence: 'Deleted' })
 
 const vm = (overrides = {}) => ({
   id: 'vm-1', name: 'web-01', ...st('Running'), ipAddress: '10.0.0.5',
@@ -85,54 +81,54 @@ describe('VmListPage', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
   })
 
-  // The server refuses a delete while the create waits and Incus has no instance yet (it may still instantiate), so the
-  // button is held back like for every other waiting request (titan-ops features/vm/design.md#requests-follow-incus).
-  it('holds Delete back while the create has no instance yet', async () => {
-    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st(null, 'Running', 'Creating'))])))
+  // The server refuses a delete while the create waits (it may still instantiate), so the button is held back
+  // (titan-ops features/vm/design.md#requests-follow-incus).
+  it('holds Delete back while the create waits', async () => {
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Creating'))])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Creating')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /delete/i })).toBeDisabled()
   })
 
-  // Once Incus has the instance a VM that never comes up has a way out: Delete.
-  it('offers Delete once the instance exists, even while the create still waits', async () => {
-    server.use(http.get('*/v1/tenant/vms', () =>
-      HttpResponse.json([vm({ ...st(null, 'Running', 'Creating'), currentExistence: 'Exists' })])))
+  // A request ended but its report could not read the instance: the next observation replaces Unknown. The instance
+  // exists, so Delete is the way out; nothing else is offered until Incus has a word for it.
+  it('shows an Unknown VM with Delete and neither Stop nor Start', async () => {
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ ...st('Unknown'), ipAddress: null })])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: /delete/i })).toBeEnabled()
+    expect(screen.getByText('Unknown')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: /^stop$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^start$/i })).not.toBeInTheDocument()
   })
 
   // Delete wins over a waiting stop or start (titan-ops features/vm/design.md#requests-follow-incus).
   it('offers Delete while a start waits', async () => {
-    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Stopped', 'Running', 'Starting'))])))
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Starting'))])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Starting')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeEnabled()
   })
 
-  // The list is a few seconds old: if the server still refuses, the toast says why.
-  it('says a VM still being set up cannot be deleted yet', async () => {
+  // A refusal the portal has no copy for gets the generic toast: it says the delete failed.
+  it('says the delete failed when the server refuses it with VM_INVALID_STATUS', async () => {
     server.use(
-      http.get('*/v1/tenant/vms', () =>
-        HttpResponse.json([vm({ ...st(null, 'Running', 'Creating'), currentExistence: 'Exists' })])),
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.delete('*/v1/tenant/vms/vm-1', () => HttpResponse.json({ code: 'VM_INVALID_STATUS' }, { status: 422 })),
     )
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /delete/i }))
     await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith('Cannot delete yet: the VM is still being set up. Try again in a minute.')
-    )
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Failed to delete VM. Please try again.'))
   })
 
-  // The reconciler did not find the instance: no status to show, so the badge says why, and Delete is the way out.
+  // The reconciler did not find the instance: the badge says so, and Delete is the way out.
   it('shows a VM Incus did not find as Not found, with Delete and neither Stop nor Start', async () => {
     server.use(http.get('*/v1/tenant/vms', () =>
-      HttpResponse.json([vm({ ...st(null, 'Running'), currentExistence: 'NotFound', ipAddress: null })])))
+      HttpResponse.json([vm({ ...st('NotFound'), ipAddress: null })])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Not found')).toBeInTheDocument()
@@ -141,11 +137,12 @@ describe('VmListPage', () => {
     expect(screen.queryByRole('button', { name: /^start$/i })).not.toBeInTheDocument()
   })
 
-  // A create the provider refused: the fixed reason is the tenant's to read, and Delete clears the row.
+  // A create that gave up before Incus made an instance: the fixed reason is the tenant's to read, and Delete clears
+  // the row.
   it('shows a refused create as Failed with its reason, and offers Delete', async () => {
     server.use(http.get('*/v1/tenant/vms', () =>
       HttpResponse.json([vm({
-        ...st(null, 'Running'), ipAddress: null,
+        ...st('Failed'), ipAddress: null,
         requestFailureReason: 'Public IPv6 is not available yet. Please create the VM without it.',
         requestFailedAt: '2026-10-10T08:00:00Z',
       })])))
@@ -324,13 +321,12 @@ describe('VmListPage', () => {
     expect(screen.queryByRole('button', { name: /^stop$/i })).not.toBeInTheDocument()
   })
 
-  // Ready is a running guest that also told Incus it is ready: what Running asked for, so no drift, and Stop.
-  it('shows a Ready VM as Ready with Stop, and not as drift', async () => {
-    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Ready', 'Running'))])))
+  // Ready is a running guest that also told Incus it is ready: Stop, as for Running.
+  it('shows a Ready VM as Ready with Stop', async () => {
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Ready'))])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Ready')).toBeInTheDocument()
-    expect(screen.queryByText(/requested:/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^stop$/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^start$/i })).not.toBeInTheDocument()
   })
@@ -339,13 +335,12 @@ describe('VmListPage', () => {
   it('shows a Frozen VM with Stop and Resume', async () => {
     let started = false
     server.use(
-      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Frozen', 'Running'))])),
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Frozen'))])),
       http.post('*/v1/tenant/vms/vm-1/start', () => { started = true; return HttpResponse.json(null, { status: 202 }) }),
     )
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Frozen')).toBeInTheDocument()
-    expect(screen.getByText('requested: Running')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^stop$/i })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /^resume$/i }))
     await waitFor(() => expect(started).toBe(true))
@@ -353,7 +348,7 @@ describe('VmListPage', () => {
 
   // Error: the qemu process is alive but Incus cannot drive it; stop and delete only.
   it('shows an Error VM with Stop and Delete, not Start', async () => {
-    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Error', 'Running'))])))
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Error'))])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Error')).toBeInTheDocument()
@@ -362,13 +357,13 @@ describe('VmListPage', () => {
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeEnabled()
   })
 
-  // UI-T4 — Stop calls API; the pending affordance comes from the SERVER's `transition` (DESIRED-CURRENT-STATE),
-  // not from the page remembering what it clicked. The handler flips what GET returns, as the CP does.
+  // Stop calls the API; the pending affordance comes from the server's status, not from the page remembering what
+  // it clicked. The handler flips what GET returns, as the CP does.
   it('calls POST /stop and shows Stopping pending once the server reports it', async () => {
     let stopped = false
     server.use(
       http.get('*/v1/tenant/vms', () =>
-        HttpResponse.json([vm(stopped ? st('Running', 'Stopped', 'Stopping') : st('Running'))])),
+        HttpResponse.json([vm(stopped ? st('Stopping') : st('Running'))])),
       http.post('*/v1/tenant/vms/vm-1/stop', () => { stopped = true; return HttpResponse.json(null, { status: 202 }) }),
     )
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
@@ -384,7 +379,7 @@ describe('VmListPage', () => {
     let started = false
     server.use(
       http.get('*/v1/tenant/vms', () =>
-        HttpResponse.json([vm(started ? st('Stopped', 'Running', 'Starting') : st('Stopped'))])),
+        HttpResponse.json([vm(started ? st('Starting') : st('Stopped'))])),
       http.post('*/v1/tenant/vms/vm-1/start', () => { started = true; return HttpResponse.json(null, { status: 202 }) }),
     )
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
@@ -395,7 +390,7 @@ describe('VmListPage', () => {
     expect(screen.getByText('Starting')).toBeInTheDocument()
   })
 
-  // UI-T6 — pending clears once the reconciler observed the stop (transition gone, current Stopped)
+  // Pending clears once the stop's report lands (status Stopped)
   it('clears pending and shows Start once VM reaches Stopped', async () => {
     let state = st('Running')
     server.use(
@@ -409,21 +404,21 @@ describe('VmListPage', () => {
     expect(screen.queryByRole('button', { name: /stopping/i })).not.toBeInTheDocument()
   })
 
-  // DCS-3 / DCS-12 — a VM stopped from inside its guest: the badge shows what it IS, marks it as not requested,
-  // and offers Start (a new request, DCS-4) — not a "Starting…" that would wait forever.
-  it('shows a VM stopped without being asked as Stopped, with what was requested, and Start offered', async () => {
-    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Stopped', 'Running', null))])))
+  // A VM stopped from inside its guest is simply Stopped: Start is offered (a new request), not a "Starting…" that
+  // would wait forever, and nothing says what was asked before.
+  it('shows a VM stopped from inside its guest as Stopped, with Start offered', async () => {
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ ...st('Stopped'), ipAddress: null })])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Stopped')).toBeInTheDocument()
-    expect(screen.getByText('requested: Running')).toBeInTheDocument()
+    expect(screen.queryByText(/requested/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^start$/i })).toBeEnabled()
     expect(screen.queryByRole('button', { name: /starting/i })).not.toBeInTheDocument()
   })
 
   // A delete in flight: Deleting on the badge, and Delete not offered again.
   it('shows a waiting delete as Deleting and does not offer Delete again', async () => {
-    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(deleting('Running'))])))
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Deleting'))])))
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Deleting')).toBeInTheDocument()

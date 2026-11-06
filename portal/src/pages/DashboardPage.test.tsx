@@ -18,8 +18,8 @@ describe('DashboardPage', () => {
     server.use(
       http.get('*/v1/tenant/vms', () =>
         HttpResponse.json([
-          { id: 'v1', name: 'web-01', currentState: 'Running', desiredState: 'Running', transition: null, currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null, ipAddress: '10.0.0.1', networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z' },
-          { id: 'v2', name: 'web-02', currentState: 'Stopped', desiredState: 'Stopped', transition: null, currentExistence: 'Exists', desiredExistence: 'Exists', requestFailureReason: null, ipAddress: null, networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-02T00:00:00Z' },
+          { id: 'v1', name: 'web-01', status: 'Running', requestFailureReason: null, ipAddress: '10.0.0.1', networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'v2', name: 'web-02', status: 'Stopped', requestFailureReason: null, ipAddress: null, networkId: 'n1', vmOfferingId: 'so1', templateId: 't1', clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-02T00:00:00Z' },
         ])
       ),
       http.get('*/v1/tenant/networks', () =>

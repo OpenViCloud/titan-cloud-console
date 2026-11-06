@@ -102,8 +102,8 @@ test('A-5 creating a VM answers with just an id, and the VM is really there', as
   expect(created.status(), 'the created VM must be readable').toBe(200)
   expect((await created.json()).name).toBe(name)
 
-  // Cleanup: this run must not leave a billable VM behind. A VM cannot be deleted while it is still
-  // Starting (422 VM_INVALID_STATUS is the rule, not a defect), so wait for it to settle first —
+  // Cleanup: this run must not leave a billable VM behind. A VM cannot be deleted while its create
+  // still waits (422 VM_INVALID_STATUS is the rule, not a defect), so wait for it to settle first —
   // deleting on the first try would leave the VM running and the failure would read as a delete bug.
   let deleted = 0
   for (let i = 0; i < 30 && deleted === 0; i++) {
