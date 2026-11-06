@@ -231,9 +231,9 @@ describe('VmDetailPage', () => {
   })
 
   // US-VMSNAP — create snapshot
-  // Incus snapshots Running, Ready, Stopped and Frozen instances, and one whose start still waits (still Stopped or
-  // Frozen on Incus) (titan-ops features/vm/design.md#requests-follow-incus); not Error, not while a stop waits.
-  it.each([['Frozen', true], ['Stopped', true], ['Starting', true], ['Error', false], ['Stopping', false]])('offers New Snapshot on a %s VM: %s', async (status, offered) => {
+  // Incus snapshots Running, Ready, Stopped and Frozen instances (titan-ops features/vm/design.md#requests-follow-incus);
+  // not Error, not while a start, a stop or another snapshot waits.
+  it.each([['Frozen', true], ['Stopped', true], ['Starting', false], ['Error', false], ['Stopping', false], ['Snapshotting', false]])('offers New Snapshot on a %s VM: %s', async (status, offered) => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st(status))])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([])),

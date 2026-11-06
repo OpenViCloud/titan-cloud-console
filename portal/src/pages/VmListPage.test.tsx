@@ -213,23 +213,6 @@ describe('VmListPage', () => {
       'Cannot delete: a load balancer sends traffic to this VM — remove it from the load balancer first'))
   })
 
-  // Delete blocked while a snapshot operation is in flight (422 VM_SNAPSHOT_IN_PROGRESS)
-  it('shows specific error toast when VM_SNAPSHOT_IN_PROGRESS', async () => {
-    server.use(
-      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
-      http.delete('*/v1/tenant/vms/vm-1', () =>
-        HttpResponse.json({ code: 'VM_SNAPSHOT_IN_PROGRESS' }, { status: 422 })
-      ),
-    )
-    renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
-    await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
-    await userEvent.click(screen.getByRole('button', { name: /delete/i }))
-    await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith('Cannot delete: a snapshot operation is in progress for this VM')
-    )
-  })
-
   // AT-P22 — delete error toast (no inline banner)
   it('shows error toast when delete fails and no inline banner', async () => {
     server.use(
@@ -423,6 +406,17 @@ describe('VmListPage', () => {
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Deleting')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeDisabled()
+  })
+
+  // A snapshot create or revert running: the badge says Snapshotting, a waiting-style note stands in for the actions,
+  // and Delete is not offered (the server answers VM_INVALID_STATUS).
+  it('shows a VM being snapshotted as Snapshotting and does not offer Delete', async () => {
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(st('Snapshotting'))])))
+    renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
+    expect(screen.getAllByText('Snapshotting').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: /^stop$/i })).not.toBeInTheDocument()
   })
 
   // UI-T7 — VM_INVALID_STATUS surfaces toast, pending does not hang

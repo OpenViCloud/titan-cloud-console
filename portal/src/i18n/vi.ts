@@ -248,7 +248,6 @@ export const vi: Messages = {
     invalidStatus: 'VM không ở trạng thái phù hợp cho thao tác này',
     actionFailed: 'Thao tác thất bại. Vui lòng thử lại.',
     deleted: 'Đã xoá máy ảo',
-    snapshotInProgress: 'Chưa xoá được: VM đang có thao tác snapshot',
     isLoadBalancerBackend: 'Chưa xoá được: một load balancer đang gửi traffic tới máy ảo này — gỡ nó khỏi load balancer trước',
     deleteFailed: 'Không xoá được VM. Vui lòng thử lại.',
     stop: 'Tắt',

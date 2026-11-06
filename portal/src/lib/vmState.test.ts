@@ -22,7 +22,7 @@ function vm(status: VmStatus, requestFailureReason: string | null = null): VmSta
   return { status, requestFailureReason }
 }
 
-const ALL: VmStatus[] = ['Creating', 'Starting', 'Stopping', 'Deleting', 'Running', 'Ready', 'Stopped', 'Frozen',
+const ALL: VmStatus[] = ['Creating', 'Starting', 'Stopping', 'Deleting', 'Snapshotting', 'Running', 'Ready', 'Stopped', 'Frozen',
   'Error', 'Unknown', 'NotFound', 'Failed', 'Deleted']
 
 function only(statuses: VmStatus[], rule: (row: VmStateFields) => boolean) {
@@ -48,8 +48,8 @@ describe('vmLabel', () => {
 })
 
 describe('isVmInTransition', () => {
-  it('Creating, Starting, Stopping and Deleting, nothing else', () => {
-    only(['Creating', 'Starting', 'Stopping', 'Deleting'], isVmInTransition)
+  it('Creating, Starting, Stopping, Deleting and Snapshotting, nothing else', () => {
+    only(['Creating', 'Starting', 'Stopping', 'Deleting', 'Snapshotting'], isVmInTransition)
   })
 })
 
@@ -68,13 +68,13 @@ describe('the buttons follow Incus', () => {
     only(['Stopped', 'Frozen'], canStartVm)
   })
 
-  it('Delete from every status but a delete waiting or done, or a create still waiting', () => {
+  it('Delete from every status but a delete waiting or done, a snapshot running, or a create still waiting', () => {
     only(['Starting', 'Stopping', 'Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Unknown', 'NotFound', 'Failed'],
       canDeleteVm)
   })
 
-  it('snapshot and volume attach from Running, Ready, Stopped, Frozen and a waiting start', () => {
-    only(['Running', 'Ready', 'Stopped', 'Frozen', 'Starting'], canSnapshotVm)
+  it('snapshot from Running, Ready, Stopped and Frozen; volume attach also from a waiting start', () => {
+    only(['Running', 'Ready', 'Stopped', 'Frozen'], canSnapshotVm)
     only(['Running', 'Ready', 'Stopped', 'Frozen', 'Starting'], canAttachVolume)
   })
 
@@ -92,7 +92,7 @@ describe('holdsItsNetwork', () => {
   // Same rule as the server's network-in-use check: the instance may be on Incus (a delete in flight included), or
   // its create waits.
   it('every status but Deleted, NotFound and Failed', () => {
-    only(['Creating', 'Starting', 'Stopping', 'Deleting', 'Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Unknown'],
+    only(['Creating', 'Starting', 'Stopping', 'Deleting', 'Snapshotting', 'Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Unknown'],
       holdsItsNetwork)
   })
 })

@@ -18,6 +18,7 @@ const stateVariant: Record<string, BadgeProps['variant']> = {
   Frozen:      'warning',
   Stopping:    'warning',
   Deleting:    'warning',
+  Snapshotting: 'warning',
   Error:       'destructive',
   'Not found': 'destructive',
   Failed:      'destructive',
@@ -82,9 +83,7 @@ export function VmActions({ vm, onDeleted }: { vm: Vm; onDeleted?: () => void })
       }
     } catch (err) {
       const res = (err as ApiError).response
-      if (res?.status === 422 && res.data?.code === 'VM_SNAPSHOT_IN_PROGRESS') {
-        toast.error(t.vmActions.snapshotInProgress)
-      } else if (res?.status === 422 && res.data?.code === 'VM_IS_LOAD_BALANCER_BACKEND') {
+      if (res?.status === 422 && res.data?.code === 'VM_IS_LOAD_BALANCER_BACKEND') {
         toast.error(t.vmActions.isLoadBalancerBackend)
       } else {
         toast.error(t.vmActions.deleteFailed)
