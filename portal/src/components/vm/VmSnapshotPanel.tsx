@@ -17,7 +17,7 @@ import {
 } from '@/hooks/useVmSnapshots'
 import { useFormat, useT } from '@/i18n/LanguageContext'
 
-// Keys are what vmSnapshotLabel() returns: the move a waiting request makes, else whether Incus holds it
+// Keys are what vmSnapshotLabel() returns: the move a waiting request makes, else Available, Not found or Failed
 // (lib/vmSnapshotState.ts).
 const snapshotStateVariant: Record<string, BadgeProps['variant']> = {
   Available:   'success',
