@@ -7,8 +7,8 @@
 //   Deleted   — gone (not listed)
 // requestFailureReason is the fixed text of the last request whose command gave up
 // (titan-ops architecture/resource-lifecycle.md#callback-routes).
-// The buttons mirror the snapshot's own rules; the VM's rules (a VM that cannot be snapshotted refuses a revert first)
-// are the server's, which answers VM_INVALID_STATUS.
+// The buttons mirror the snapshot's own rules. Revert does not check the VM: a VM that cannot be snapshotted refuses it
+// on the server, which answers VM_INVALID_STATUS.
 
 import { POLL_MS } from '@/hooks/pollUntilSettled'
 
