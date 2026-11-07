@@ -1,6 +1,6 @@
 // A volume's and a snapshot's state as the server sends it (titan-ops features/volume/design.md#volume-state-is-existence):
-// Incus has no status word for a custom volume, a volume snapshot or an instance snapshot, so there is no
-// currentState — only whether Incus holds it and, for a volume, which instance uses it.
+// Incus has no status word for a custom volume or a volume snapshot, so there is no currentState — only whether Incus
+// holds it and, for a volume, which instance uses it. A VM snapshot has one status instead (lib/vmSnapshotState.ts).
 //   currentExistence / desiredExistence — NotCreated · Exists · NotFound · Deleted / Exists · Deleted
 //   currentAttachedVmId      — the Titan VM Incus reports using the volume (only observations write it)
 //   currentAttachedElsewhere — an instance that is no Titan VM uses it (attached outside Titan)
@@ -103,7 +103,7 @@ export function canDeleteStoredVolume(volume: StoredVolumeFields): boolean {
   return canDeleteStoredSnapshot(volume) && !isInUse(volume)
 }
 
-/** Restore (volume snapshot) and revert (VM snapshot): on Incus, nothing waits. */
+/** Restore (volume snapshot): on Incus, nothing waits. */
 export function canUseStoredSnapshot(snapshot: StoredSnapshotFields): boolean {
   return restsOnIncus(snapshot)
 }

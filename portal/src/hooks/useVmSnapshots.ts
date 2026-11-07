@@ -2,17 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useTenant } from '@/contexts/TenantContext'
 import { useIdempotencyKey } from '@/lib/idempotency'
-import { pollWhileStorageWaits } from '@/lib/storageState'
+import { pollWhileVmSnapshotsWait } from '@/lib/vmSnapshotState'
 
-// Incus has no status word for an instance snapshot (lib/storageState.ts): currentExistence NotCreated | Exists |
-// NotFound (Deleted rows are not listed); desiredExistence Exists | Deleted; transition Creating | Reverting | Deleting
-// while a request waits.
+// One status (lib/vmSnapshotState.ts): Creating | Reverting | Deleting while a request waits, else Available | NotFound |
+// Failed (Deleted rows are not listed).
 export interface VmSnapshot {
   id: string
   name: string
-  currentExistence: string
-  desiredExistence: string
-  transition: string | null
+  status: string
   requestFailureReason: string | null
   requestFailedAt: string | null
   createdAt: string
@@ -28,7 +25,7 @@ export function useVmSnapshots(vmId: string, enabled = true) {
         .then(r => r.data),
     enabled: !!tenantId && enabled,
     // A snapshot being created, reverted to or deleted refreshes until the worker reports back.
-    refetchInterval: q => pollWhileStorageWaits(q.state.data),
+    refetchInterval: q => pollWhileVmSnapshotsWait(q.state.data),
   })
 }
 

@@ -142,7 +142,7 @@ describe('VmDetailPage', () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
-        { id: 'snap-1', name: 'before-deploy', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
+        { id: 'snap-1', name: 'before-deploy', status: 'Available', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
       ])),
     )
     renderAt('/vms/vm-1')
@@ -152,15 +152,15 @@ describe('VmDetailPage', () => {
     expect(screen.getByText('Available')).toBeInTheDocument()
   })
 
-  // The badge shows the waiting request from the server's transition, and a snapshot with a request waiting offers
+  // The badge shows the waiting request from the server's status, and a snapshot with a request waiting offers
   // neither Revert nor Delete (a second press adds nothing).
-  it('shows a waiting revert or delete from transition and hides the snapshot actions', async () => {
+  it('shows a waiting revert or delete from the status and hides the snapshot actions', async () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
-        { id: 'snap-1', name: 'reverting-snap', currentExistence: 'Exists', desiredExistence: 'Exists', transition: 'Reverting', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
-        { id: 'snap-2', name: 'deleting-snap', currentExistence: 'Exists', desiredExistence: 'Deleted', transition: 'Deleting', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
-        { id: 'snap-3', name: 'resting-snap', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
+        { id: 'snap-1', name: 'reverting-snap', status: 'Reverting', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
+        { id: 'snap-2', name: 'deleting-snap', status: 'Deleting', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
+        { id: 'snap-3', name: 'resting-snap', status: 'Available', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
       ])),
     )
     renderAt('/vms/vm-1')
@@ -182,9 +182,9 @@ describe('VmDetailPage', () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
-        { id: 'snap-1', name: 'gave-up-snap', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null,
+        { id: 'snap-1', name: 'gave-up-snap', status: 'Available',
           requestFailureReason: 'VM snapshot revert failed due to a system error.', requestFailedAt: '2026-01-03T00:00:00Z', createdAt: '2026-01-02T00:00:00Z' },
-        { id: 'snap-2', name: 'waiting-snap', currentExistence: 'Exists', desiredExistence: 'Exists', transition: 'Reverting',
+        { id: 'snap-2', name: 'waiting-snap', status: 'Reverting',
           requestFailureReason: 'An older reason.', requestFailedAt: '2026-01-03T00:00:00Z', createdAt: '2026-01-02T00:00:00Z' },
       ])),
     )
@@ -199,13 +199,13 @@ describe('VmDetailPage', () => {
   // Delete follows Incus: a snapshot Incus no longer has, or whose create failed before Incus had it, is deletable,
   // never revertible.
   it.each([
-    ['Not found', { currentExistence: 'NotFound' }],
-    ['Failed', { currentExistence: 'NotCreated', requestFailureReason: 'Snapshot creation failed.' }],
+    ['Not found', { status: 'NotFound' }],
+    ['Failed', { status: 'Failed', requestFailureReason: 'Snapshot creation failed.' }],
   ])('shows a %s snapshot and offers Delete but not Revert', async (label, overrides) => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
-        { id: 'snap-1', name: 'lost-snap', desiredExistence: 'Exists', transition: null,
+        { id: 'snap-1', name: 'lost-snap',
           requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z', ...overrides },
       ])),
     )
@@ -274,7 +274,7 @@ describe('VmDetailPage', () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
-        { id: 'snap-1', name: 'before-deploy', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
+        { id: 'snap-1', name: 'before-deploy', status: 'Available', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
       ])),
       http.delete('*/v1/tenant/vms/vm-1/snapshots/snap-1', () => {
         deleted = true
@@ -297,7 +297,7 @@ describe('VmDetailPage', () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
       http.get('*/v1/tenant/vms/vm-1/snapshots', () => HttpResponse.json([
-        { id: 'snap-1', name: 'before-deploy', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
+        { id: 'snap-1', name: 'before-deploy', status: 'Available', requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-02T00:00:00Z' },
       ])),
       http.post('*/v1/tenant/vms/vm-1/snapshots/snap-1/revert', () => {
         reverted = true
