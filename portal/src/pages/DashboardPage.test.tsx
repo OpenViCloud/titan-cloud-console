@@ -24,7 +24,7 @@ describe('DashboardPage', () => {
       ),
       http.get('*/v1/tenant/networks', () =>
         HttpResponse.json([
-          { id: 'n1', name: 'prod-net', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1', clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'n1', name: 'prod-net', status: 'Created', requestFailureReason: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1', clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' },
         ])
       ),
     )

@@ -41,7 +41,7 @@ test.beforeAll(() => {
   if (!PASSWORD) throw new Error('BETA_USER_PASSWORD is not set — inject from the k8s secret.')
 })
 
-// A-4 — the network quota is full on this environment (max_networks=1, one Active network), so a
+// A-4 — the network quota is full on this environment (max_networks=1, one live network), so a
 // create must be refused by the quota rather than succeed. This is the EXPECTED answer, not a
 // defect: writing it down here is what stops a later run from filing it as one.
 test('A-4 creating a network past the quota is refused, and the refusal is the quota rule', async ({ page, request }) => {
@@ -52,7 +52,7 @@ test('A-4 creating a network past the quota is refused, and the refusal is the q
   // changes while you type, and a quota test on an env that is no longer full proves nothing.
   const list = await request.get(`${API}/v1/tenant/networks`, { headers })
   expect(list.status()).toBe(200)
-  const active = (await list.json()).filter((n: { status: string }) => n.status !== 'Deleted')
+  const active = (await list.json()).filter((n: { status: string }) => !['Deleting', 'Deleted', 'NotFound', 'Failed'].includes(n.status))
   expect(active.length, 'network quota must be full for this case to mean anything').toBe(1)
 
   const res = await request.post(`${API}/v1/tenant/networks`, {
@@ -79,8 +79,8 @@ test('A-5 creating a VM answers with just an id, and the VM is really there', as
   expect(offering, 'catalog must have an offering').toBeTruthy()
 
   const networks = await request.get(`${API}/v1/tenant/networks`, { headers })
-  const network = (await networks.json()).find((n: { status: string }) => n.status === 'Active')
-  expect(network, 'an Active network is required to place a VM').toBeTruthy()
+  const network = (await networks.json()).find((n: { status: string }) => n.status === 'Created')
+  expect(network, 'a Created network is required to place a VM').toBeTruthy()
 
   const name = `cqrs2-${Date.now()}`
   const res = await request.post(`${API}/v1/tenant/vms`, {

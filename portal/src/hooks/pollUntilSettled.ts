@@ -3,8 +3,8 @@
 // Nothing pushes status to the browser: the worker carries out each command and reports to the API, so a
 // list rendered once shows whatever was true at page load.
 //
-// Every provisioned resource polls while the server reports a request waiting: a VM's status (lib/vmState.ts), the
-// others' `transition` (lib/networkState.ts, lib/storageState.ts, lib/templateState.ts). What remains here is the
+// Every provisioned resource polls while the server reports a request waiting: a VM's and a network's status
+// (lib/vmState.ts, lib/networkState.ts), the others' `transition` (lib/storageState.ts, lib/templateState.ts). What remains here is the
 // interval and the invoice predicate.
 
 export const POLL_MS = 5000

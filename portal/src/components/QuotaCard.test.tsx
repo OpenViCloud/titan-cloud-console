@@ -27,11 +27,11 @@ describe('QuotaCard', () => {
       ])),
       // Public IPv6 counts networks holding a /64, the way Networks counts networks
       http.get('*/v1/tenant/networks', () => HttpResponse.json([
-        { id: 'n', ...live, publicIpv6Subnet: '2001:db8:0:1::/64' },
-        { id: 'n-creating', ...live, currentExistence: 'NotCreated', transition: 'Creating', publicIpv6Subnet: '2001:db8:0:2::/64' },
-        { id: 'n-private', ...live, publicIpv6Subnet: null },
-        { id: 'gone', ...live, currentExistence: 'NotFound', publicIpv6Subnet: '2001:db8:0:3::/64' },
-        { id: 'deleting', ...live, desiredExistence: 'Deleted', transition: 'Deleting', publicIpv6Subnet: '2001:db8:0:4::/64' },
+        { id: 'n', status: 'Created', publicIpv6Subnet: '2001:db8:0:1::/64' },
+        { id: 'n-creating', status: 'Creating', publicIpv6Subnet: '2001:db8:0:2::/64' },
+        { id: 'n-private', status: 'Created', publicIpv6Subnet: null },
+        { id: 'gone', status: 'NotFound', publicIpv6Subnet: '2001:db8:0:3::/64' },
+        { id: 'deleting', status: 'Deleting', publicIpv6Subnet: '2001:db8:0:4::/64' },
       ])),
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([{ id: 'v', ...live }])),
     )
@@ -46,7 +46,7 @@ describe('QuotaCard', () => {
   it('counts no public IPv6 when the control plane is too old to send publicIpv6Subnet', async () => {
     server.use(
       http.get('*/v1/tenant', () => HttpResponse.json(tenant)),
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n', ...live }, { id: 'm', ...live }])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n', status: 'Created' }, { id: 'm', status: 'Created' }])),
     )
     renderWithProviders(<QuotaCard />)
     await waitFor(() => expect(within(row('Networks')).getByText('2 / 3')).toBeInTheDocument())
