@@ -10,17 +10,15 @@ import { NetworkListPage } from './NetworkListPage'
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() }, Toaster: () => null }))
 import { toast } from 'sonner'
 
-// A network's or a rule's state (lib/networkState.ts): the Incus word, null while Incus holds nothing, and an
-// existence of its own.
-const st = (currentState: string | null, extra = {}) => ({
-  currentState, currentExistence: currentState === null ? 'NotCreated' : 'Exists', desiredExistence: 'Exists',
-  transition: null as string | null, requestFailureReason: null as string | null, requestFailedAt: null as string | null,
+// A network's or a rule's one status (lib/networkState.ts): the Incus word at rest, or the move a request waits on.
+const st = (status: string, extra = {}) => ({
+  status, requestFailureReason: null as string | null, requestFailedAt: null as string | null,
   ...extra,
 })
-const creating = () => st(null, { transition: 'Creating' })
-const deleting = (currentState = 'Created') => st(currentState, { desiredExistence: 'Deleted', transition: 'Deleting' })
-const failedCreate = () => st(null, { requestFailureReason: 'Network creation failed due to a system error. Please try again or contact support.' })
-const notFound = () => st(null, { currentExistence: 'NotFound' })
+const creating = () => st('Creating')
+const deleting = () => st('Deleting')
+const failedCreate = () => st('Failed', { requestFailureReason: 'Network creation failed due to a system error. Please try again or contact support.' })
+const notFound = () => st('NotFound')
 const rule = (id: string, cidr: string, externalId: string | null, state: object) => ({
   id, direction: 'Ingress', protocol: 'TCP', startPort: 22, endPort: 22, cidr, externalId, ...state,
   createdAt: '2026-01-01T00:00:00Z',
@@ -384,7 +382,7 @@ describe('NetworkListPage', () => {
       http.get('*/v1/tenant/networks', () => HttpResponse.json([net()])),
       http.get('*/v1/tenant/networks/net-1/firewall-rules', () => HttpResponse.json([
         rule('rule-1', '10.1.0.0/16', 'acl/rule-1', st('enabled', { requestFailureReason: refused })),
-        rule('rule-2', '10.2.0.0/16', 'acl/rule-2', { ...deleting('enabled'), requestFailureReason: refused }),
+        rule('rule-2', '10.2.0.0/16', 'acl/rule-2', { ...deleting(), requestFailureReason: refused }),
       ])),
     )
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
@@ -543,8 +541,8 @@ describe('NetworkListPage', () => {
       http.get('*/v1/tenant/networks', () => HttpResponse.json([net()])),
       http.get('*/v1/tenant/networks/net-1/firewall-rules', () => HttpResponse.json([
         rule('rule-1', '10.1.0.0/16', null, creating()),
-        rule('rule-2', '10.2.0.0/16', null, st(null, { requestFailureReason: 'Firewall rule creation failed due to a system error. Please try again or contact support.' })),
-        rule('rule-3', '10.3.0.0/16', 'acl/rule-3', deleting('enabled')),
+        rule('rule-2', '10.2.0.0/16', null, st('Failed', { requestFailureReason: 'Firewall rule creation failed due to a system error. Please try again or contact support.' })),
+        rule('rule-3', '10.3.0.0/16', 'acl/rule-3', deleting()),
         rule('rule-4', '10.4.0.0/16', 'acl/rule-4', st('disabled')),
         rule('rule-5', '10.5.0.0/16', 'acl/rule-5', st('logged')),
         rule('rule-6', '10.6.0.0/16', 'acl/rule-6', notFound()),
@@ -573,8 +571,8 @@ describe('NetworkListPage', () => {
       http.get('*/v1/tenant/networks', () => HttpResponse.json([net()])),
       http.get('*/v1/tenant/networks/net-1/firewall-rules', () => HttpResponse.json([
         rule('rule-1', '10.1.0.0/16', null, creating()),
-        rule('rule-2', '10.2.0.0/16', null, st(null, { requestFailureReason: 'Firewall rule creation failed due to a system error. Please try again or contact support.' })),
-        rule('rule-3', '10.3.0.0/16', 'acl/rule-3', deleting('enabled')),
+        rule('rule-2', '10.2.0.0/16', null, st('Failed', { requestFailureReason: 'Firewall rule creation failed due to a system error. Please try again or contact support.' })),
+        rule('rule-3', '10.3.0.0/16', 'acl/rule-3', deleting()),
         rule('rule-4', '10.4.0.0/16', 'acl/rule-4', st('enabled')),
         rule('rule-5', '10.5.0.0/16', 'acl/rule-5', st('disabled')),
         rule('rule-6', '10.6.0.0/16', 'acl/rule-6', notFound()),

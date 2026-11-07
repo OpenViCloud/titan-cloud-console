@@ -6,11 +6,8 @@ import { useIdempotencyKey } from '@/lib/idempotency'
 export interface Network {
   id: string
   name: string
-  // titan-ops architecture/desired-and-current.md#provider-state-is-verbatim — see lib/networkState.ts
-  currentState: string | null
-  currentExistence: string
-  desiredExistence: string
-  transition: string | null
+  // One status (titan-ops features/network/design.md#network-lifecycle) — see lib/networkState.ts
+  status: string
   requestFailureReason: string | null
   requestFailedAt: string | null
   cidr: string | null

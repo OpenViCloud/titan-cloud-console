@@ -9,7 +9,7 @@ import type { LoadBalancer } from '@/hooks/useLoadBalancers'
 
 // A network the way GET /v1/tenant/networks sends it; usable = Incus reports it Created, nothing waits.
 const net = (id: string, name: string, extra = {}) => ({
-  id, name, currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null,
+  id, name, status: 'Created',
   requestFailureReason: null, requestFailedAt: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1',
   publicIpv6Subnet: '2001:db8:0:d401::/64' as string | null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z', ...extra,
 })
@@ -36,7 +36,7 @@ describe('LoadBalancerFormModal — create', () => {
     serve([
       net('net-6', 'six'),
       net('net-4', 'four', { publicIpv6Subnet: null }),
-      net('net-wait', 'waiting', { currentState: null, currentExistence: 'NotCreated', transition: 'Creating' }),
+      net('net-wait', 'waiting', { status: 'Creating' }),
     ], [])
     renderWithProviders(<LoadBalancerFormModal open onOpenChange={vi.fn()} />)
     await waitFor(() => expect(screen.getByRole('option', { name: 'six' })).toBeInTheDocument())

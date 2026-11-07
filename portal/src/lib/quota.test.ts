@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { occupiesQuota, vmOccupiesQuota } from './quota'
+import { networkOccupiesQuota, occupiesQuota, vmOccupiesQuota } from './quota'
 
-// One case per branch of the server rule Network.OccupiesQuota / Volume.OccupiesQuota:
+// One case per branch of the server rule Volume.OccupiesQuota:
 // desired Exists ∧ (Exists ∨ (NotCreated ∧ a waiting request)).
 const base = { desiredExistence: 'Exists', currentExistence: 'Exists', transition: null as string | null }
 
@@ -46,6 +46,21 @@ describe('vmOccupiesQuota', () => {
   it('stops counting as soon as delete is pressed, and does not count a VM whose instance is gone or never came', () => {
     for (const status of ['Deleting', 'Deleted', 'NotFound', 'Failed']) {
       expect(vmOccupiesQuota({ status }), status).toBe(false)
+    }
+  })
+})
+
+// Network.OccupiesQuota: status not in Deleting, Deleted, NotFound, Failed.
+describe('networkOccupiesQuota', () => {
+  it('counts a network with a create waiting or held by Incus, whatever word Incus gave', () => {
+    for (const status of ['Creating', 'Pending', 'Created', 'Errored', 'Unavailable', 'Unknown']) {
+      expect(networkOccupiesQuota({ status }), status).toBe(true)
+    }
+  })
+
+  it('stops counting as soon as delete is pressed, and does not count a network Incus lost or never made', () => {
+    for (const status of ['Deleting', 'Deleted', 'NotFound', 'Failed']) {
+      expect(networkOccupiesQuota({ status }), status).toBe(false)
     }
   })
 })

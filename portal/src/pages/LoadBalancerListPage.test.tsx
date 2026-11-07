@@ -18,8 +18,8 @@ const lb = (extra = {}) => ({
   requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-01T00:00:00Z', ...extra,
 })
 const net = {
-  id: 'net-6', name: 'six', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists',
-  transition: null, requestFailureReason: null, requestFailedAt: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1',
+  id: 'net-6', name: 'six', status: 'Created',
+  requestFailureReason: null, requestFailedAt: null, cidr: '10.0.0.0/24', gateway: '10.0.0.1',
   publicIpv6Subnet: '2001:db8:0:d401::/64', clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z',
 }
 

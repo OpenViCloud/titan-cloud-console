@@ -2,7 +2,7 @@ import { useVms } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
 import { useVolumes } from '@/hooks/useVolumes'
 import { useTenantProfile } from '@/hooks/useTenantProfile'
-import { occupiesQuota, vmOccupiesQuota } from '@/lib/quota'
+import { networkOccupiesQuota, occupiesQuota, vmOccupiesQuota } from '@/lib/quota'
 import { useT } from '@/i18n/LanguageContext'
 
 function QuotaRow({ label, used, cap }: { label: string; used: number; cap: number | undefined }) {
@@ -44,7 +44,7 @@ export function QuotaCard() {
   const liveVms = vms.filter(vmOccupiesQuota)
   // MaxPublicIpv6 counts networks holding a /64, the same way MaxNetworks counts networks. A control plane too old to
   // send publicIpv6Subnet leaves it undefined, which must not count.
-  const liveNetworks = networks.filter(occupiesQuota)
+  const liveNetworks = networks.filter(networkOccupiesQuota)
 
   return (
     <section className="rounded-xl border border-border bg-card" aria-label={t.quota.title}>

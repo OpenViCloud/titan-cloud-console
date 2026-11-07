@@ -175,7 +175,7 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
     const clusters = await (await custApi.get('/v1/clusters')).json()
     const clusterId = (clusters as { id: string }[])[0].id
     const networks = await (await custApi.get('/v1/tenant/networks')).json()
-    let usable = (networks as { id: string; currentState: string }[]).find(n => n.currentState === 'Active')
+    let usable = (networks as { id: string; status: string }[]).find(n => n.status === 'Created')
     if (!usable) {
       // The environment is usually empty between runs; bring a network for the VM and take it away at the end.
       const net = await custApi.post('/v1/tenant/networks', {
@@ -185,10 +185,10 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
       expect(net.status(), `POST /v1/tenant/networks -> ${net.status()}`).toBe(202)
       networkId = (await net.json()).networkId as string
       await expect
-        .poll(async () => (await (await (await apiAs(customer.page)).get(`/v1/tenant/networks/${networkId}`)).json()).currentState,
+        .poll(async () => (await (await (await apiAs(customer.page)).get(`/v1/tenant/networks/${networkId}`)).json()).status,
               { timeout: 360_000, intervals: [5_000] })
-        .toBe('Active')
-      usable = { id: networkId, currentState: 'Active' }
+        .toBe('Created')
+      usable = { id: networkId, status: 'Created' }
     }
     const offerings = await (await custApi.get('/v1/vm-offerings')).json()
     const templates = await (await custApi.get('/v1/templates')).json()
@@ -253,7 +253,7 @@ test('B1+B2+B3 — ceiling 0 does NOT stop VM creation, then restore', async ({ 
       const delNet = await netCleanup.delete(`/v1/tenant/networks/${networkId}`)
       expect(delNet.status(), `cleanup DELETE network ${networkId} -> ${delNet.status()}`).toBe(202)
       await expect
-        .poll(async () => (await (await (await apiAs(customer.page)).get(`/v1/tenant/networks/${networkId}`)).json()).currentState,
+        .poll(async () => (await (await (await apiAs(customer.page)).get(`/v1/tenant/networks/${networkId}`)).json()).status,
               { timeout: 360_000, intervals: [5_000] })
         .toBe('Deleted')
       await netCleanup.dispose()

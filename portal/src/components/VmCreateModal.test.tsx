@@ -7,7 +7,7 @@ import { server } from '@/test/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { VmCreateModal } from './VmCreateModal'
 
-const activeNetwork = { id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }
+const activeNetwork = { id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }
 const cluster = { id: 'z1', name: 'Cluster 1' }
 const template = { id: 't1', name: 'Ubuntu 22.04', os: 'Ubuntu' }
 const offering = { id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }
@@ -303,17 +303,17 @@ describe('VmCreateModal', () => {
   })
 
   // Same rule as Network.ProviderIdForVm: Incus reports it Created and nothing waits on it. A network whose delete
-  // waits still reads Created on Incus.
+  // waits is Deleting.
   it('lists only the networks a VM can be created on', async () => {
     const usable = (id: string, name: string, extra = {}) => ({ ...activeNetwork, id, name, ...extra })
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([
         activeNetwork,
-        usable('n2', 'leaving', { desiredExistence: 'Deleted', transition: 'Deleting' }),
-        usable('n3', 'being-made', { currentState: null, currentExistence: 'NotCreated', transition: 'Creating' }),
-        usable('n4', 'errored', { currentState: 'Errored' }),
-        usable('n5', 'pending', { currentState: 'Pending' }),
-        usable('n6', 'gone', { currentState: null, currentExistence: 'NotFound' }),
+        usable('n2', 'leaving', { status: 'Deleting' }),
+        usable('n3', 'being-made', { status: 'Creating' }),
+        usable('n4', 'errored', { status: 'Errored' }),
+        usable('n5', 'pending', { status: 'Pending' }),
+        usable('n6', 'gone', { status: 'NotFound' }),
       ])),
       http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
     )

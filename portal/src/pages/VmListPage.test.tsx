@@ -247,7 +247,7 @@ describe('VmListPage', () => {
   it('the create VM form has no public IPv6 box and sends no enablePublicIpv6', async () => {
     let capturedBody: Record<string, unknown> = {}
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
       http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
       http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
@@ -270,7 +270,7 @@ describe('VmListPage', () => {
   // AT-P15 — create success toast
   it('shows success toast after VM created', async () => {
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', currentState: 'Created', currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
       http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
       http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),

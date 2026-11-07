@@ -1,5 +1,5 @@
 // What the quota card counts as used. A copy of the server rules Vm.OccupiesQuota, Network.OccupiesQuota and
-// Volume.OccupiesQuota (OpenViCloud/titan-control-plane, Titan.Domain). A network or volume counts when it is wanted
+// Volume.OccupiesQuota (OpenViCloud/titan-control-plane, Titan.Domain). A volume counts when it is wanted
 // (desired Exists) and Incus holds it, or its create still waits. The server keys "waits" on a pending request id the API does not
 // expose; `transition` is non-null exactly while a request waits. Accepted risk: this copy can drift from the
 // server's.
@@ -20,9 +20,14 @@ export function occupiesQuota(resource: QuotaFields): boolean {
 }
 
 // A VM has one status: it counts while its create waits or Incus holds its instance, until its delete is asked
-// (titan-ops features/vm/design.md#counting-and-billing).
-const VM_STATUSES_OUTSIDE_QUOTA = new Set(['Deleting', 'Deleted', 'NotFound', 'Failed'])
+// (titan-ops features/vm/design.md#counting-and-billing). A network has one status too, with the same four outside.
+const STATUSES_OUTSIDE_QUOTA = new Set(['Deleting', 'Deleted', 'NotFound', 'Failed'])
 
 export function vmOccupiesQuota(vm: { status: string }): boolean {
-  return !VM_STATUSES_OUTSIDE_QUOTA.has(vm.status)
+  return !STATUSES_OUTSIDE_QUOTA.has(vm.status)
+}
+
+// Network.OccupiesQuota: status not in Deleting, Deleted, NotFound, Failed.
+export function networkOccupiesQuota(network: { status: string }): boolean {
+  return !STATUSES_OUTSIDE_QUOTA.has(network.status)
 }
