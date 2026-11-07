@@ -3,8 +3,8 @@
 //   Creating · Deleting — a request waits on its command
 //   Pending · Created · Errored · Unavailable — the Incus word of a network, at rest
 //   enabled · disabled · logged — the Incus word of an ACL rule, at rest
-//   Unknown  — a network Incus shows without a word, or Titan's word when no Incus word is known (a request ended but
-//              its report read none); the next observation replaces it
+//   Unknown  — the Incus word of a network shown without a word, or Titan's word when no Incus word is known (a request
+//              ended but its report read none); the next observation replaces Titan's word
 //   NotFound — the reconciler sees nothing on Incus
 //   Failed   — the create gave up before Incus made it
 //   Deleted  — gone
