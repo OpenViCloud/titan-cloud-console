@@ -6,7 +6,7 @@ import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 import type { Vm } from '@/hooks/useVms'
-import { snapshotLabel, canUseStoredSnapshot, canDeleteStoredSnapshot, requestFailureNote } from '@/lib/storageState'
+import { vmSnapshotLabel, canRevertVmSnapshot, canDeleteVmSnapshot, vmSnapshotFailureNote } from '@/lib/vmSnapshotState'
 import { canSnapshotVm } from '@/lib/vmState'
 import {
   useVmSnapshots,
@@ -17,8 +17,8 @@ import {
 } from '@/hooks/useVmSnapshots'
 import { useFormat, useT } from '@/i18n/LanguageContext'
 
-// Keys are what snapshotLabel() returns: the move a waiting request makes, else whether Incus holds it
-// (lib/storageState.ts).
+// Keys are what vmSnapshotLabel() returns: the move a waiting request makes, else Available, Not found or Failed
+// (lib/vmSnapshotState.ts).
 const snapshotStateVariant: Record<string, BadgeProps['variant']> = {
   Available:   'success',
   Creating:    'blue',
@@ -129,18 +129,18 @@ export function VmSnapshotPanel({ vm }: { vm: Vm }) {
           {snapshots.map(snap => (
             <div key={snap.id} className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-card">
               <span className="text-xs text-soft-foreground flex-1 truncate">{snap.name}</span>
-              <Badge variant={snapshotStateVariant[snapshotLabel(snap)] ?? 'default'} className="text-[10px]">
-                {snapshotLabel(snap)}
+              <Badge variant={snapshotStateVariant[vmSnapshotLabel(snap)] ?? 'default'} className="text-[10px]">
+                {vmSnapshotLabel(snap)}
               </Badge>
-              {requestFailureNote(snap) !== null && (
-                <span className="min-w-0 max-w-[40%] truncate text-[10px] text-bad" title={requestFailureNote(snap) ?? undefined}>
-                  {requestFailureNote(snap)}
+              {vmSnapshotFailureNote(snap) !== null && (
+                <span className="min-w-0 max-w-[40%] truncate text-[10px] text-bad" title={vmSnapshotFailureNote(snap) ?? undefined}>
+                  {vmSnapshotFailureNote(snap)}
                 </span>
               )}
               <span className="text-[10px] text-faint">
                 {f.shortDate(snap.createdAt)}
               </span>
-              {canUseStoredSnapshot(snap) && (
+              {canRevertVmSnapshot(snap) && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -153,7 +153,7 @@ export function VmSnapshotPanel({ vm }: { vm: Vm }) {
                 </Button>
               )}
               {/* Delete follows Incus: a snapshot Incus no longer has, or whose create failed, is deletable too. */}
-              {canDeleteStoredSnapshot(snap) && (
+              {canDeleteVmSnapshot(snap) && (
                 <Button
                   size="sm"
                   variant="ghost"
