@@ -96,7 +96,7 @@ describe('snapshots', () => {
     expect(snapshotLabel(snapshot({ currentExistence: 'NotCreated', requestFailureReason: 'x' }))).toBe('Failed')
   })
 
-  it('offers restore or revert only when Incus has it and nothing waits, and delete unless a request waits', () => {
+  it('offers restore only when Incus has it and nothing waits, and delete unless a request waits', () => {
     expect(canUseStoredSnapshot(snapshot())).toBe(true)
     expect(canUseStoredSnapshot(snapshot({ currentExistence: 'NotFound' }))).toBe(false)
     expect(canDeleteStoredSnapshot(snapshot({ currentExistence: 'NotFound' }))).toBe(true)
