@@ -11,8 +11,8 @@ export interface FirewallRule {
   endPort: number | null
   cidr: string
   externalId: string | null
-  // One status: the Incus ACL rule state (enabled · disabled · logged) at rest — see lib/networkState.ts. Deleted
-  // rules are not listed.
+  // One status: the Incus ACL rule state (enabled · disabled · logged) at rest, or the move a request waits on —
+  // see lib/networkState.ts. Deleted rules are not listed.
   status: string
   requestFailureReason: string | null
   requestFailedAt: string | null

@@ -41,7 +41,7 @@ test.beforeAll(() => {
   if (!PASSWORD) throw new Error('BETA_USER_PASSWORD is not set — inject from the k8s secret.')
 })
 
-// A-4 — the network quota is full on this environment (max_networks=1, one Created network), so a
+// A-4 — the network quota is full on this environment (max_networks=1, one live network), so a
 // create must be refused by the quota rather than succeed. This is the EXPECTED answer, not a
 // defect: writing it down here is what stops a later run from filing it as one.
 test('A-4 creating a network past the quota is refused, and the refusal is the quota rule', async ({ page, request }) => {

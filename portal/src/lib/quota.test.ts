@@ -58,7 +58,7 @@ describe('networkOccupiesQuota', () => {
     }
   })
 
-  it('stops counting as soon as delete is pressed, and does not count a network Incus lost or never made', () => {
+  it('stops counting as soon as delete is pressed, and does not count a network on its way out, gone, lost or never made', () => {
     for (const status of ['Deleting', 'Deleted', 'NotFound', 'Failed']) {
       expect(networkOccupiesQuota({ status }), status).toBe(false)
     }

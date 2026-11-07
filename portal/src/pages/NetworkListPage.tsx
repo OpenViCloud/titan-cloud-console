@@ -26,7 +26,7 @@ import { incusLabel, canDeleteIncusResource, canRenameNetwork, refusedRequestRea
 import { holdsItsNetwork } from '@/lib/vmState'
 import { useT, useFormat } from '@/i18n/LanguageContext'
 
-// Keys are what incusLabel() returns: an Incus word, a waiting request's move, or why Incus has none.
+// Keys are what incusLabel() returns: the network's one status, NotFound spelled Not found.
 const statusVariant: Record<string, BadgeProps['variant']> = {
   Created:       'success',
   Pending:       'blue',

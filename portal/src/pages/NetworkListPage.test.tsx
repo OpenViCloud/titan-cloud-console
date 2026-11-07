@@ -535,7 +535,7 @@ describe('NetworkListPage', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Rule deletion requested'))
   })
 
-  // A rule shows the Incus ACL rule state as Incus spells it, or why Incus has none.
+  // A rule shows its one status: the Incus ACL rule state as Incus spells it, or the move a request waits on.
   it('shows the status of each firewall rule', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([net()])),

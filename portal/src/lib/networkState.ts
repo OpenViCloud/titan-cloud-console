@@ -1,9 +1,10 @@
 // A network and a firewall rule have one status, as the server sends it
 // (titan-ops features/network/design.md#network-lifecycle):
 //   Creating · Deleting — a request waits on its command
-//   Pending · Created · Errored · Unavailable · Unknown — the Incus word of a network, at rest
-//   enabled · disabled · logged · Unknown — the Incus word of an ACL rule, at rest (a rule's Unknown is Titan's: its
-//                         create ended but its report could not read the rule; the next observation replaces it)
+//   Pending · Created · Errored · Unavailable — the Incus word of a network, at rest
+//   enabled · disabled · logged — the Incus word of an ACL rule, at rest
+//   Unknown  — a network Incus shows without a word, or Titan's word when no Incus word is known (a request ended but
+//              its report read none); the next observation replaces it
 //   NotFound — the reconciler sees nothing on Incus
 //   Failed   — the create gave up before Incus made it
 //   Deleted  — gone
@@ -35,7 +36,7 @@ export function incusLabel(resource: IncusStateFields): string {
 
 /**
  * Why the provider refused the last request, while nothing else waits. After a refused delete the badge is the Incus
- * word again, so this is the only thing that says the delete did not happen. A request waiting again makes it stale.
+ * word (or Unknown) again, so this is the only thing that says the delete did not happen. A request waiting again makes it stale.
  */
 export function refusedRequestReason(resource: IncusStateFields): string | null {
   if (isWaiting(resource)) {
