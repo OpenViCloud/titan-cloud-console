@@ -11,18 +11,23 @@ import {
 } from './loadBalancerState'
 
 const lb = (extra = {}) => ({
-  currentExistence: 'Exists', desiredExistence: 'Exists', transition: null as string | null,
-  requestFailureReason: null as string | null, ...extra,
+  status: 'Available', requestFailureReason: null as string | null, ...extra,
 })
 
 describe('loadBalancerLabel', () => {
-  it('names the waiting request first, then why Incus has none, else Active', () => {
+  it('names each status the server sends; a load balancer at rest on Incus reads Active', () => {
     expect(loadBalancerLabel(lb())).toBe('Active')
-    expect(loadBalancerLabel(lb({ transition: 'Updating' }))).toBe('Updating')
-    expect(loadBalancerLabel(lb({ currentExistence: 'NotCreated', transition: 'Creating' }))).toBe('Creating')
-    expect(loadBalancerLabel(lb({ currentExistence: 'NotFound' }))).toBe('Not found')
-    expect(loadBalancerLabel(lb({ currentExistence: 'NotCreated', requestFailureReason: 'x' }))).toBe('Failed')
-    expect(loadBalancerLabel(lb({ currentExistence: 'Deleted', desiredExistence: 'Deleted' }))).toBe('Deleted')
+    expect(loadBalancerLabel(lb({ status: 'Creating' }))).toBe('Creating')
+    expect(loadBalancerLabel(lb({ status: 'Updating' }))).toBe('Updating')
+    expect(loadBalancerLabel(lb({ status: 'Deleting' }))).toBe('Deleting')
+    expect(loadBalancerLabel(lb({ status: 'NotFound' }))).toBe('Not found')
+    expect(loadBalancerLabel(lb({ status: 'Failed', requestFailureReason: 'x' }))).toBe('Failed')
+    expect(loadBalancerLabel(lb({ status: 'Deleted' }))).toBe('Deleted')
+  })
+
+  // A status this page does not know yet shows as the server spelled it rather than as Active.
+  it('shows a status it does not know as the server spelled it', () => {
+    expect(loadBalancerLabel(lb({ status: 'Quarantined' }))).toBe('Quarantined')
   })
 })
 
@@ -31,7 +36,7 @@ describe('loadBalancerRequestFailureNote', () => {
   it('is the server reason while nothing waits, and null while a request waits', () => {
     expect(loadBalancerRequestFailureNote(lb({ requestFailureReason: 'Load balancer change failed.' })))
       .toBe('Load balancer change failed.')
-    expect(loadBalancerRequestFailureNote(lb({ requestFailureReason: 'old', transition: 'Updating' }))).toBeNull()
+    expect(loadBalancerRequestFailureNote(lb({ requestFailureReason: 'old', status: 'Updating' }))).toBeNull()
     expect(loadBalancerRequestFailureNote(lb())).toBeNull()
   })
 })
@@ -40,11 +45,9 @@ describe('loadBalancerRequestFailureNote', () => {
 describe('canEditLoadBalancer', () => {
   it('is on only for a load balancer resting on Incus', () => {
     expect(canEditLoadBalancer(lb())).toBe(true)
-    for (const transition of ['Creating', 'Updating', 'Deleting']) {
-      expect(canEditLoadBalancer(lb({ transition }))).toBe(false)
+    for (const status of ['Creating', 'Updating', 'Deleting', 'NotFound', 'Failed', 'Deleted']) {
+      expect(canEditLoadBalancer(lb({ status }))).toBe(false)
     }
-    expect(canEditLoadBalancer(lb({ currentExistence: 'NotFound' }))).toBe(false)
-    expect(canEditLoadBalancer(lb({ currentExistence: 'NotCreated', requestFailureReason: 'x' }))).toBe(false)
   })
 })
 
@@ -53,12 +56,12 @@ describe('canEditLoadBalancer', () => {
 describe('canDeleteLoadBalancer', () => {
   it('is off while a create or a delete waits, and once deleted', () => {
     expect(canDeleteLoadBalancer(lb())).toBe(true)
-    expect(canDeleteLoadBalancer(lb({ transition: 'Updating' }))).toBe(true)
-    expect(canDeleteLoadBalancer(lb({ currentExistence: 'NotFound' }))).toBe(true)
-    expect(canDeleteLoadBalancer(lb({ currentExistence: 'NotCreated', requestFailureReason: 'x' }))).toBe(true)
-    expect(canDeleteLoadBalancer(lb({ transition: 'Creating' }))).toBe(false)
-    expect(canDeleteLoadBalancer(lb({ transition: 'Deleting' }))).toBe(false)
-    expect(canDeleteLoadBalancer(lb({ currentExistence: 'Deleted', desiredExistence: 'Deleted' }))).toBe(false)
+    expect(canDeleteLoadBalancer(lb({ status: 'Updating' }))).toBe(true)
+    expect(canDeleteLoadBalancer(lb({ status: 'NotFound' }))).toBe(true)
+    expect(canDeleteLoadBalancer(lb({ status: 'Failed', requestFailureReason: 'x' }))).toBe(true)
+    expect(canDeleteLoadBalancer(lb({ status: 'Creating' }))).toBe(false)
+    expect(canDeleteLoadBalancer(lb({ status: 'Deleting' }))).toBe(false)
+    expect(canDeleteLoadBalancer(lb({ status: 'Deleted' }))).toBe(false)
   })
 })
 
@@ -66,7 +69,8 @@ describe('pollWhileLoadBalancersWait', () => {
   it('polls while any row has a request waiting, and stops after', () => {
     expect(pollWhileLoadBalancersWait(undefined)).toBe(false)
     expect(pollWhileLoadBalancersWait([lb(), lb()])).toBe(false)
-    expect(pollWhileLoadBalancersWait([lb(), lb({ transition: 'Updating' })])).toBeGreaterThan(0)
+    expect(pollWhileLoadBalancersWait([lb(), lb({ status: 'Updating' })])).toBeGreaterThan(0)
+    expect(pollWhileLoadBalancersWait([lb(), lb({ status: 'NotFound' }), lb({ status: 'Failed' })])).toBe(false)
   })
 })
 

@@ -381,7 +381,7 @@ export function NetworkListPage() {
   // network, whatever else it is doing.
   const { data: loadBalancers = [] } = useLoadBalancers()
   const networksWithALoadBalancer = new Set(
-    loadBalancers.filter(lb => lb.currentExistence !== 'Deleted').map(lb => lb.networkId)
+    loadBalancers.filter(lb => lb.status !== 'Deleted').map(lb => lb.networkId)
   )
 
   async function handleConfirmDelete() {

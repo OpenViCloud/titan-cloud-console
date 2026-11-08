@@ -312,13 +312,13 @@ describe('NetworkListPage', () => {
   // The server refuses a network that still has a load balancer not yet Deleted (NETWORK_NOT_EMPTY); the button
   // follows the same rule as for a VM that holds it.
   it('holds Delete back while a load balancer of the network is not deleted', async () => {
-    const lb = (id: string, networkId: string, currentExistence: string) => ({
-      id, name: id, networkId, vip: null, currentExistence, desiredExistence: 'Exists', transition: null,
+    const lb = (id: string, networkId: string, status: string) => ({
+      id, name: id, networkId, vip: null, status,
       requestFailureReason: null, listeners: [], backendVmIds: [], createdAt: '2026-01-01T00:00:00Z',
     })
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([net(), net({ id: 'net-2', name: 'free-net' })])),
-      http.get('*/v1/tenant/load-balancers', () => HttpResponse.json([lb('lb-1', 'net-1', 'Exists'), lb('lb-2', 'net-2', 'Deleted')])),
+      http.get('*/v1/tenant/load-balancers', () => HttpResponse.json([lb('lb-1', 'net-1', 'Available'), lb('lb-2', 'net-2', 'Deleted')])),
     )
     renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('prod-net')).toBeInTheDocument())
