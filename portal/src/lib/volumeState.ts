@@ -16,7 +16,7 @@
 import { POLL_MS } from '@/hooks/pollUntilSettled'
 
 export interface VolumeStateFields {
-  // A string, not a union: a status this portal was not taught still renders, and offers nothing.
+  // A string, not a union: a status this portal was not taught still renders, and offers only Delete (when no instance uses it).
   status: string
   currentAttachedVmId: string | null
   currentAttachedElsewhere: boolean
@@ -73,7 +73,10 @@ export function canSnapshotStoredVolume(volume: VolumeStateFields): boolean {
   return volume.status === 'Available'
 }
 
-/** Delete follows Incus: not found and a failed create are deletable; a waiting request or an instance using it are not. */
+/**
+ * Delete follows Incus: not found and a failed create are deletable; a waiting request or an instance using it are not.
+ * A volume that still holds a snapshot is refused by the server (VOLUME_HAS_SNAPSHOTS), which the page reports.
+ */
 export function canDeleteStoredVolume(volume: VolumeStateFields): boolean {
   return !isVolumeWaiting(volume) && volume.status !== 'Deleted' && !isInUse(volume)
 }
