@@ -4,16 +4,16 @@
 // list rendered once shows whatever was true at page load.
 //
 // Every provisioned resource polls while the server reports a request waiting: the status of a VM, a network, a VM
-// snapshot, a volume and a volume snapshot (lib/vmState.ts, lib/networkState.ts, lib/vmSnapshotState.ts,
-// lib/volumeState.ts, lib/volumeSnapshotState.ts), the others' `transition` (lib/templateState.ts,
-// lib/loadBalancerState.ts). What remains here is the interval and the invoice predicate.
+// snapshot, a volume, a volume snapshot and a load balancer (lib/vmState.ts, lib/networkState.ts,
+// lib/vmSnapshotState.ts, lib/volumeState.ts, lib/volumeSnapshotState.ts, lib/loadBalancerState.ts). What remains
+// here is the interval and the invoice predicate.
 
 export const POLL_MS = 5000
 
 /**
  * titan-ops architecture/money-and-wallet.md#single-writer-outbox S7 — refresh invoices while any payment is still being applied, then stop.
  *
- * Separate from the resources' transition polls because invoices are not decided by `status`: an invoice
+ * Separate from the resources' status polls because invoices are not decided by `status`: an invoice
  * being paid stays `status: New` and moves on `paymentState` instead. The admin portal
  * (titan-admin-console) keeps a copy of this hook with the same rule, so both stop at the same moment — an admin watching a
  * payment they triggered and the customer watching the same payment should not disagree.

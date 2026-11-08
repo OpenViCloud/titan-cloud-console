@@ -14,7 +14,7 @@ const lb = (extra = {}) => ({
   id: 'lb-1', name: 'web-lb', networkId: 'net-6', clusterId: 'z1', vip: '2001:db8:0:d401::1:1',
   listeners: [{ protocol: 'TCP', port: 80, targetPort: 8080 }, { protocol: 'UDP', port: 53, targetPort: 53 }],
   backends: [{ vmId: 'vm-a' }, { vmId: 'vm-b' }],
-  currentExistence: 'Exists', desiredExistence: 'Exists', transition: null as string | null,
+  status: 'Available',
   requestFailureReason: null, requestFailedAt: null, createdAt: '2026-01-01T00:00:00Z', ...extra,
 })
 const net = {
@@ -63,7 +63,7 @@ describe('LoadBalancerListPage', () => {
   })
 
   it('edits only a load balancer resting on Incus', async () => {
-    serve([lb({ transition: 'Updating' }), lb({ id: 'lb-2', name: 'api-lb' })])
+    serve([lb({ status: 'Updating' }), lb({ id: 'lb-2', name: 'api-lb' })])
     page()
     const rows = await screen.findAllByRole('listitem')
     expect(within(rows[0]).getByRole('button', { name: 'Edit' })).toBeDisabled()
@@ -73,7 +73,7 @@ describe('LoadBalancerListPage', () => {
   })
 
   it('refuses delete while a create waits, allows it while an update waits', async () => {
-    serve([lb({ currentExistence: 'NotCreated', transition: 'Creating' }), lb({ id: 'lb-2', name: 'api-lb', transition: 'Updating' })])
+    serve([lb({ status: 'Creating' }), lb({ id: 'lb-2', name: 'api-lb', status: 'Updating' })])
     page()
     const rows = await screen.findAllByRole('listitem')
     expect(within(rows[0]).getByRole('button', { name: 'Delete' })).toBeDisabled()

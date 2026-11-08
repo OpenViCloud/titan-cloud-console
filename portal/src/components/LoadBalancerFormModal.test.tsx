@@ -27,7 +27,7 @@ function serve(networks: object[], vms: object[]) {
 const lb = (extra: Partial<LoadBalancer> = {}): LoadBalancer => ({
   id: 'lb-1', name: 'web-lb', networkId: 'net-6', clusterId: 'z1', vip: '2001:db8:0:d401::1:1',
   listeners: [{ protocol: 'TCP', port: 80, targetPort: 8080 }], backends: [{ vmId: 'vm-a' }],
-  currentExistence: 'Exists', desiredExistence: 'Exists', transition: null, requestFailureReason: null,
+  status: 'Available', requestFailureReason: null,
   requestFailedAt: null, createdAt: '2026-01-01T00:00:00Z', ...extra,
 })
 

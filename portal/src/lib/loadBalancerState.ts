@@ -1,16 +1,26 @@
 // A load balancer's state as the server sends it (titan-ops features/load-balancer/design.md#lb-lifecycle): Incus has no
-// status word for one, so only whether Incus holds it and which request still waits.
-//   currentExistence / desiredExistence — NotCreated · Exists · NotFound · Deleted / Exists · Deleted
-//   transition                          — Creating · Updating · Deleting, derived by the server
-// The buttons mirror the aggregate's rules.
+// status word for one, so the one `status` is Titan's — Creating, Updating and Deleting while a request waits for the
+// worker, Available when Incus holds it, NotFound when the reconciler saw it gone, Failed when a create gave up before
+// Incus had it, Deleted once it is gone. The buttons mirror the aggregate's rules.
 
 import { POLL_MS } from '@/hooks/pollUntilSettled'
 
 export interface LoadBalancerStateFields {
-  currentExistence: string
-  desiredExistence: string
-  transition: string | null
+  status: string
   requestFailureReason: string | null
+}
+
+// The statuses a request is waiting in.
+const WAITING = new Set(['Creating', 'Updating', 'Deleting'])
+
+const LABEL: Record<string, string> = {
+  Creating: 'Creating',
+  Available: 'Active',
+  Updating: 'Updating',
+  Deleting: 'Deleting',
+  NotFound: 'Not found',
+  Failed: 'Failed',
+  Deleted: 'Deleted',
 }
 
 export interface ListenerFields {
@@ -35,21 +45,9 @@ export const MAX_BACKENDS = 20
 const NAME_MAX = 100
 const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/
 
-/** The badge: the waiting request's move, else why Incus has none, else Active. */
+/** The badge: the status word, spelled for the customer. A status this page does not know shows as the server spelled it. */
 export function loadBalancerLabel(lb: LoadBalancerStateFields): string {
-  if (lb.transition !== null) {
-    return lb.transition
-  }
-  if (lb.currentExistence === 'NotFound') {
-    return 'Not found'
-  }
-  if (lb.currentExistence === 'NotCreated') {
-    return 'Failed'
-  }
-  if (lb.currentExistence === 'Deleted') {
-    return 'Deleted'
-  }
-  return 'Active'
+  return LABEL[lb.status] ?? lb.status
 }
 
 /**
@@ -57,20 +55,18 @@ export function loadBalancerLabel(lb: LoadBalancerStateFields): string {
  * (titan-ops architecture/resource-lifecycle.md#invariants). Server text, shown as sent.
  */
 export function loadBalancerRequestFailureNote(lb: LoadBalancerStateFields): string | null {
-  return lb.transition === null ? lb.requestFailureReason : null
+  return WAITING.has(lb.status) ? null : lb.requestFailureReason
 }
 
 /** LoadBalancer.RequestUpdate: on Incus, nothing waiting. */
 export function canEditLoadBalancer(lb: LoadBalancerStateFields): boolean {
-  return lb.transition === null
-    && lb.currentExistence === 'Exists'
-    && lb.desiredExistence === 'Exists'
+  return lb.status === 'Available'
 }
 
-/** LoadBalancer.RequestDelete: a delete replaces a waiting update; a waiting create or delete refuses it. */
+/** LoadBalancer.Delete: a delete replaces a waiting update; a waiting create refuses it and a waiting delete needs no second one. */
 export function canDeleteLoadBalancer(lb: LoadBalancerStateFields): boolean {
-  const createOrDeleteWaits = lb.transition === 'Creating' || lb.transition === 'Deleting'
-  const isGone = lb.currentExistence === 'Deleted'
+  const createOrDeleteWaits = lb.status === 'Creating' || lb.status === 'Deleting'
+  const isGone = lb.status === 'Deleted'
   return !createOrDeleteWaits && !isGone
 }
 
@@ -79,7 +75,7 @@ export function pollWhileLoadBalancersWait(rows: readonly LoadBalancerStateField
   if (rows === undefined) {
     return false
   }
-  const anyWaiting = rows.some(row => row.transition !== null)
+  const anyWaiting = rows.some(row => WAITING.has(row.status))
   if (anyWaiting) {
     return POLL_MS
   }

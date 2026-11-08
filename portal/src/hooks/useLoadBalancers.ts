@@ -4,7 +4,7 @@ import { useIdempotencyKey } from '@/lib/idempotency'
 import { pollWhileLoadBalancersWait, type ListenerFields } from '@/lib/loadBalancerState'
 
 // titan-ops features/load-balancer/design.md#lb-resource-model — listeners and backends are what the customer last asked
-// for; transition says whether Incus has it yet.
+// for; status says whether Incus has it yet.
 export interface LoadBalancer {
   id: string
   name: string
@@ -13,9 +13,7 @@ export interface LoadBalancer {
   vip: string
   listeners: ListenerFields[]
   backends: { vmId: string }[]
-  currentExistence: string
-  desiredExistence: string
-  transition: string | null
+  status: string
   requestFailureReason: string | null
   requestFailedAt: string | null
   createdAt: string
