@@ -1,14 +1,14 @@
-// A volume has one status, as the server sends it (titan-ops features/volume/design.md#volume-state-is-existence). Incus
-// has no status word for a custom volume, so the words are Titan's:
+// A volume has one status, as the server sends it (titan-ops features/volume/design.md#volume-state-is-existence).
+// Incus has no status word for a custom volume, so the words are Titan's:
 //   Creating · Attaching · Detaching · Deleting — a request waits on its command
 //   Available — Incus holds it and nothing waits
 //   NotFound  — the reconciler no longer sees it
 //   Failed    — the create gave up before Incus made it
 //   Deleted   — gone (not listed)
 // The attachment is separate (the status says nothing about who uses the volume):
-//   currentAttachedVmId      — the Titan VM Incus reports using the volume (what Incus reported or a report of its command saw)
+//   currentAttachedVmId      — the Titan VM Incus reports using the volume (observed, or seen by a command's report)
 //   currentAttachedElsewhere — an instance that is no Titan VM uses it (attached outside Titan)
-//   desiredAttachedVmId      — the VM the customer asked for (set by an attach or detach request, put back by its report)
+//   desiredAttachedVmId      — the VM the customer asked for (set by a request, put back by a failed report)
 // requestFailureReason is the fixed text of the last request whose command gave up
 // (titan-ops architecture/resource-lifecycle.md#invariants).
 // The buttons mirror the aggregate's rules, so the server's 422 is never the first thing a customer reads.
@@ -16,7 +16,8 @@
 import { POLL_MS } from '@/hooks/pollUntilSettled'
 
 export interface VolumeStateFields {
-  // A string, not a union: a status this portal was not taught still renders, and offers only Delete (unless an instance uses it).
+  // A string, not a union: a status this portal was not taught still renders, and offers only Delete (unless
+  // an instance uses it).
   status: string
   currentAttachedVmId: string | null
   currentAttachedElsewhere: boolean
