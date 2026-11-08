@@ -63,7 +63,7 @@ export function canEditLoadBalancer(lb: LoadBalancerStateFields): boolean {
   return lb.status === 'Available'
 }
 
-/** LoadBalancer.RequestDelete: a delete replaces a waiting update; a waiting create or delete refuses it. */
+/** LoadBalancer.Delete: a delete replaces a waiting update; a waiting create refuses it and a waiting delete needs no second one. */
 export function canDeleteLoadBalancer(lb: LoadBalancerStateFields): boolean {
   const createOrDeleteWaits = lb.status === 'Creating' || lb.status === 'Deleting'
   const isGone = lb.status === 'Deleted'
