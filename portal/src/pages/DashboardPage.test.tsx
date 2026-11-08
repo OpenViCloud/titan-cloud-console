@@ -41,8 +41,8 @@ describe('DashboardPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () =>
         HttpResponse.json([
-          { id: 'vol1', name: 'd1', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T00:00:00Z' },
-          { id: 'vol2', name: 'd2', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: 'v1', currentAttachedElsewhere: false, desiredAttachedVmId: 'v1', transition: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 250, createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'vol1', name: 'd1', status: 'Available', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T00:00:00Z' },
+          { id: 'vol2', name: 'd2', status: 'Available', currentAttachedVmId: 'v1', currentAttachedElsewhere: false, desiredAttachedVmId: 'v1', requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 250, createdAt: '2026-01-01T00:00:00Z' },
         ])
       ),
       http.get('*/v1/tenant/billing/summary', () =>
@@ -107,7 +107,7 @@ describe('DashboardPage — Vietnamese', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () =>
         HttpResponse.json([
-          { id: 'vol1', name: 'd1', currentExistence: 'Exists', desiredExistence: 'Exists', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T12:00:00Z' },
+          { id: 'vol1', name: 'd1', status: 'Available', currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, requestFailureReason: null, requestFailedAt: null, clusterId: 'z1', volumeOfferingId: 'o1', sizeGb: 100, createdAt: '2026-01-01T12:00:00Z' },
         ])
       ),
       http.get('*/v1/tenant/billing/summary', () =>

@@ -5,7 +5,6 @@ import { server } from '@/test/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { QuotaCard } from './QuotaCard'
 
-const live = { desiredExistence: 'Exists', currentExistence: 'Exists', transition: null as string | null }
 const tenant = { id: 't1', name: 'alice', status: 'Active', maxVms: 5, maxNetworks: 3, maxVolumes: 10, maxPublicIpv6: 4 }
 
 function row(label: string) {
@@ -33,12 +32,21 @@ describe('QuotaCard', () => {
         { id: 'gone', status: 'NotFound', publicIpv6Subnet: '2001:db8:0:3::/64' },
         { id: 'deleting', status: 'Deleting', publicIpv6Subnet: '2001:db8:0:4::/64' },
       ])),
-      http.get('*/v1/tenant/volumes', () => HttpResponse.json([{ id: 'v', ...live }])),
+      http.get('*/v1/tenant/volumes', () => HttpResponse.json([
+        { id: 'v1', status: 'Available' },
+        // a create and an attach or detach still waiting count: Incus holds the volume or is about to
+        { id: 'v2', status: 'Creating' },
+        { id: 'v3', status: 'Attaching' },
+        // a refused create, a volume Incus no longer has and a volume whose delete was pressed do not count
+        { id: 'v4', status: 'Failed' },
+        { id: 'v5', status: 'NotFound' },
+        { id: 'v6', status: 'Deleting' },
+      ])),
     )
     renderWithProviders(<QuotaCard />)
     await waitFor(() => expect(within(row('VMs')).getByText('2 / 5')).toBeInTheDocument())
     await waitFor(() => expect(within(row('Networks')).getByText('3 / 3')).toBeInTheDocument())
-    await waitFor(() => expect(within(row('Volumes')).getByText('1 / 10')).toBeInTheDocument())
+    await waitFor(() => expect(within(row('Volumes')).getByText('3 / 10')).toBeInTheDocument())
     expect(within(row('Public IPv6')).getByText('2 / 4')).toBeInTheDocument()
     expect(within(row('VMs')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
   })
@@ -56,7 +64,7 @@ describe('QuotaCard', () => {
   it('shows the quota card in Vietnamese', async () => {
     server.use(
       http.get('*/v1/tenant', () => HttpResponse.json({ id: 't1', name: 'alice', status: 'Active', maxVms: 5, maxNetworks: 3 })),
-      http.get('*/v1/tenant/volumes', () => HttpResponse.json([{ id: 'v', ...live }])),
+      http.get('*/v1/tenant/volumes', () => HttpResponse.json([{ id: 'v', status: 'Available' }])),
     )
     renderWithProviders(<QuotaCard />, { lang: 'vi' })
     expect(screen.getByRole('heading', { name: 'Hạn mức' })).toBeInTheDocument()
@@ -68,7 +76,7 @@ describe('QuotaCard', () => {
   it('shows the used count without a bar when the control plane does not send a cap yet', async () => {
     server.use(
       http.get('*/v1/tenant', () => HttpResponse.json({ id: 't1', name: 'alice', status: 'Active', maxVms: 5, maxNetworks: 3 })),
-      http.get('*/v1/tenant/volumes', () => HttpResponse.json([{ id: 'v', ...live }])),
+      http.get('*/v1/tenant/volumes', () => HttpResponse.json([{ id: 'v', status: 'Available' }])),
     )
     renderWithProviders(<QuotaCard />)
     await waitFor(() => expect(within(row('Volumes')).getByText('1 used')).toBeInTheDocument())

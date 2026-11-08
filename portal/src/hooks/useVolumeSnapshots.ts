@@ -2,16 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useTenant } from '@/contexts/TenantContext'
 import { useIdempotencyKey } from '@/lib/idempotency'
-import { pollWhileStorageWaits } from '@/lib/storageState'
+import { pollWhileVolumeSnapshotsWait } from '@/lib/volumeSnapshotState'
 
-// Incus has no status word for a volume snapshot (lib/storageState.ts).
+// One status (lib/volumeSnapshotState.ts): Creating | Deleting while a request waits, else Available | NotFound | Failed.
 export interface VolumeSnapshot {
   id: string
   volumeId: string
   name: string
-  currentExistence: string
-  desiredExistence: string
-  transition: string | null
+  status: string
   requestFailureReason: string | null
   requestFailedAt: string | null
   createdAt: string
@@ -31,7 +29,7 @@ export function useVolumeSnapshots(volumeId: string, enabled = true) {
         .then(r => r.data),
     enabled: !!tenantId && enabled,
     // A snapshot being created or deleted refreshes until the worker reports back.
-    refetchInterval: q => pollWhileStorageWaits(q.state.data),
+    refetchInterval: q => pollWhileVolumeSnapshotsWait(q.state.data),
   })
 }
 

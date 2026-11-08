@@ -1,19 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { pollWhileStorageWaits } from '@/lib/storageState'
+import { pollWhileVolumesWait } from '@/lib/volumeState'
 import { useTenant } from '@/contexts/TenantContext'
 import { useIdempotencyKey } from '@/lib/idempotency'
 
-// Incus has no status word for a volume: whether it holds it, and which instance uses it — lib/storageState.ts.
+// One status (lib/volumeState.ts): Creating | Attaching | Detaching | Deleting while a request waits, else Available |
+// NotFound | Failed. Who uses the volume is the attachment pair beside it.
 export interface Volume {
   id: string
   name: string
-  currentExistence: string
-  desiredExistence: string
+  status: string
   currentAttachedVmId: string | null
   currentAttachedElsewhere: boolean
   desiredAttachedVmId: string | null
-  transition: string | null
   requestFailureReason: string | null
   requestFailedAt: string | null
   clusterId: string
@@ -39,7 +38,7 @@ export function useVolumes() {
     queryKey: ['volumes', tenantId],
     queryFn: () => api.get<Volume[]>(`/v1/tenant/volumes`).then(r => r.data),
     enabled: !!tenantId,
-    refetchInterval: q => pollWhileStorageWaits(q.state.data),
+    refetchInterval: q => pollWhileVolumesWait(q.state.data),
   })
 }
 

@@ -1,26 +1,6 @@
-// What the quota card counts as used. A copy of the server rules Vm.OccupiesQuota, Network.OccupiesQuota and
-// Volume.OccupiesQuota (OpenViCloud/titan-control-plane, Titan.Domain). A volume counts when it is wanted
-// (desired Exists) and Incus holds it, or its create still waits. The server keys "waits" on a pending request id the API does not
-// expose; `transition` is non-null exactly while a request waits. Accepted risk: this copy can drift from the
-// server's.
-export interface QuotaFields {
-  desiredExistence: string
-  currentExistence: string
-  transition: string | null
-}
-
-export function occupiesQuota(resource: QuotaFields): boolean {
-  if (resource.desiredExistence !== 'Exists') {
-    return false
-  }
-  if (resource.currentExistence === 'Exists') {
-    return true
-  }
-  return resource.currentExistence === 'NotCreated' && resource.transition !== null
-}
-
 // A VM has one status: it counts while its create waits or Incus holds its instance, until its delete is asked
-// (titan-ops features/vm/design.md#counting-and-billing). A network has one status too, with the same four outside.
+// (titan-ops features/vm/design.md#counting-and-billing). A network and a volume have one status too, with the same four
+// outside.
 const STATUSES_OUTSIDE_QUOTA = new Set(['Deleting', 'Deleted', 'NotFound', 'Failed'])
 
 export function vmOccupiesQuota(vm: { status: string }): boolean {
@@ -30,4 +10,12 @@ export function vmOccupiesQuota(vm: { status: string }): boolean {
 // Network.OccupiesQuota: status not in Deleting, Deleted, NotFound, Failed.
 export function networkOccupiesQuota(network: { status: string }): boolean {
   return !STATUSES_OUTSIDE_QUOTA.has(network.status)
+}
+
+// Volume.OccupiesQuota: Creating, Available, and Attaching or Detaching while Incus holds it — the portal cannot see
+// whether Incus holds it (the server keeps that in the operation), so it counts the two as held: attach and detach
+// start only on a volume Incus holds. Accepted risk: a volume the reconciler saw vanish mid-attach counts here until
+// the attach or detach command reports.
+export function volumeOccupiesQuota(volume: { status: string }): boolean {
+  return !STATUSES_OUTSIDE_QUOTA.has(volume.status)
 }
