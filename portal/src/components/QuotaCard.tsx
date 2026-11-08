@@ -2,7 +2,7 @@ import { useVms } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
 import { useVolumes } from '@/hooks/useVolumes'
 import { useTenantProfile } from '@/hooks/useTenantProfile'
-import { networkOccupiesQuota, occupiesQuota, vmOccupiesQuota } from '@/lib/quota'
+import { networkOccupiesQuota, vmOccupiesQuota, volumeOccupiesQuota } from '@/lib/quota'
 import { useT } from '@/i18n/LanguageContext'
 
 function QuotaRow({ label, used, cap }: { label: string; used: number; cap: number | undefined }) {
@@ -55,7 +55,7 @@ export function QuotaCard() {
       <div className="flex flex-col gap-4 px-5 py-4">
         <QuotaRow label={t.quota.vms} used={liveVms.length} cap={tenant?.maxVms} />
         <QuotaRow label={t.quota.networks} used={liveNetworks.length} cap={tenant?.maxNetworks} />
-        <QuotaRow label={t.quota.volumes} used={volumes.filter(occupiesQuota).length} cap={tenant?.maxVolumes} />
+        <QuotaRow label={t.quota.volumes} used={volumes.filter(volumeOccupiesQuota).length} cap={tenant?.maxVolumes} />
         <QuotaRow label={t.quota.publicIpv6} used={liveNetworks.filter(n => typeof n.publicIpv6Subnet === 'string').length} cap={tenant?.maxPublicIpv6} />
       </div>
     </section>

@@ -24,21 +24,25 @@ import { useClusterMap } from '@/hooks/useClusters'
 import type { BadgeProps } from '@/components/ui/badge'
 import {
   volumeLabel,
-  snapshotLabel,
+  volumeFailureNote,
+  volumeAttachmentDrifts,
   canAttachStoredVolume,
   canDetachStoredVolume,
   canDeleteStoredVolume,
   canSnapshotStoredVolume,
+} from '@/lib/volumeState'
+import {
+  volumeSnapshotLabel,
+  volumeSnapshotFailureNote,
   canUseStoredSnapshot,
   canDeleteStoredSnapshot,
-  requestFailureNote,
-} from '@/lib/storageState'
+} from '@/lib/volumeSnapshotState'
 import { canAttachVolume, vmLabel } from '@/lib/vmState'
 import { useT, useFormat } from '@/i18n/LanguageContext'
 import type { Messages } from '@/i18n/en'
 
-// Keys are what volumeLabel() and snapshotLabel() return: the move a waiting request makes, else whether Incus
-// holds it and who uses it (lib/storageState.ts).
+// Keys are what volumeLabel() and volumeSnapshotLabel() return: the move a waiting request makes, else why Incus has
+// none, else who uses it (lib/volumeState.ts, lib/volumeSnapshotState.ts).
 const volumeStateVariant: Record<string, BadgeProps['variant']> = {
   Available:                'success',
   Attached:                 'blue',
@@ -62,9 +66,7 @@ const snapshotStateVariant: Record<string, BadgeProps['variant']> = {
 // Nothing waits, yet the attachment Incus shows is not the one asked for: attached or detached outside Titan. The
 // badge shows the truth; the row adds what was requested.
 function attachmentDrift(volume: Volume, vmNameMap: Map<string, string>, t: Messages): string | null {
-  const nothingWaits = volume.transition === null
-  const differs = volume.currentAttachedVmId !== volume.desiredAttachedVmId
-  if (!nothingWaits || !differs) {
+  if (!volumeAttachmentDrifts(volume)) {
     return null
   }
   if (volume.desiredAttachedVmId === null) {
@@ -246,12 +248,12 @@ function SnapshotPanel({ volume }: { volume: Volume }) {
           {snapshots.map(snap => (
             <div key={snap.id} className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-card">
               <span className="text-xs text-soft-foreground flex-1 truncate">{snap.name}</span>
-              <Badge variant={snapshotStateVariant[snapshotLabel(snap)] ?? 'default'} className="text-[10px]">
-                {snapshotLabel(snap)}
+              <Badge variant={snapshotStateVariant[volumeSnapshotLabel(snap)] ?? 'default'} className="text-[10px]">
+                {volumeSnapshotLabel(snap)}
               </Badge>
-              {requestFailureNote(snap) !== null && (
-                <span className="min-w-0 max-w-[40%] truncate text-[10px] text-bad" title={requestFailureNote(snap) ?? undefined}>
-                  {requestFailureNote(snap)}
+              {volumeSnapshotFailureNote(snap) !== null && (
+                <span className="min-w-0 max-w-[40%] truncate text-[10px] text-bad" title={volumeSnapshotFailureNote(snap) ?? undefined}>
+                  {volumeSnapshotFailureNote(snap)}
                 </span>
               )}
               <span className="text-[10px] text-faint">
@@ -489,8 +491,8 @@ export function VolumeListPage() {
                           <span className="text-[11px] text-faint">{attachmentDrift(volume, vmNameMap, t)}</span>
                         )}
                       </div>
-                      {requestFailureNote(volume) !== null && (
-                        <p className="mt-0.5 text-[11px] text-bad">{requestFailureNote(volume)}</p>
+                      {volumeFailureNote(volume) !== null && (
+                        <p className="mt-0.5 text-[11px] text-bad">{volumeFailureNote(volume)}</p>
                       )}
                       <p className="mt-0.5 truncate text-[12.5px] text-faint">
                         {offeringMap.get(volume.volumeOfferingId)?.name ?? volume.volumeOfferingId} · {clusterMap.get(volume.clusterId) ?? volume.clusterId} · {t.volumes.createdOn(f.date(volume.createdAt))}

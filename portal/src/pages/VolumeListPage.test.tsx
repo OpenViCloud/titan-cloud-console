@@ -10,10 +10,10 @@ import { VolumeListPage } from './VolumeListPage'
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() }, Toaster: () => null }))
 import { toast } from 'sonner'
 
-// A volume Incus holds that no instance uses, nothing waiting (lib/storageState.ts).
+// A volume Incus holds that no instance uses, nothing waiting (lib/volumeState.ts).
 const vol = (overrides = {}) => ({
-  id: 'vol-1', name: 'data-vol-1', currentExistence: 'Exists', desiredExistence: 'Exists',
-  currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null, transition: null,
+  id: 'vol-1', name: 'data-vol-1', status: 'Available',
+  currentAttachedVmId: null, currentAttachedElsewhere: false, desiredAttachedVmId: null,
   requestFailureReason: null, requestFailedAt: null,
   clusterId: 'z1', volumeOfferingId: 'do1', sizeGb: 50,
   createdAt: '2026-01-01T00:00:00Z',
@@ -23,8 +23,8 @@ const vol = (overrides = {}) => ({
 const attached = (overrides = {}) => vol({ currentAttachedVmId: 'vm-1', desiredAttachedVmId: 'vm-1', ...overrides })
 
 const snap = (overrides = {}) => ({
-  id: 'snap-1', volumeId: 'vol-1', name: 'before-update', currentExistence: 'Exists', desiredExistence: 'Exists',
-  transition: null, requestFailureReason: null, requestFailedAt: null,
+  id: 'snap-1', volumeId: 'vol-1', name: 'before-update', status: 'Available',
+  requestFailureReason: null, requestFailedAt: null,
   createdAt: '2026-01-02T00:00:00Z',
   ...overrides,
 })
@@ -59,7 +59,7 @@ describe('VolumeListPage', () => {
   // DESIRED-CURRENT-STATE PR-2 — the badge shows the waiting request, and no new request starts over it.
   it('shows the waiting detach as the badge and offers neither detach nor delete', async () => {
     server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([
-      attached({ desiredAttachedVmId: null, transition: 'Detaching' }),
+      attached({ desiredAttachedVmId: null, status: 'Detaching' }),
     ])))
     renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
@@ -97,8 +97,8 @@ describe('VolumeListPage', () => {
   // Delete follows Incus: a volume Incus no longer has, and one whose create failed before Incus had it, are
   // deletable; neither can be attached.
   it.each([
-    ['Not found', { currentExistence: 'NotFound' }],
-    ['Failed', { currentExistence: 'NotCreated', requestFailureReason: 'Volume creation failed.' }],
+    ['Not found', { status: 'NotFound' }],
+    ['Failed', { status: 'Failed', requestFailureReason: 'Volume creation failed.' }],
   ])('shows %s and offers Delete but not Attach', async (label, overrides) => {
     server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol(overrides)])))
     renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
@@ -114,7 +114,7 @@ describe('VolumeListPage', () => {
     const reason = 'Attaching the volume failed due to a system error. Please try again or contact support.'
     server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([
       vol({ requestFailureReason: reason }),
-      vol({ id: 'vol-2', name: 'data-vol-2', transition: 'Attaching', desiredAttachedVmId: 'vm-1', requestFailureReason: 'an older failure' }),
+      vol({ id: 'vol-2', name: 'data-vol-2', status: 'Attaching', desiredAttachedVmId: 'vm-1', requestFailureReason: 'an older failure' }),
     ])))
     renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
@@ -141,7 +141,7 @@ describe('VolumeListPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol()])),
       http.get('*/v1/tenant/volumes/vol-1/snapshots', () => HttpResponse.json([
-        snap({ desiredExistence: 'Deleted', transition: 'Deleting' }),
+        snap({ status: 'Deleting' }),
       ])),
     )
     renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
@@ -180,7 +180,7 @@ describe('VolumeListPage', () => {
   // Incus has made the volume once its create command answers, so a create waits only seconds: the server refuses a
   // delete over it, and the page does not offer one.
   it('holds Delete back while the volume is being created', async () => {
-    server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol({ currentExistence: 'NotCreated', transition: 'Creating' })])))
+    server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol({ status: 'Creating' })])))
     renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
     await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
     expect(screen.getByText('Creating')).toBeInTheDocument()
@@ -356,7 +356,7 @@ describe('VolumeListPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol()])),
       http.get('*/v1/tenant/volumes/vol-1/snapshots', () => HttpResponse.json([
-        snap({ currentExistence: 'NotCreated', transition: 'Creating' }),
+        snap({ status: 'Creating' }),
       ])),
     )
     renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
@@ -372,7 +372,7 @@ describe('VolumeListPage', () => {
     server.use(
       http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol()])),
       http.get('*/v1/tenant/volumes/vol-1/snapshots', () => HttpResponse.json([
-        snap({ currentExistence: 'NotFound' }),
+        snap({ status: 'NotFound' }),
       ])),
       http.delete('*/v1/tenant/volumes/vol-1/snapshots/snap-1', () =>
         HttpResponse.json({ code: 'VOLUME_SNAPSHOT_INVALID_STATE' }, { status: 422 })),
