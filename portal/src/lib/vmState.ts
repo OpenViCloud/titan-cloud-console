@@ -76,7 +76,7 @@ export function canAttachVolume(vm: VmStateFields): boolean {
 }
 
 /**
- * Same rule as the server's network-in-use check (Vm.HoldsItsNetwork): the instance may be on Incus, a delete in
+ * Same rule as the server's network-in-use check (Vm.HasNetwork): the instance may be on Incus, a delete in
  * flight included, or its create waits.
  */
 export function holdsItsNetwork(vm: VmStateFields): boolean {
