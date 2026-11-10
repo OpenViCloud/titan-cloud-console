@@ -250,7 +250,7 @@ describe('VmListPage', () => {
       http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
       http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
-      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
+      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
       http.post('*/v1/tenant/vms', async ({ request }) => {
         capturedBody = await request.json() as Record<string, unknown>
         return HttpResponse.json({ id: 'vm-new' }, { status: 202 })
@@ -273,7 +273,7 @@ describe('VmListPage', () => {
       http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
       http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
-      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
+      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
       http.post('*/v1/tenant/vms', () => HttpResponse.json({ id: 'vm-new' }, { status: 202 })),
     )
     renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)

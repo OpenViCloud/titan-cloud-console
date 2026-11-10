@@ -7,11 +7,10 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { VolumeCreateModal } from './VolumeCreateModal'
 
 const cluster = { id: 'z1', name: 'Cluster 1' }
-// isCustomized=true → user must type a size; isCustomized=false → size comes from the offering.
-const customOffering = { id: 'vo-custom', name: 'Custom SSD', sizeGb: 0, isCustomized: true }
-const fixedOffering = { id: 'vo-fixed', name: 'Standard', sizeGb: 100, isCustomized: false }
+// A tier is a name: the customer always types the size.
+const offering = { id: 'vo-standard', name: 'Standard' }
 
-function mockCatalog(offerings = [customOffering, fixedOffering]) {
+function mockCatalog(offerings = [offering]) {
   server.use(
     http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
     http.get('*/v1/volume-offerings', () => HttpResponse.json(offerings)),
@@ -26,45 +25,20 @@ async function selectClusterAndOffering(offeringId: string) {
 }
 
 describe('VolumeCreateModal', () => {
-  it('blocks submit with a size error when a custom-size offering has no size', async () => {
+  it('blocks submit with a size error when no size is typed', async () => {
     mockCatalog()
     renderWithProviders(<VolumeCreateModal open onOpenChange={vi.fn()} onCreated={vi.fn()} />)
-    await waitFor(() => expect(screen.getByRole('option', { name: /Custom SSD/i })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectClusterAndOffering(customOffering.id)
-    // size field is present for a custom offering but left empty
+    await selectClusterAndOffering(offering.id)
+    // the size field is left empty
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
 
     expect(screen.getByText('Size is required for this disk offering.')).toBeInTheDocument()
   })
 
-  it('hides the size field for a fixed offering and posts the offering size', async () => {
-    mockCatalog()
-    let body: unknown
-    server.use(
-      http.post('*/v1/tenant/volumes', async ({ request }) => {
-        body = await request.json()
-        return HttpResponse.json({ id: 'vol-new' }, { status: 202 })
-      }),
-    )
-    const onCreated = vi.fn()
-    const onOpenChange = vi.fn()
-    renderWithProviders(<VolumeCreateModal open onOpenChange={onOpenChange} onCreated={onCreated} />)
-    await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
-
-    await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectClusterAndOffering(fixedOffering.id)
-    // fixed offering → no custom size input rendered
-    expect(screen.queryByPlaceholderText(/e\.g\. 50/i)).not.toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
-    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
-    expect(onCreated).toHaveBeenCalled()
-    expect(body).toEqual({ name: 'my-vol', volumeOfferingId: fixedOffering.id, clusterId: cluster.id, sizeGb: 100 })
-  })
-
-  it('posts the typed size for a custom offering', async () => {
+  it('posts the typed size', async () => {
     mockCatalog()
     let body: unknown
     server.use(
@@ -74,15 +48,15 @@ describe('VolumeCreateModal', () => {
       }),
     )
     renderWithProviders(<VolumeCreateModal open onOpenChange={vi.fn()} onCreated={vi.fn()} />)
-    await waitFor(() => expect(screen.getByRole('option', { name: /Custom SSD/i })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectClusterAndOffering(customOffering.id)
+    await selectClusterAndOffering(offering.id)
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. 50/i), '50')
 
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
     await waitFor(() => expect(body).toEqual(
-      { name: 'my-vol', volumeOfferingId: customOffering.id, clusterId: cluster.id, sizeGb: 50 },
+      { name: 'my-vol', volumeOfferingId: offering.id, clusterId: cluster.id, sizeGb: 50 },
     ))
   })
 
@@ -97,18 +71,20 @@ describe('VolumeCreateModal', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
-    await selectClusterAndOffering(fixedOffering.id)
+    await selectClusterAndOffering(offering.id)
+    await userEvent.type(screen.getByPlaceholderText(/e\.g\. 50/i), '50')
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
 
     await waitFor(() => expect(screen.getByText('Volume quota exceeded (max 10).')).toBeInTheDocument())
   })
 
-  it('shows the form in Vietnamese, including the custom-size option', async () => {
+  it('shows the form in Vietnamese', async () => {
     mockCatalog()
     renderWithProviders(<VolumeCreateModal open onOpenChange={vi.fn()} onCreated={vi.fn()} />, { lang: 'vi' })
     expect(screen.getByRole('heading', { name: 'Tạo ổ đĩa dữ liệu' })).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByRole('option', { name: 'Custom SSD — Dung lượng tuỳ chọn' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Standard' })).toBeInTheDocument())
     expect(screen.getByText('Cấu hình ổ đĩa')).toBeInTheDocument()
+    expect(screen.getByText('Dung lượng (GB)')).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Chọn cluster…' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Tạo ổ đĩa' })).toBeDisabled()
   })

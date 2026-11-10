@@ -27,16 +27,13 @@ export function VolumeCreateModal({ open, onOpenChange, onCreated }: Props) {
   const { data: clusters = [] } = useClusters()
   const t = useT()
 
-  const selectedOffering = offerings.find(o => o.id === volumeOfferingId)
-  const needsCustomSize = selectedOffering?.isCustomized ?? true
-
   function reset() {
     setName(''); setVolumeOfferingId(''); setClusterId(''); setSizeGb(''); setError('')
   }
 
   async function handleCreate() {
     if (!name.trim() || !volumeOfferingId || !clusterId) return
-    if (needsCustomSize && (!sizeGb || parseInt(sizeGb) <= 0)) {
+    if (!sizeGb || parseInt(sizeGb) <= 0) {
       setError(t.volumeCreate.sizeRequired)
       return
     }
@@ -46,7 +43,7 @@ export function VolumeCreateModal({ open, onOpenChange, onCreated }: Props) {
         name: name.trim(),
         volumeOfferingId,
         clusterId,
-        sizeGb: needsCustomSize ? parseInt(sizeGb) : (selectedOffering?.sizeGb ?? 0),
+        sizeGb: parseInt(sizeGb),
       })
       reset()
       onCreated()
@@ -91,25 +88,19 @@ export function VolumeCreateModal({ open, onOpenChange, onCreated }: Props) {
               onChange={e => setVolumeOfferingId(e.target.value)}
             >
               <option value="">{t.volumeCreate.selectOffering}</option>
-              {offerings.map(o => (
-                <option key={o.id} value={o.id}>
-                  {o.name}{!o.isCustomized && o.sizeGb > 0 ? ` — ${o.sizeGb} GB` : ` — ${t.volumeCreate.customSize}`}
-                </option>
-              ))}
+              {offerings.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
           </div>
-          {needsCustomSize && (
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">{t.volumeCreate.size}</label>
-              <Input
-                type="number"
-                placeholder={t.volumeCreate.sizePlaceholder}
-                value={sizeGb}
-                onChange={e => setSizeGb(e.target.value)}
-                min={1}
-              />
-            </div>
-          )}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">{t.volumeCreate.size}</label>
+            <Input
+              type="number"
+              placeholder={t.volumeCreate.sizePlaceholder}
+              value={sizeGb}
+              onChange={e => setSizeGb(e.target.value)}
+              min={1}
+            />
+          </div>
           {error && <p className="text-xs text-bad">{error}</p>}
         </div>
         <DialogFooter>

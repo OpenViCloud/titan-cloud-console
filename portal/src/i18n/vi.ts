@@ -474,7 +474,6 @@ export const vi: Messages = {
     selectCluster: 'Chọn cluster…',
     offering: 'Cấu hình ổ đĩa',
     selectOffering: 'Chọn cấu hình…',
-    customSize: 'Dung lượng tuỳ chọn',
     size: 'Dung lượng (GB)',
     sizePlaceholder: 'ví dụ: 50',
     sizeRequired: 'Cấu hình ổ đĩa này cần nhập dung lượng.',

@@ -10,7 +10,7 @@ import { VmCreateModal } from './VmCreateModal'
 const activeNetwork = { id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }
 const cluster = { id: 'z1', name: 'Cluster 1' }
 const template = { id: 't1', name: 'Ubuntu 22.04', os: 'Ubuntu' }
-const offering = { id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }
+const offering = { id: 'm', name: 'Medium', vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }
 const clusterTwoNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', clusterId: 'z2' }
 
 // The form refuses to send until cluster, network, template and size are chosen; a test about what the server answers

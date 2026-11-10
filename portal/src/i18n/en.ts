@@ -480,7 +480,6 @@ export const en = {
     selectCluster: 'Select cluster…',
     offering: 'Volume Offering',
     selectOffering: 'Select offering…',
-    customSize: 'Custom size',
     size: 'Size (GB)',
     sizePlaceholder: 'e.g. 50',
     sizeRequired: 'Size is required for this disk offering.',

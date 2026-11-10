@@ -413,7 +413,7 @@ describe('VolumeListPage', () => {
   it('opens Create Volume modal and creates volume successfully', async () => {
     let posted = false
     server.use(
-      http.get('*/v1/volume-offerings', () => HttpResponse.json([{ id: 'do1', name: 'Fast SSD', sizeGb: 0, isCustomized: true }])),
+      http.get('*/v1/volume-offerings', () => HttpResponse.json([{ id: 'do1', name: 'Fast SSD' }])),
       http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
       http.post('*/v1/tenant/volumes', async ({ request }) => {
         const body = await request.json() as Record<string, unknown>

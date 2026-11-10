@@ -4,8 +4,6 @@ import { api } from '@/lib/api'
 export interface VolumeOffering {
   id: string
   name: string
-  sizeGb: number
-  isCustomized: boolean
 }
 
 export function useVolumeOfferings() {
