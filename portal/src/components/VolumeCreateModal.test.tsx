@@ -46,7 +46,7 @@ describe('VolumeCreateModal', () => {
     expect(posted).toBe(false)
   })
 
-  it('posts the typed size', async () => {
+  it('posts the typed size, then closes', async () => {
     mockCatalog()
     let body: unknown
     server.use(
@@ -55,7 +55,9 @@ describe('VolumeCreateModal', () => {
         return HttpResponse.json({ id: 'vol-new' }, { status: 202 })
       }),
     )
-    renderWithProviders(<VolumeCreateModal open onOpenChange={vi.fn()} onCreated={vi.fn()} />)
+    const onOpenChange = vi.fn()
+    const onCreated = vi.fn()
+    renderWithProviders(<VolumeCreateModal open onOpenChange={onOpenChange} onCreated={onCreated} />)
     await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
 
     await userEvent.type(screen.getByPlaceholderText(/data-vol/i), 'my-vol')
@@ -66,6 +68,8 @@ describe('VolumeCreateModal', () => {
     await waitFor(() => expect(body).toEqual(
       { name: 'my-vol', volumeOfferingId: offering.id, clusterId: cluster.id, sizeGb: 50 },
     ))
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+    expect(onCreated).toHaveBeenCalled()
   })
 
   it('maps VOLUME_QUOTA_EXCEEDED to a readable error', async () => {
