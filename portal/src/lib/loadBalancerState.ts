@@ -58,7 +58,7 @@ export function loadBalancerRequestFailureNote(lb: LoadBalancerStateFields): str
   return WAITING.has(lb.status) ? null : lb.requestFailureReason
 }
 
-/** LoadBalancer.RequestUpdate: on Incus, nothing waiting. */
+/** LoadBalancer.Update: on Incus, nothing waiting. */
 export function canEditLoadBalancer(lb: LoadBalancerStateFields): boolean {
   return lb.status === 'Available'
 }
