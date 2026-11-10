@@ -188,7 +188,8 @@ function DiskCard({ points, range }: { points: VmMetricPoint[]; range: VmMetrics
   const latestWrite = latestWith(points, p => p.diskWriteBytesPerSecond)?.diskWriteBytesPerSecond ?? null
   const rate = (v: number) => formatByteRate(v, lang)
 
-  // The read and write rates come from QEMU, so they are drawn even when the root filesystem needs the guest agent.
+  // The read and write rates exist with or without the guest agent, so they are drawn even when the root filesystem
+  // needs it.
   let filesystem = <HeaderNote>{t.vmMetrics.needsAgent}</HeaderNote>
   if (latestFs !== undefined && latestFs.rootFsUsedBytes !== null) {
     filesystem = <HeaderValue>{usedOf(t, lang, latestFs.rootFsUsedBytes, latestFs.rootFsSizeBytes)}</HeaderValue>

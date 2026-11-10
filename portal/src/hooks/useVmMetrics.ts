@@ -4,7 +4,8 @@ import { useTenant } from '@/contexts/TenantContext'
 
 export type VmMetricsRange = '1h' | '24h' | '7d'
 
-// One point per step; a field is null where Incus had no number (no guest agent, first sample, a counter reset).
+// 1h gives one point per sample, 24h and 7d one per step that has samples. A null field is a number the control plane
+// does not have: Incus reported none, or CPU and the rates on the first sample, a restart or a change of source.
 export interface VmMetricPoint {
   at: string
   cpuPercent: number | null

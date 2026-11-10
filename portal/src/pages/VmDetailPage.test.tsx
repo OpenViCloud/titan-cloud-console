@@ -332,7 +332,7 @@ describe('VmDetailPage', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'Monitoring' }))
   }
 
-  // UI-1: the card headers carry the latest number of each field, as the API sent it.
+  // The card headers carry the latest number of each field, as the API sent it.
   it('shows the latest CPU, memory and disk numbers in the Monitoring tab', async () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
@@ -360,7 +360,7 @@ describe('VmDetailPage', () => {
     expect(screen.queryByText('Needs the guest agent inside the VM.')).not.toBeInTheDocument()
   })
 
-  // UI-2: without the guest agent Incus has no memory or filesystem numbers; CPU still comes from QEMU.
+  // Memory and the root filesystem may have no number (the filesystem only comes with the guest agent); CPU still has one.
   it('says the guest agent is needed where memory and disk are null, and still shows CPU', async () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
@@ -386,7 +386,7 @@ describe('VmDetailPage', () => {
     expect(within(cpu).queryByText('Needs the guest agent inside the VM.')).not.toBeInTheDocument()
   })
 
-  // UI-3: the range buttons ask the API again with the range picked.
+  // The range buttons ask the API again with the range picked.
   it('asks for 1h first and for 24h after pressing 24h', async () => {
     const ranges: (string | null)[] = []
     server.use(
@@ -407,7 +407,6 @@ describe('VmDetailPage', () => {
     expect(screen.getByRole('button', { name: '1h' })).toHaveAttribute('aria-pressed', 'false')
   })
 
-  // UI-4
   it('says no data yet when the VM has no usage points', async () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
