@@ -4,7 +4,7 @@ import type { Lang } from '@/i18n/lang'
 // 900,000 ₫ in English, 900.000 ₫ in Vietnamese. Titan bills in VND (titan-ops architecture/money-and-wallet.md#money-is-long-vnd)
 // — VND has no minor unit, so totals show no decimals and a "₫" suffix. A legacy/other currency falls back
 // to the old prefix style so nothing renders as raw numbers if the backend ever returns non-VND.
-const NUMBER_LOCALE: Record<Lang, string> = { en: 'en-US', vi: 'vi-VN' }
+export const NUMBER_LOCALE: Record<Lang, string> = { en: 'en-US', vi: 'vi-VN' }
 
 export function formatMoney(amount: number, lang: Lang, currency = 'VND'): string {
   if (currency === 'VND') {
@@ -65,6 +65,15 @@ export function formatDateTime(iso: string, lang: Lang): string {
     return `${formatDate(iso, 'vi')} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`
   }
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+// A time of day, for a chart axis: 14:05 in Vietnamese, 02:05 PM in English.
+export function formatTime(iso: string, lang: Lang): string {
+  const date = new Date(iso)
+  if (lang === 'vi') {
+    return `${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`
+  }
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 }
 
 // Typed money is read the way the page shows it (900.000 ₫ in Vietnamese, 900,000 ₫ in English). Number() reads

@@ -10,6 +10,7 @@ import {
   formatRate,
   formatShortDate,
   formatSignedMoney,
+  formatTime,
 } from '@/lib/money'
 
 interface LanguageState {
@@ -59,6 +60,7 @@ export interface Format {
   shortDate: (iso: string) => string
   month: (year: number, month: number) => string
   dateTime: (iso: string) => string
+  time: (iso: string) => string
 }
 
 export function formatFor(lang: Lang): Format {
@@ -70,6 +72,7 @@ export function formatFor(lang: Lang): Format {
     shortDate: iso => formatShortDate(iso, lang),
     month: (year, month) => formatMonth(year, month, lang),
     dateTime: iso => formatDateTime(iso, lang),
+    time: iso => formatTime(iso, lang),
   }
 }
 

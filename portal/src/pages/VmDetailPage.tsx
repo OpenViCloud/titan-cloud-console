@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { VmActions, VmStatusBadge, VmStatusNote } from '@/components/vm/VmActions'
 import { VmSnapshotPanel } from '@/components/vm/VmSnapshotPanel'
@@ -12,12 +12,18 @@ import { useFormat, useT } from '@/i18n/LanguageContext'
 import type { Messages } from '@/i18n/en'
 import { cn } from '@/lib/utils'
 
-type Tab = 'overview' | 'snapshots'
+// Recharts is most of this panel's weight; only a page that opens the Monitoring tab loads it.
+const VmMetricsPanel = lazy(() =>
+  import('@/components/vm/VmMetricsPanel').then((module) => ({ default: module.VmMetricsPanel })),
+)
+
+type Tab = 'overview' | 'snapshots' | 'monitoring'
 
 function tabs(t: Messages): { id: Tab; label: string }[] {
   return [
     { id: 'overview', label: t.vmDetail.tabOverview },
     { id: 'snapshots', label: t.vmDetail.tabSnapshots },
+    { id: 'monitoring', label: t.vmDetail.tabMonitoring },
   ]
 }
 
@@ -144,6 +150,13 @@ export function VmDetailPage() {
         <section className="overflow-hidden rounded-xl border border-border bg-card" aria-label={t.vmDetail.snapshots}>
           <VmSnapshotPanel vm={vm} />
         </section>
+      )}
+
+      {/* Mounted only while the tab is open, so the usage is asked again every minute only then. */}
+      {tab === 'monitoring' && (
+        <Suspense fallback={null}>
+          <VmMetricsPanel vmId={vm.id} />
+        </Suspense>
       )}
     </div>
   )
