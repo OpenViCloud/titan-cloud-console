@@ -43,7 +43,7 @@ describe('VmDetailPage', () => {
   it('shows the facts of my VM, its size and this month\'s cost', async () => {
     server.use(
       http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
-      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', cpu: 1, vcpu: 2, memoryMb: 4096 }])),
+      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', vcpu: 2, memoryMb: 4096 }])),
       http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'prod-net' }])),
       http.get('*/v1/tenant/billing/summary', () => HttpResponse.json({
         month: '2026-10', totalCost: 120000, currency: 'VND',

@@ -5,7 +5,6 @@ import { api } from '@/lib/api'
 interface VmOfferingInfo {
   id: string
   name: string
-  cpu: number
   vcpu: number
   memoryMb: number
 }
