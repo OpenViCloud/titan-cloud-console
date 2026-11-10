@@ -482,7 +482,7 @@ export const en = {
     selectOffering: 'Select offering…',
     size: 'Size (GB)',
     sizePlaceholder: 'e.g. 50',
-    sizeRequired: 'Size is required for this disk offering.',
+    sizeRequired: 'Size is required.',
     quotaExceeded: 'Volume quota exceeded (max 10).',
     createFailed: 'Failed to create volume.',
     creating: 'Creating…',

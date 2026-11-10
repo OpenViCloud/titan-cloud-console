@@ -476,7 +476,7 @@ export const vi: Messages = {
     selectOffering: 'Chọn cấu hình…',
     size: 'Dung lượng (GB)',
     sizePlaceholder: 'ví dụ: 50',
-    sizeRequired: 'Cấu hình ổ đĩa này cần nhập dung lượng.',
+    sizeRequired: 'Cần nhập dung lượng.',
     quotaExceeded: 'Đã vượt hạn mức ổ đĩa (tối đa 10).',
     createFailed: 'Không tạo được ổ đĩa.',
     creating: 'Đang tạo…',

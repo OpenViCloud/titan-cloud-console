@@ -7,7 +7,7 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { VolumeCreateModal } from './VolumeCreateModal'
 
 const cluster = { id: 'z1', name: 'Cluster 1' }
-// A tier is a name: the customer always types the size.
+// The form reads a tier's name only: the customer always types the size.
 const offering = { id: 'vo-standard', name: 'Standard' }
 
 function mockCatalog(offerings = [offering]) {
@@ -25,8 +25,15 @@ async function selectClusterAndOffering(offeringId: string) {
 }
 
 describe('VolumeCreateModal', () => {
-  it('blocks submit with a size error when no size is typed', async () => {
+  it('shows a size error and sends nothing when no size is typed', async () => {
     mockCatalog()
+    let posted = false
+    server.use(
+      http.post('*/v1/tenant/volumes', () => {
+        posted = true
+        return HttpResponse.json({ id: 'vol-new' }, { status: 202 })
+      }),
+    )
     renderWithProviders(<VolumeCreateModal open onOpenChange={vi.fn()} onCreated={vi.fn()} />)
     await waitFor(() => expect(screen.getByRole('option', { name: /Standard/i })).toBeInTheDocument())
 
@@ -35,7 +42,8 @@ describe('VolumeCreateModal', () => {
     // the size field is left empty
     await userEvent.click(screen.getByRole('button', { name: /create volume/i }))
 
-    expect(screen.getByText('Size is required for this disk offering.')).toBeInTheDocument()
+    expect(screen.getByText('Size is required.')).toBeInTheDocument()
+    expect(posted).toBe(false)
   })
 
   it('posts the typed size', async () => {
