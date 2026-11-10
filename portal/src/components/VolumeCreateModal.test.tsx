@@ -7,7 +7,7 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { VolumeCreateModal } from './VolumeCreateModal'
 
 const cluster = { id: 'z1', name: 'Cluster 1' }
-// The form reads a tier's name only: the customer always types the size.
+// The form shows a tier's name only: the customer always types the size.
 const offering = { id: 'vo-standard', name: 'Standard' }
 
 function mockCatalog(offerings = [offering]) {
