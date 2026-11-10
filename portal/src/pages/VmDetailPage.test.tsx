@@ -313,4 +313,140 @@ describe('VmDetailPage', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Revert started'))
   })
 
+  // titan-ops features/vm/design.md#vm-metrics — the Monitoring tab reads GET /v1/tenant/vms/{vmId}/metrics.
+  const metricPoint = (overrides = {}) => ({
+    at: '2026-11-10T14:01:00Z',
+    cpuPercent: 3.2,
+    memoryUsedBytes: 278491136,
+    memoryTotalBytes: 2059284480,
+    rootFsUsedBytes: 2018664448,
+    rootFsSizeBytes: 10222313472,
+    diskReadBytesPerSecond: 0,
+    diskWriteBytesPerSecond: 40960,
+    ...overrides,
+  })
+
+  async function openMonitoring() {
+    renderAt('/vms/vm-1')
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'web-01' })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('tab', { name: 'Monitoring' }))
+  }
+
+  // The card headers carry the latest number of each field, as the API sent it.
+  it('shows the latest CPU, memory and disk numbers in the Monitoring tab', async () => {
+    server.use(
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+      http.get('*/v1/tenant/vms/vm-1/metrics', () => HttpResponse.json({
+        range: '1h', stepSeconds: 60,
+        points: [
+          // The first sample has no earlier one: no CPU or rates yet.
+          metricPoint({ at: '2026-11-10T14:00:00Z', cpuPercent: null, memoryUsedBytes: 104857600,
+            rootFsUsedBytes: 1073741824, diskReadBytesPerSecond: null, diskWriteBytesPerSecond: null }),
+          metricPoint(),
+        ],
+      })),
+    )
+    await openMonitoring()
+    const cpu = await screen.findByRole('region', { name: 'CPU' })
+    await waitFor(() => expect(within(cpu).getByText('3.2%')).toBeInTheDocument())
+    expect(within(cpu).getByLabelText('CPU usage over time')).toBeInTheDocument()
+    const memory = screen.getByRole('region', { name: 'Memory' })
+    expect(within(memory).getByText('265.6 MiB of 1.9 GiB')).toBeInTheDocument()
+    // The control for the guest-agent case: here the memory chart is drawn.
+    expect(within(memory).getByLabelText('Memory used over time')).toBeInTheDocument()
+    const disk = screen.getByRole('region', { name: 'Disk' })
+    expect(within(disk).getByText('1.9 GiB of 9.5 GiB')).toBeInTheDocument()
+    expect(within(disk).getByText('Read 0 B/s · Write 40 KiB/s')).toBeInTheDocument()
+    expect(screen.queryByText('Needs the guest agent inside the VM.')).not.toBeInTheDocument()
+  })
+
+  // Memory and the root filesystem may have no number (the filesystem only comes with the guest agent); CPU still has one.
+  it('says the guest agent is needed where memory and disk are null, and still shows CPU', async () => {
+    server.use(
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+      http.get('*/v1/tenant/vms/vm-1/metrics', () => HttpResponse.json({
+        range: '1h', stepSeconds: 60,
+        points: [
+          metricPoint({ at: '2026-11-10T14:00:00Z', cpuPercent: 8, memoryUsedBytes: null, memoryTotalBytes: null,
+            rootFsUsedBytes: null, rootFsSizeBytes: null }),
+          metricPoint({ cpuPercent: 12.5, memoryUsedBytes: null, memoryTotalBytes: null,
+            rootFsUsedBytes: null, rootFsSizeBytes: null }),
+        ],
+      })),
+    )
+    await openMonitoring()
+    const cpu = await screen.findByRole('region', { name: 'CPU' })
+    await waitFor(() => expect(within(cpu).getByText('12.5%')).toBeInTheDocument())
+    const memory = screen.getByRole('region', { name: 'Memory' })
+    expect(within(memory).getByText('Needs the guest agent inside the VM.')).toBeInTheDocument()
+    // No memory chart drawn as zero.
+    expect(within(memory).queryByLabelText('Memory used over time')).not.toBeInTheDocument()
+    const disk = screen.getByRole('region', { name: 'Disk' })
+    expect(within(disk).getByText('Needs the guest agent inside the VM.')).toBeInTheDocument()
+    expect(within(cpu).queryByText('Needs the guest agent inside the VM.')).not.toBeInTheDocument()
+  })
+
+  // The range buttons ask the API again with the range picked.
+  it('asks for 1h first and for 24h after pressing 24h', async () => {
+    const ranges: (string | null)[] = []
+    server.use(
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+      http.get('*/v1/tenant/vms/vm-1/metrics', ({ request }) => {
+        const range = new URL(request.url).searchParams.get('range')
+        ranges.push(range)
+        return HttpResponse.json({ range, stepSeconds: range === '24h' ? 300 : 60, points: [metricPoint()] })
+      }),
+    )
+    await openMonitoring()
+    await waitFor(() => expect(ranges).toEqual(['1h']))
+    expect(screen.getByRole('button', { name: '1h' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '24h' })).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.click(screen.getByRole('button', { name: '24h' }))
+    await waitFor(() => expect(ranges).toContain('24h'))
+    expect(screen.getByRole('button', { name: '24h' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '1h' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('says no data yet when the VM has no usage points', async () => {
+    server.use(
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+      http.get('*/v1/tenant/vms/vm-1/metrics', () => HttpResponse.json({ range: '1h', stepSeconds: 60, points: [] })),
+    )
+    await openMonitoring()
+    await waitFor(() => expect(
+      screen.getByText('No data yet. Usage appears a few minutes after the VM starts.')).toBeInTheDocument())
+    expect(screen.queryByRole('region', { name: 'CPU' })).not.toBeInTheDocument()
+  })
+
+  it('shows a banner when the usage cannot be loaded', async () => {
+    server.use(
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+      http.get('*/v1/tenant/vms/vm-1/metrics', () => HttpResponse.json({ code: 'INTERNAL_ERROR' }, { status: 500 })),
+    )
+    await openMonitoring()
+    await waitFor(() => expect(
+      screen.getByText('Failed to load usage. Please refresh the page.')).toBeInTheDocument())
+  })
+
+  it('shows the Monitoring tab in Vietnamese, numbers with a decimal comma', async () => {
+    server.use(
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+      http.get('*/v1/tenant/vms/vm-1/metrics', () => HttpResponse.json({ range: '1h', stepSeconds: 60, points: [metricPoint()] })),
+    )
+    renderWithProviders(
+      <MemoryRouter initialEntries={['/vms/vm-1']}>
+        <Routes>
+          <Route path="/vms/:vmId" element={<VmDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { lang: 'vi' },
+    )
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'web-01' })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('tab', { name: 'Giám sát' }))
+    const cpu = await screen.findByRole('region', { name: 'CPU' })
+    await waitFor(() => expect(within(cpu).getByText('3,2%')).toBeInTheDocument())
+    const memory = screen.getByRole('region', { name: 'Bộ nhớ' })
+    expect(within(memory).getByText('265,6 MiB trên 1,9 GiB')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '24 giờ' })).toHaveAttribute('aria-pressed', 'false')
+  })
 })

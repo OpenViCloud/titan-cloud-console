@@ -22,6 +22,7 @@ export const handlers = [
   http.get('*/v1/volume-offerings', () => HttpResponse.json([])),
   http.get('*/v1/vm-offerings', () => HttpResponse.json([])),
   http.get('*/v1/tenant/vms/*/snapshots', () => HttpResponse.json([])),
+  http.get('*/v1/tenant/vms/*/metrics', () => HttpResponse.json({ range: '1h', stepSeconds: 60, points: [] })),
   http.get('*/v1/tenant/networks/*/firewall-rules', () => HttpResponse.json([])),
   http.get('*/v1/tenant/ssh-keys', () => HttpResponse.json([])),
   http.get('*/v1/tenant/api-tokens', () => HttpResponse.json([])),

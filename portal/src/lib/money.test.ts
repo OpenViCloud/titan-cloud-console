@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateTime, formatMoney, formatMonth, formatRate, formatShortDate, formatSignedMoney, parseRate, parseWholeVnd, rateInputValue } from './money'
+import { formatDate, formatDateTime, formatMoney, formatTime, formatMonth, formatRate, formatShortDate, formatSignedMoney, parseRate, parseWholeVnd, rateInputValue } from './money'
 
 describe('money follows the language', () => {
   it('uses English separators in English and Vietnamese ones in Vietnamese', () => {
@@ -49,6 +49,12 @@ describe('dates follow the language', () => {
   it('writes a timestamp with hours and minutes', () => {
     expect(formatDateTime(day, 'en')).toMatch(/^Jan 5, 2026, \d\d:\d\d (AM|PM)$/)
     expect(formatDateTime(day, 'vi')).toMatch(/^05\/01\/2026 \d\d:\d\d$/)
+  })
+
+  it('writes a time of day for a chart axis', () => {
+    const afternoon = new Date(2026, 10, 10, 14, 5).toISOString()
+    expect(formatTime(afternoon, 'en')).toBe('02:05 PM')
+    expect(formatTime(afternoon, 'vi')).toBe('14:05')
   })
 })
 
