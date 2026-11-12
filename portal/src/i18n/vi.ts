@@ -535,6 +535,8 @@ export const vi: Messages = {
     cost: 'Chi phí',
     empty: 'Tháng này chưa có mức sử dụng',
     emptyHint: 'Mức sử dụng sẽ hiện khi có VM đang chạy',
+    expired: 'Mức sử dụng chi tiết chỉ được giữ 90 ngày, nên tháng này không còn xem được.',
+    expiredInvoices: 'Xem hoá đơn',
   },
   invoices: {
     title: 'Hoá đơn',

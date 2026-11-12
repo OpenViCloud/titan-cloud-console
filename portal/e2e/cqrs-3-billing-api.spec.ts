@@ -22,6 +22,14 @@ const need = (k: string) => {
 
 const SETTLED_INVOICE = '54d73318-55df-4457-ada3-185108339b06' // 2026-9, SettledByWallet
 const ABSENT = '00000000-0000-0000-0000-0000000000ff'
+// A UTC month counted from this one. Usage records are kept 90 days, so a fixed past month stops answering 200
+// (titan-ops features/billing/metering/design.md#usage-retention); the previous month is always kept.
+function utcMonth(offset: number): string {
+  const d = new Date()
+  d.setUTCDate(1)
+  d.setUTCMonth(d.getUTCMonth() + offset)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
 
 async function login(page: Page, host: string, user: string, password: string) {
   await page.goto(host + '/', { waitUntil: 'domcontentloaded' })
@@ -83,9 +91,9 @@ test('A-1..A-5 every Billing route answers on the real host; commands write noth
   const detail = JSON.parse(await expectCode(await request.get(`${API}/v1/tenant/billing/invoices/${SETTLED_INVOICE}`, { headers: tenant }), 200))
   expect(detail.items.length).toBe(2)
   expect(detail.total).toBe(158)
-  const summary = JSON.parse(await expectCode(await request.get(`${API}/v1/tenant/billing/summary?month=2026-09`, { headers: tenant }), 200))
+  const summary = JSON.parse(await expectCode(await request.get(`${API}/v1/tenant/billing/summary?month=${utcMonth(-1)}`, { headers: tenant }), 200))
   expect(summary.currency).toBe('VND')
-  await expectCode(await request.get(`${API}/v1/tenant/vms/${need('DESTROYED_VM_ID')}/cost?month=2026-09`, { headers: tenant }), 200)
+  await expectCode(await request.get(`${API}/v1/tenant/vms/${need('DESTROYED_VM_ID')}/cost?month=${utcMonth(-1)}`, { headers: tenant }), 200)
 
   // ── A-2 admin queries ───────────────────────────────────────────────────────────────────────
   const all = JSON.parse(await expectCode(await request.get(`${API}/v1/admin/invoices`, { headers: admin }), 200))
@@ -111,9 +119,10 @@ test('A-1..A-5 every Billing route answers on the real host; commands write noth
 
   // ── A-4 internal routes ─────────────────────────────────────────────────────────────────────
   const internal = { 'X-Internal-Token': need('INTERNAL_TOKEN') }
-  const run = JSON.parse(await expectCode(await request.post(`${API}/internal/billing/invoices/run`,
-    { headers: internal, data: { year: 2020, month: 1 } }), 200))
-  expect(run).toEqual({ generated: 0, skipped: 0 })
+  // A period older than the 90 days usage is kept: refused before anything is read or written. The 422 comes from the
+  // handler, so it still proves the handler resolves.
+  await expectCode(await request.post(`${API}/internal/billing/invoices/run`,
+    { headers: internal, data: { year: 2020, month: 1 } }), 422, 'USAGE_PERIOD_EXPIRED')
   // An environment without a SePay key (control-plane-secrets has none) → 401 by design. The endpoint and
   // its handler are constructed before the key check, so this still proves the handler resolves.
   await expectCode(await request.post(`${API}/internal/payments/sepay/webhook`,

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, ReceiptText } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { useBillingSummary } from '@/hooks/useBilling'
@@ -34,7 +35,10 @@ export function BillingPage() {
   const today = currentMonth()
   const isCurrentMonth = month === today
 
-  const { data, isLoading, isError } = useBillingSummary(month)
+  const { data, isLoading, isError, error } = useBillingSummary(month)
+  // A month whose first day is more than 90 days back: its first usage records may already be deleted, while the
+  // invoice keeps the amounts (titan-ops features/billing/metering/design.md#usage-retention).
+  const isExpired = (error as { response?: { data?: { code?: string } } } | null)?.response?.data?.code === 'USAGE_PERIOD_EXPIRED'
 
   return (
     <div className="max-w-5xl">
@@ -50,6 +54,7 @@ export function BillingPage() {
             size="sm"
             aria-label={t.usage.previousMonth}
             onClick={() => setMonth(prevMonth)}
+            disabled={isExpired}
             className="text-muted-foreground hover:text-foreground px-2"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -70,7 +75,16 @@ export function BillingPage() {
         </div>
       </div>
 
-      {isError && (
+      {isExpired && (
+        <p className="mb-4 text-sm text-muted-foreground bg-card border border-border rounded-lg px-4 py-3">
+          {t.usage.expired}{' '}
+          <Link to="/billing/invoices" className="text-foreground underline underline-offset-2">
+            {t.usage.expiredInvoices}
+          </Link>
+        </p>
+      )}
+
+      {isError && !isExpired && (
         <p className="mb-4 text-sm text-bad bg-bad-soft border border-bad-border rounded-lg px-4 py-3">
           {t.usage.loadFailed}
         </p>

@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
 import { server } from '@/test/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { BillingPage } from './BillingPage'
@@ -110,6 +111,32 @@ describe('BillingPage', () => {
       expect(screen.getByText(/failed to load billing data/i)).toBeInTheDocument(),
     )
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  // A month whose first day is more than 90 days back: its first usage records may already be deleted, and the API
+  // says so with a code (titan-ops features/billing/metering/design.md#usage-retention). The page says it plainly,
+  // never shows 0 ₫, points to the invoices and stops going back.
+  it('says the usage of an expired month is no longer kept, shows no amount, and stops at it', async () => {
+    server.use(
+      http.get('*/v1/tenant/billing/summary', ({ request }) => {
+        const month = new URL(request.url).searchParams.get('month')
+        if (month === '2026-04') return HttpResponse.json(summary())
+        return HttpResponse.json(
+          { status: 422, title: 'Usage of 2026-03 is no longer kept', code: 'USAGE_PERIOD_EXPIRED' },
+          { status: 422 },
+        )
+      }),
+    )
+    renderWithProviders(<MemoryRouter><BillingPage /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText('66,600 ₫')).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: /previous month/i }))
+
+    await waitFor(() => expect(screen.getByText(/detailed usage is kept for 90 days/i)).toBeInTheDocument())
+    expect(screen.getByRole('link', { name: /invoices/i })).toHaveAttribute('href', '/billing/invoices')
+    expect(screen.queryByText(/₫/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/failed to load billing data/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /previous month/i })).toBeDisabled()
   })
 
   // AT-UI-B07 — vmName fallback when UUID-like name
