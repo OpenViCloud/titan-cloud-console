@@ -542,6 +542,8 @@ export const en = {
     cost: 'Cost',
     empty: 'No usage this month',
     emptyHint: 'Usage will appear once VMs are running',
+    expired: 'Detailed usage is kept for 90 days, so this month can no longer be shown.',
+    expiredInvoices: 'See the invoices',
   },
   invoices: {
     title: 'Invoices',

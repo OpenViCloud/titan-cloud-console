@@ -13,8 +13,19 @@ import { hostPattern, requiredHost } from './hosts'
 const USERNAME = process.env.BETA_USER_USERNAME || 'beta-user'
 const PASSWORD = process.env.BETA_USER_PASSWORD
 const API = requiredHost('API_BASE_URL')
-const BILLED_MONTH = process.env.BILL_MONTH || '2026-09'   // month that HAS usage
-const EMPTY_MONTH = process.env.EMPTY_MONTH || '2026-01'   // month that has none
+// A UTC month counted from this one. Usage records are kept 90 days, so a fixed past month stops answering 200
+// (titan-ops features/billing/metering/design.md#usage-retention); the previous month is always kept.
+function utcMonth(offset: number): string {
+  const d = new Date()
+  d.setUTCDate(1)
+  d.setUTCMonth(d.getUTCMonth() + offset)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+// The previous month: it has usage only if beta-user held a billed VM, volume or snapshot then; otherwise set BILL_MONTH
+// to a kept month that has.
+const BILLED_MONTH = process.env.BILL_MONTH || utcMonth(-1)
+const EMPTY_MONTH = process.env.EMPTY_MONTH || utcMonth(1)    // month that has none (next month: kept, nothing yet)
+const EXPIRED_MONTH = '2020-01'                               // first day long before the 90 days usage is kept
 
 test('RM-BC1: deployed read path reports VND and survives an empty period', async ({ page }) => {
   if (!PASSWORD) throw new Error('BETA_USER_PASSWORD not set')
@@ -67,6 +78,11 @@ test('RM-BC1: deployed read path reports VND and survives an empty period', asyn
   console.log('S-5 EMPTY', JSON.stringify(empty))
   expect(empty.currency, 'S-5 currency on an empty period').toBe('VND')
   expect(empty.totalCost, 'S-5 total on an empty period').toBe(0)
+
+  // A month whose first day is more than 90 days back: 422 with its code, never a 200 of 0 ₫
+  const xRes = await api.get(`/v1/tenant/billing/summary?month=${EXPIRED_MONTH}`)
+  expect(xRes.status(), 'expired-month status').toBe(422)
+  expect((await xRes.json()).code, 'expired-month code').toBe('USAGE_PERIOD_EXPIRED')
 
   await page.screenshot({ path: 'e2e-out/rm-bc1-billing-pass.png', fullPage: true })
 })
