@@ -175,7 +175,7 @@ export const vi: Messages = {
     notOpened: 'Phiên không mở được. Hãy kết nối lại.',
     busy: 'VM này đang có một phiên console khác. Đóng phiên đó rồi kết nối lại.',
     unavailable: 'Console của VM này hiện không dùng được.',
-    accountNotActive: 'Tài khoản của bạn chưa hoạt động nên console không mở được.',
+    accountNotActive: 'Tài khoản của bạn không hoạt động nên console không mở được.',
     clusterUnreachable: 'Hiện không kết nối được tới cluster của VM này. Vui lòng thử lại sau.',
     idle: 'Phiên đã đóng sau 30 phút không hoạt động.',
     ended: 'Phiên đã kết thúc.',

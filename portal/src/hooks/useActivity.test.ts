@@ -99,7 +99,7 @@ describe('formatActivityAction', () => {
   })
 
   // An SSH session is a request with no outcome row: the session leaves nothing behind on the VM.
-  it('labels an SSH session request in both languages', () => {
+  it('labels an SSH session request and an opened console session in both languages', () => {
     expect(formatActivityAction('vm.ssh_requested', en)).toBe('Requested SSH session')
     expect(formatActivityAction('vm.ssh_requested', viMessages)).toBe('Yêu cầu phiên SSH')
     expect(formatActivityAction('vm.console_requested', en)).toBe('Opened console session')
