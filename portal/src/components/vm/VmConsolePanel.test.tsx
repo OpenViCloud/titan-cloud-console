@@ -288,6 +288,23 @@ describe('VmConsolePanel', () => {
     expect(screen.getByLabelText('VM console terminal')).toBe(xterm.terminals[0].parent)
   })
 
+  it('opens no websocket when the tab closes while the ticket is still on its way', async () => {
+    let answer: () => void = () => {}
+    server.use(http.post('*/v1/tenant/vms/vm-1/console-tickets', () =>
+      new Promise<Response>(resolve => {
+        answer = () => resolve(new HttpResponse(null, { status: 204 }))
+      })))
+    const { unmount } = renderWithProviders(<VmConsolePanel vm={runningVm} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Connect' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Connecting…' })).toBeDisabled())
+
+    unmount()
+    answer()
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(FakeWebSocket.sockets).toHaveLength(0)
+  })
+
   it('offers no console while the VM does not run', () => {
     renderWithProviders(<VmConsolePanel vm={{ ...runningVm, status: 'Stopped' }} />)
     expect(screen.getByText('The console opens while the VM is running.')).toBeInTheDocument()

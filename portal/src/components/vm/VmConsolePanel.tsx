@@ -34,11 +34,14 @@ export function VmConsolePanel({ vm }: { vm: VmStateFields & { id: string } }) {
   const fitRef = useRef<FitAddon | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const disconnectedRef = useRef(false)
+  const unmountedRef = useRef(false)
 
   useEffect(() => {
+    unmountedRef.current = false
     const fitToWindow = () => fitRef.current?.fit()
     window.addEventListener('resize', fitToWindow)
     return () => {
+      unmountedRef.current = true
       window.removeEventListener('resize', fitToWindow)
       const socket = socketRef.current
       if (socket !== null) {
@@ -86,6 +89,10 @@ export function VmConsolePanel({ vm }: { vm: VmStateFields & { id: string } }) {
       return
     }
 
+    // The tab closed while the ticket was on its way: a websocket opened now would hold a place nobody can close.
+    if (unmountedRef.current) {
+      return
+    }
     const socket = new WebSocket(consoleSocketUrl(getConfig().apiBaseUrl, vm.id, ticket))
     socket.binaryType = 'arraybuffer'
     socketRef.current = socket
