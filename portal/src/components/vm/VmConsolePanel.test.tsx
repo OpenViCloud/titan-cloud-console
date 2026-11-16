@@ -252,7 +252,7 @@ describe('VmConsolePanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Connect' }))
 
     await waitFor(() => expect(
-      screen.getByText('You already have 5 SSH or console sessions open. Close one, then connect again.'),
+      screen.getByText('Your account already has 5 SSH or console sessions open. Close one, then connect again.'),
     ).toBeInTheDocument())
     expect(FakeWebSocket.sockets).toHaveLength(0)
     expect(screen.getByRole('button', { name: 'Connect' })).toBeEnabled()

@@ -37,9 +37,11 @@ describe('resize frame', () => {
 })
 
 describe('message when the ticket is refused', () => {
-  it('says the session limit, the VM status, or a general failure', () => {
+  it('says the session limit, the VM status, an account not active, or a general failure', () => {
     expect(ticketErrorMessage('VM_SESSION_LIMIT_REACHED')).toBe('sessionLimit')
     expect(ticketErrorMessage('VM_INVALID_STATUS')).toBe('notRunningNow')
+    expect(ticketErrorMessage('TENANT_SUSPENDED')).toBe('accountNotActive')
+    expect(ticketErrorMessage('TENANT_PENDING_APPROVAL')).toBe('accountNotActive')
     expect(ticketErrorMessage('INTERNAL_ERROR')).toBe('couldNotStart')
     expect(ticketErrorMessage(undefined)).toBe('couldNotStart')
   })

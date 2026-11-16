@@ -43,6 +43,9 @@ export function ticketErrorMessage(code: string | undefined): ConsoleMessage {
   if (code === 'VM_INVALID_STATUS') {
     return 'notRunningNow'
   }
+  if (code === 'TENANT_SUSPENDED' || code === 'TENANT_PENDING_APPROVAL') {
+    return 'accountNotActive'
+  }
   return 'couldNotStart'
 }
 

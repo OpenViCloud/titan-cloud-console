@@ -102,6 +102,8 @@ describe('formatActivityAction', () => {
   it('labels an SSH session request in both languages', () => {
     expect(formatActivityAction('vm.ssh_requested', en)).toBe('Requested SSH session')
     expect(formatActivityAction('vm.ssh_requested', viMessages)).toBe('Yêu cầu phiên SSH')
+    expect(formatActivityAction('vm.console_requested', en)).toBe('Opened console session')
+    expect(formatActivityAction('vm.console_requested', viMessages)).toBe('Mở phiên console')
   })
 
   it('keeps the labels of rows written before docs/architecture/intent-and-observation.md#intent-has-identity', () => {
