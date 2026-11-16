@@ -21,7 +21,7 @@ export interface Vm {
   createdAt: string
 }
 
-interface CreateVmRequest {
+export interface CreateVmRequest {
   name: string
   networkId: string
   clusterId: string
@@ -29,6 +29,7 @@ interface CreateVmRequest {
   templateId: string
   diskSizeGb?: number
   sshKeyIds?: string[]
+  consolePassword?: string
 }
 
 export function useVms() {

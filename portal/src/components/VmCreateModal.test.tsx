@@ -177,6 +177,95 @@ describe('VmCreateModal', () => {
     expect(await screen.findByText('A picked SSH key no longer exists — pick again')).toBeInTheDocument()
   })
 
+  // titan-ops features/vm/design.md#console-password — the password logs in as ubuntu on the Console tab; the server
+  // keeps only its hash.
+  describe('console password', () => {
+    let posts: Record<string, unknown>[]
+    beforeEach(() => {
+      posts = []
+      server.use(
+        http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
+        http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
+        http.get('*/v1/templates', () => HttpResponse.json([template])),
+        http.post('*/v1/tenant/vms', async ({ request }) => {
+          posts.push(await request.json() as Record<string, unknown>)
+          return HttpResponse.json({ vmId: 'vm-new' }, { status: 202 })
+        }),
+      )
+    })
+
+    async function fillTheForm() {
+      await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
+      await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseTheRest()
+    }
+
+    it('sends the console password with the create, typed in a hidden field', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      const field = screen.getByLabelText('Console password')
+      expect(field.getAttribute('type')).toBe('password')
+      expect(field.getAttribute('autocomplete')).toBe('new-password')
+      expect(screen.getByText('Optional. 12 to 72 characters, to log in as ubuntu on the Console tab. It cannot be shown again.')).toBeInTheDocument()
+      await userEvent.type(field, 'correct horse battery')
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts.at(-1)?.consolePassword).toBe('correct horse battery')
+    })
+
+    it('sends no console password when the field is left empty', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts).toHaveLength(1)
+      expect(posts[0]).not.toHaveProperty('consolePassword')
+    })
+
+    it.each([
+      ['11', 'a'.repeat(11)],
+      ['73', 'a'.repeat(73)],
+    ])('refuses a console password of %s characters and sends nothing', async (_, password) => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+      await fillTheForm()
+      await userEvent.type(screen.getByLabelText('Console password'), password)
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      expect(await screen.findByText('The console password must be 12 to 72 characters.')).toBeInTheDocument()
+      expect(posts).toHaveLength(0)
+    })
+
+    it('accepts 12 and 72 characters', async () => {
+      for (const password of ['a'.repeat(12), 'a'.repeat(72)]) {
+        const onOpenChange = vi.fn()
+        const { unmount } = renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+        await fillTheForm()
+        await userEvent.type(screen.getByLabelText('Console password'), password)
+        await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+        await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+        expect(posts.at(-1)?.consolePassword).toBe(password)
+        unmount()
+      }
+    })
+
+    it('speaks Vietnamese: label, hint and the length error', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
+      await userEvent.type(await screen.findByLabelText('Mật khẩu console'), 'short')
+      await userEvent.type(screen.getByPlaceholderText(/web/i), 'my-vm')
+      await userEvent.click(screen.getByRole('button', { name: 'Tạo VM' }))
+
+      expect(screen.getByText('Không bắt buộc. 12 đến 72 ký tự, để đăng nhập user ubuntu ở tab Console. Không xem lại được.')).toBeInTheDocument()
+      expect(await screen.findByText('Mật khẩu console phải từ 12 đến 72 ký tự.')).toBeInTheDocument()
+    })
+  })
+
   // titan-ops features/catalog/design.md#template-per-cluster — each cluster holds its own copy of a template; the
   // form offers only the ones synced in the cluster picked.
   const clusterTwo = { id: 'z2', name: 'Cluster 2' }

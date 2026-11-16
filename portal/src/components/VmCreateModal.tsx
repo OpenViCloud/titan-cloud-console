@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useCreateVm } from '@/hooks/useVms'
+import { useCreateVm, type CreateVmRequest } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
 import { useClusters } from '@/hooks/useClusters'
 import { useClusterTemplates } from '@/hooks/useTemplates'
@@ -16,6 +16,10 @@ import { useSshKeys } from '@/hooks/useSshKeys'
 import type { AxiosError } from 'axios'
 import { isUsableNetwork } from '@/lib/networkState'
 import { useT } from '@/i18n/LanguageContext'
+
+// The length the server accepts (titan-ops features/vm/design.md#console-password); no rule on the kind of characters.
+const CONSOLE_PASSWORD_MIN = 12
+const CONSOLE_PASSWORD_MAX = 72
 
 interface Props {
   open: boolean
@@ -66,7 +70,9 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const [templateId, setTemplateId] = useState('')
   const [vmOfferingId, setVmOfferingId] = useState('')
   const [sshKeyIds, setSshKeyIds] = useState<string[]>([])
+  const [consolePassword, setConsolePassword] = useState('')
   const [nameError, setNameError] = useState('')
+  const [consolePasswordError, setConsolePasswordError] = useState('')
   const [apiError, setApiError]   = useState('')
 
   const createVm = useCreateVm()
@@ -127,6 +133,12 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     if (!name.trim()) { setNameError(t.vmCreate.nameRequired); return false }
     if (name.length > 64) { setNameError(t.vmCreate.nameTooLong); return false }
     setNameError('')
+    const passwordTooShort = consolePassword !== '' && consolePassword.length < CONSOLE_PASSWORD_MIN
+    if (passwordTooShort || consolePassword.length > CONSOLE_PASSWORD_MAX) {
+      setConsolePasswordError(t.vmCreate.consolePasswordLength)
+      return false
+    }
+    setConsolePasswordError('')
     const everyChoiceMade = clusterId !== '' && networkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
     if (!everyChoiceMade) {
       setApiError(t.vmCreate.choicesRequired)
@@ -140,7 +152,13 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     if (!validate()) return
     setApiError('')
     try {
-      await createVm.mutateAsync({ name, networkId, clusterId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds })
+      const request: CreateVmRequest = {
+        name, networkId, clusterId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds,
+      }
+      if (consolePassword !== '') {
+        request.consolePassword = consolePassword
+      }
+      await createVm.mutateAsync(request)
       handleClose()
       onCreated?.()
     } catch (err) {
@@ -165,8 +183,8 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
 
   function handleClose() {
     setName(''); setNetworkId(''); setClusterId('')
-    setTemplateId(''); setVmOfferingId(''); setSshKeyIds([])
-    setNameError(''); setApiError('')
+    setTemplateId(''); setVmOfferingId(''); setSshKeyIds([]); setConsolePassword('')
+    setNameError(''); setConsolePasswordError(''); setApiError('')
     onOpenChange(false)
   }
 
@@ -260,6 +278,22 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
               </div>
             )}
           </fieldset>
+
+          <div className="space-y-1.5">
+            <label htmlFor="console-password" className="text-[13px] font-medium text-soft-foreground">
+              {t.vmCreate.consolePassword}
+            </label>
+            <Input
+              id="console-password"
+              type="password"
+              autoComplete="new-password"
+              value={consolePassword}
+              onChange={e => { setConsolePassword(e.target.value); setConsolePasswordError('') }}
+              error={consolePasswordError}
+              disabled={createVm.isPending}
+            />
+            <p className="text-xs text-faint">{t.vmCreate.consolePasswordHint}</p>
+          </div>
 
           {apiError && (
             <p className="text-xs text-bad bg-bad-soft border border-bad-border rounded-md px-3 py-2">
