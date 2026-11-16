@@ -9,6 +9,13 @@ import { VmDetailPage } from './VmDetailPage'
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() }, Toaster: () => null }))
 
+// Counts loads of the terminal library: the Console tab's panel, and xterm with it, load only when the tab opens.
+const xtermLoads = vi.hoisted(() => ({ count: 0 }))
+vi.mock('@xterm/xterm', () => {
+  xtermLoads.count += 1
+  return { Terminal: class {} }
+})
+
 import { toast } from 'sonner'
 
 const st = (status: string) =>
@@ -448,5 +455,18 @@ describe('VmDetailPage', () => {
     const memory = screen.getByRole('region', { name: 'Bộ nhớ' })
     expect(within(memory).getByText('265,6 MiB trên 1,9 GiB')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '24 giờ' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('opens the serial console in the Console tab, loading the terminal only then', async () => {
+    server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])))
+    renderAt('/vms/vm-1')
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'web-01' })).toBeInTheDocument())
+    expect(xtermLoads.count).toBe(0)
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Console' }))
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Serial console' })).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
+    expect(xtermLoads.count).toBe(1)
   })
 })

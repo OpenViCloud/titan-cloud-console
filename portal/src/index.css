@@ -65,6 +65,9 @@
   --color-qr: #ffffff;
   --color-qr-foreground: #111111;
 
+  /* The console terminal draws on xterm's own black in either theme; its frame matches it. */
+  --color-terminal: #000000;
+
   --radius: 0.5rem;
 }
 

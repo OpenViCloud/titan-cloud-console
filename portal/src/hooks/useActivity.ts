@@ -58,6 +58,7 @@ const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'load_balancer.update_requested': 'loadBalancerUpdateRequested',
   'load_balancer.delete_requested': 'loadBalancerDeleteRequested',
   'vm.ssh_requested': 'vmSshRequested',
+  'vm.console_requested': 'vmConsoleRequested',
   'vm.created': 'vmCreated',
   'vm.deleted': 'vmDeleted',
   'vm.stopped': 'vmStopped',

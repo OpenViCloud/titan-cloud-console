@@ -17,13 +17,19 @@ const VmMetricsPanel = lazy(() =>
   import('@/components/vm/VmMetricsPanel').then((module) => ({ default: module.VmMetricsPanel })),
 )
 
-type Tab = 'overview' | 'snapshots' | 'monitoring'
+// The terminal library is most of this panel's weight; only a page that opens the Console tab loads it.
+const VmConsolePanel = lazy(() =>
+  import('@/components/vm/VmConsolePanel').then((module) => ({ default: module.VmConsolePanel })),
+)
+
+type Tab = 'overview' | 'snapshots' | 'monitoring' | 'console'
 
 function tabs(t: Messages): { id: Tab; label: string }[] {
   return [
     { id: 'overview', label: t.vmDetail.tabOverview },
     { id: 'snapshots', label: t.vmDetail.tabSnapshots },
     { id: 'monitoring', label: t.vmDetail.tabMonitoring },
+    { id: 'console', label: t.vmDetail.tabConsole },
   ]
 }
 
@@ -156,6 +162,13 @@ export function VmDetailPage() {
       {tab === 'monitoring' && (
         <Suspense fallback={null}>
           <VmMetricsPanel vmId={vm.id} />
+        </Suspense>
+      )}
+
+      {/* Leaving the tab unmounts the panel, which closes its session. */}
+      {tab === 'console' && (
+        <Suspense fallback={null}>
+          <VmConsolePanel vm={vm} />
         </Suspense>
       )}
     </div>
