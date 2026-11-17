@@ -18,6 +18,9 @@ export interface Vm {
   templateId: string
   clusterId: string
   diskSizeGb: number
+  // How long a stop waits for a clean shutdown before the power is cut (titan-ops features/vm/design.md#vm-stop-timeout).
+  // Absent from a control plane that does not send it yet: the VM page then shows no stop timeout.
+  stopTimeoutSeconds?: number
   createdAt: string
 }
 
@@ -30,6 +33,13 @@ export interface CreateVmRequest {
   diskSizeGb?: number
   sshKeyIds?: string[]
   consolePassword?: string
+  stopTimeoutSeconds?: number
+}
+
+// At least one of the two; the server answers 204 and sends no provider command.
+export interface UpdateVmRequest {
+  name?: string
+  stopTimeoutSeconds?: number
 }
 
 export function useVms() {
@@ -51,6 +61,17 @@ export function useCreateVm() {
   return useMutation({
     mutationFn: (req: CreateVmRequest) =>
       withKey(headers => api.post(`/v1/tenant/vms`, req, { headers })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['vms', tenantId] }),
+  })
+}
+
+export function useUpdateVm() {
+  const { tenantId } = useTenant()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ vmId, ...body }: UpdateVmRequest & { vmId: string }) =>
+      // titan-ops architecture/http-contract.md#commands-return-no-data: 204 with no body — the list is re-read.
+      api.patch(`/v1/tenant/vms/${vmId}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['vms', tenantId] }),
   })
 }

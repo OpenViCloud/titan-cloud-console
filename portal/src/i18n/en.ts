@@ -141,6 +141,20 @@ export const en = {
     costThisMonth: 'Cost this month',
     costHint: 'Compute is billed while the VM is Running, Ready, Frozen or Error.',
     snapshots: 'Snapshots',
+    stopTimeout: 'Stop timeout',
+    stopTimeoutValue: (seconds: number) => {
+      const minutes = Math.floor(seconds / 60)
+      const rest = seconds % 60
+      if (minutes === 0) return `${seconds} s`
+      if (rest === 0) return `${seconds} s (${minutes} min)`
+      return `${seconds} s (${minutes} min ${rest} s)`
+    },
+    stopTimeoutHint: 'How long a stop waits for the VM to shut down cleanly before its power is cut. A change applies to the next stop.',
+    stopTimeoutInput: 'New stop timeout in seconds',
+    stopTimeoutRange: 'The stop timeout must be a whole number of seconds from 30 to 1800.',
+    stopTimeoutSaved: 'Stop timeout saved',
+    stopTimeoutVmDeleted: 'This VM is deleted — its stop timeout can no longer be changed.',
+    stopTimeoutSaveFailed: 'Could not save the stop timeout. Please try again.',
   },
   vmMetrics: {
     range: 'Time range',
@@ -276,6 +290,9 @@ export const en = {
     consolePassword: 'Console password',
     consolePasswordHint: 'Optional. 12 to 72 characters, to log in as ubuntu on the Console tab. It cannot be shown again.',
     consolePasswordLength: 'The console password must be 12 to 72 characters.',
+    stopTimeout: 'Stop timeout (seconds)',
+    stopTimeoutHint: 'How long the VM gets to shut down cleanly when stopped, before its power is cut. 30 to 1800, default 120.',
+    stopTimeoutRange: 'The stop timeout must be a whole number of seconds from 30 to 1800.',
     creating: 'Creating…',
     submit: 'Create VM',
     choicesRequired: 'Choose a cluster, network, template and size.',

@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { VmActions, VmStatusBadge, VmStatusNote } from '@/components/vm/VmActions'
 import { VmSnapshotPanel } from '@/components/vm/VmSnapshotPanel'
+import { VmStopTimeoutPanel } from '@/components/vm/VmStopTimeoutPanel'
 import { useVms } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
 import { useClusterMap } from '@/hooks/useClusters'
@@ -142,13 +143,21 @@ export function VmDetailPage() {
               </Fact>
             </dl>
           </section>
-          <section className="rounded-xl border border-border bg-card px-5 py-4" aria-label={t.vmDetail.costThisMonth}>
-            <h2 className="text-[15px] font-semibold">{t.vmDetail.costThisMonth}</h2>
-            <p data-testid="vm-cost" className="mt-3 text-[28px] font-bold tracking-tight tabular-nums">
-              {f.money(cost?.totalCost ?? 0, currency)}
-            </p>
-            <p className="mt-1 text-[12.5px] text-faint">{t.vmDetail.costHint}</p>
-          </section>
+          <div className="flex flex-col gap-5">
+            <section className="rounded-xl border border-border bg-card px-5 py-4" aria-label={t.vmDetail.costThisMonth}>
+              <h2 className="text-[15px] font-semibold">{t.vmDetail.costThisMonth}</h2>
+              <p data-testid="vm-cost" className="mt-3 text-[28px] font-bold tracking-tight tabular-nums">
+                {f.money(cost?.totalCost ?? 0, currency)}
+              </p>
+              <p className="mt-1 text-[12.5px] text-faint">{t.vmDetail.costHint}</p>
+            </section>
+            {vm.stopTimeoutSeconds !== undefined && (
+              <VmStopTimeoutPanel
+                key={`${vm.id}:${vm.stopTimeoutSeconds}`}
+                vm={{ id: vm.id, stopTimeoutSeconds: vm.stopTimeoutSeconds }}
+              />
+            )}
+          </div>
         </div>
       )}
 

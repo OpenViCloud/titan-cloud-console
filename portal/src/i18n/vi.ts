@@ -139,6 +139,20 @@ export const vi: Messages = {
     costThisMonth: 'Chi phí tháng này',
     costHint: 'Compute được tính tiền khi VM ở trạng thái Running, Ready, Frozen hoặc Error.',
     snapshots: 'Snapshot',
+    stopTimeout: 'Thời gian dừng',
+    stopTimeoutValue: (seconds: number) => {
+      const minutes = Math.floor(seconds / 60)
+      const rest = seconds % 60
+      if (minutes === 0) return `${seconds} giây`
+      if (rest === 0) return `${seconds} giây (${minutes} phút)`
+      return `${seconds} giây (${minutes} phút ${rest} giây)`
+    },
+    stopTimeoutHint: 'Khi dừng, hệ thống chờ VM tắt êm trong chừng này thời gian rồi mới ngắt nguồn. Giá trị mới áp dụng từ lần dừng kế tiếp.',
+    stopTimeoutInput: 'Thời gian dừng mới, tính bằng giây',
+    stopTimeoutRange: 'Thời gian dừng phải là số giây nguyên, từ 30 đến 1800.',
+    stopTimeoutSaved: 'Đã lưu thời gian dừng',
+    stopTimeoutVmDeleted: 'VM này đã bị xoá — không đổi được thời gian dừng nữa.',
+    stopTimeoutSaveFailed: 'Không lưu được thời gian dừng. Vui lòng thử lại.',
   },
   vmMetrics: {
     range: 'Khoảng thời gian',
@@ -274,6 +288,9 @@ export const vi: Messages = {
     consolePassword: 'Mật khẩu console',
     consolePasswordHint: 'Không bắt buộc. 12 đến 72 ký tự, để đăng nhập user ubuntu ở tab Console. Không xem lại được.',
     consolePasswordLength: 'Mật khẩu console phải từ 12 đến 72 ký tự.',
+    stopTimeout: 'Thời gian dừng (giây)',
+    stopTimeoutHint: 'Khi dừng, VM có chừng này thời gian để tắt êm trước khi bị ngắt nguồn. Từ 30 đến 1800, mặc định 120.',
+    stopTimeoutRange: 'Thời gian dừng phải là số giây nguyên, từ 30 đến 1800.',
     creating: 'Đang tạo…',
     submit: 'Tạo VM',
     choicesRequired: 'Chọn cluster, mạng, template và cấu hình.',
