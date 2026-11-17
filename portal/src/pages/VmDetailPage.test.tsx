@@ -30,6 +30,7 @@ const vm = (overrides = {}) => ({
   networkId: 'n1', vmOfferingId: 'm', templateId: 't1',
   clusterId: 'z1', diskSizeGb: 50, createdAt: '2026-01-01T00:00:00Z',
   publicIpv6Address: '2001:db8::11',
+  stopTimeoutSeconds: 120,
   ...overrides,
 })
 
@@ -468,5 +469,113 @@ describe('VmDetailPage', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Serial console' })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
     expect(xtermLoads.count).toBe(1)
+  })
+
+  // titan-ops features/vm/design.md#vm-stop-timeout — the Overview shows the VM's stop timeout and changes it in place.
+  describe('stop timeout', () => {
+    function stopTimeoutPanel() {
+      return screen.getByRole('region', { name: 'Stop timeout' })
+    }
+
+    it('shows no stop timeout when the server does not send one yet', async () => {
+      const withoutStopTimeout: Record<string, unknown> = { ...vm() }
+      delete withoutStopTimeout.stopTimeoutSeconds
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([withoutStopTimeout])))
+      renderAt('/vms/vm-1')
+      await waitFor(() => expect(screen.getByText('10.0.0.5')).toBeInTheDocument())
+      expect(screen.queryByRole('region', { name: 'Stop timeout' })).not.toBeInTheDocument()
+      expect(screen.queryByTestId('vm-stop-timeout')).not.toBeInTheDocument()
+    })
+
+    it('shows the stop timeout the server sends, in seconds and minutes', async () => {
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ stopTimeoutSeconds: 600 })])))
+      renderAt('/vms/vm-1')
+      await waitFor(() => expect(screen.getByTestId('vm-stop-timeout')).toHaveTextContent('600 s (10 min)'))
+      expect(within(stopTimeoutPanel()).getByRole('textbox', { name: 'New stop timeout in seconds' })).toHaveValue('600')
+      expect(within(stopTimeoutPanel()).getByRole('button', { name: 'Save' })).toBeDisabled()
+    })
+
+    it('saves a new stop timeout with PATCH, says so and shows the value read again', async () => {
+      let saved = 120
+      const patches: unknown[] = []
+      server.use(
+        http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ stopTimeoutSeconds: saved })])),
+        http.patch('*/v1/tenant/vms/vm-1', async ({ request }) => {
+          patches.push(await request.json())
+          saved = 900
+          return new HttpResponse(null, { status: 204 })
+        }),
+      )
+      renderAt('/vms/vm-1')
+      await waitFor(() => expect(screen.getByTestId('vm-stop-timeout')).toHaveTextContent('120 s (2 min)'))
+      const field = within(stopTimeoutPanel()).getByRole('textbox', { name: 'New stop timeout in seconds' })
+      await userEvent.clear(field)
+      await userEvent.type(field, '900')
+      await userEvent.click(within(stopTimeoutPanel()).getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Stop timeout saved'))
+      expect(patches).toEqual([{ stopTimeoutSeconds: 900 }])
+      await waitFor(() => expect(screen.getByTestId('vm-stop-timeout')).toHaveTextContent('900 s (15 min)'))
+    })
+
+    it.each(['29', '1801', '90.5'])('refuses %s seconds and sends nothing', async (text) => {
+      let patched = false
+      server.use(
+        http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+        http.patch('*/v1/tenant/vms/vm-1', () => {
+          patched = true
+          return new HttpResponse(null, { status: 204 })
+        }),
+      )
+      renderAt('/vms/vm-1')
+      await waitFor(() => expect(screen.getByTestId('vm-stop-timeout')).toBeInTheDocument())
+      const field = within(stopTimeoutPanel()).getByRole('textbox', { name: 'New stop timeout in seconds' })
+      await userEvent.clear(field)
+      await userEvent.type(field, text)
+      await userEvent.click(within(stopTimeoutPanel()).getByRole('button', { name: 'Save' }))
+
+      expect(await within(stopTimeoutPanel()).findByText('The stop timeout must be a whole number of seconds from 30 to 1800.')).toBeInTheDocument()
+      expect(patched).toBe(false)
+    })
+
+    it.each([
+      { status: 422, code: 'VM_INVALID_STATUS', message: 'This VM is deleted — its stop timeout can no longer be changed.' },
+      { status: 400, code: 'VALIDATION_ERROR', message: 'The stop timeout must be a whole number of seconds from 30 to 1800.' },
+    ])('shows what a $status $code means and says nothing was saved', async ({ status, code, message }) => {
+      server.use(
+        http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])),
+        http.patch('*/v1/tenant/vms/vm-1', () => HttpResponse.json({ code }, { status })),
+      )
+      renderAt('/vms/vm-1')
+      await waitFor(() => expect(screen.getByTestId('vm-stop-timeout')).toBeInTheDocument())
+      const field = within(stopTimeoutPanel()).getByRole('textbox', { name: 'New stop timeout in seconds' })
+      await userEvent.clear(field)
+      await userEvent.type(field, '300')
+      await userEvent.click(within(stopTimeoutPanel()).getByRole('button', { name: 'Save' }))
+
+      expect(await within(stopTimeoutPanel()).findByText(message)).toBeInTheDocument()
+      expect(toast.success).not.toHaveBeenCalled()
+      expect(screen.getByTestId('vm-stop-timeout')).toHaveTextContent('120 s (2 min)')
+    })
+
+    it('speaks Vietnamese: heading, value and the range error', async () => {
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ stopTimeoutSeconds: 150 })])))
+      renderWithProviders(
+        <MemoryRouter initialEntries={['/vms/vm-1']}>
+          <Routes>
+            <Route path="/vms/:vmId" element={<VmDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+        { lang: 'vi' },
+      )
+      await waitFor(() => expect(screen.getByTestId('vm-stop-timeout')).toHaveTextContent('150 giây (2 phút 30 giây)'))
+      const panel = screen.getByRole('region', { name: 'Thời gian dừng' })
+      const field = within(panel).getByRole('textbox', { name: 'Thời gian dừng mới, tính bằng giây' })
+      await userEvent.clear(field)
+      await userEvent.type(field, '10')
+      await userEvent.click(within(panel).getByRole('button', { name: 'Lưu' }))
+
+      expect(await within(panel).findByText('Thời gian dừng phải là số giây nguyên, từ 30 đến 1800.')).toBeInTheDocument()
+    })
   })
 })
