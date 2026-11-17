@@ -19,8 +19,8 @@ export function formatSignedMoney(amount: number, lang: Lang, currency = 'VND'):
   return `${sign}${formatMoney(Math.abs(amount), lang, currency)}`
 }
 
-// A rate can be fractional (the catalog prices are whole, but the admin route takes a fraction), so formatMoney —
-// which rounds VND to whole đồng — would render a rate like 1.57914 ₫/GB/h as "2 ₫" and a small price change as a no-op.
+// A rate can be fractional (the catalog prices are whole, but the VM price route takes a fraction), so formatMoney —
+// which rounds VND to whole đồng — would render a rate like 161.388 ₫/h as "161 ₫" and a small price change as a no-op.
 // Rates keep their decimals; totals keep whole đồng.
 export function formatRate(rate: number, lang: Lang, currency = 'VND'): string {
   if (currency === 'VND') {
