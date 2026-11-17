@@ -16,6 +16,7 @@ import { useSshKeys } from '@/hooks/useSshKeys'
 import type { AxiosError } from 'axios'
 import { isUsableNetwork } from '@/lib/networkState'
 import { useT } from '@/i18n/LanguageContext'
+import { parseStopTimeout, STOP_TIMEOUT_DEFAULT } from '@/lib/vmStopTimeout'
 
 // The length the server accepts (titan-ops features/vm/design.md#console-password); no rule on the kind of characters.
 const CONSOLE_PASSWORD_MIN = 12
@@ -71,8 +72,10 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const [vmOfferingId, setVmOfferingId] = useState('')
   const [sshKeyIds, setSshKeyIds] = useState<string[]>([])
   const [consolePassword, setConsolePassword] = useState('')
+  const [stopTimeout, setStopTimeout] = useState(String(STOP_TIMEOUT_DEFAULT))
   const [nameError, setNameError] = useState('')
   const [consolePasswordError, setConsolePasswordError] = useState('')
+  const [stopTimeoutError, setStopTimeoutError] = useState('')
   const [apiError, setApiError]   = useState('')
 
   const createVm = useCreateVm()
@@ -139,6 +142,11 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       return false
     }
     setConsolePasswordError('')
+    if (parseStopTimeout(stopTimeout) === null) {
+      setStopTimeoutError(t.vmCreate.stopTimeoutRange)
+      return false
+    }
+    setStopTimeoutError('')
     const everyChoiceMade = clusterId !== '' && networkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
     if (!everyChoiceMade) {
       setApiError(t.vmCreate.choicesRequired)
@@ -157,6 +165,11 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       }
       if (consolePassword !== '') {
         request.consolePassword = consolePassword
+      }
+      // The default is the server's too (a VM that sets none gets 120), so only a changed value is sent.
+      const stopTimeoutSeconds = parseStopTimeout(stopTimeout)
+      if (stopTimeoutSeconds !== null && stopTimeoutSeconds !== STOP_TIMEOUT_DEFAULT) {
+        request.stopTimeoutSeconds = stopTimeoutSeconds
       }
       await createVm.mutateAsync(request)
       handleClose()
@@ -184,7 +197,8 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   function handleClose() {
     setName(''); setNetworkId(''); setClusterId('')
     setTemplateId(''); setVmOfferingId(''); setSshKeyIds([]); setConsolePassword('')
-    setNameError(''); setConsolePasswordError(''); setApiError('')
+    setStopTimeout(String(STOP_TIMEOUT_DEFAULT))
+    setNameError(''); setConsolePasswordError(''); setStopTimeoutError(''); setApiError('')
     onOpenChange(false)
   }
 
@@ -293,6 +307,23 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
               disabled={createVm.isPending}
             />
             <p className="text-xs text-faint">{t.vmCreate.consolePasswordHint}</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="stop-timeout" className="text-[13px] font-medium text-soft-foreground">
+              {t.vmCreate.stopTimeout}
+            </label>
+            {/* Text, not type=number: the range check is ours and shows inline, not the browser's bubble. */}
+            <Input
+              id="stop-timeout"
+              type="text"
+              inputMode="numeric"
+              value={stopTimeout}
+              onChange={e => { setStopTimeout(e.target.value); setStopTimeoutError('') }}
+              error={stopTimeoutError}
+              disabled={createVm.isPending}
+            />
+            <p className="text-xs text-faint">{t.vmCreate.stopTimeoutHint}</p>
           </div>
 
           {apiError && (

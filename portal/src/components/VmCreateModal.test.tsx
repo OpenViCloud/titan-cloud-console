@@ -266,6 +266,90 @@ describe('VmCreateModal', () => {
     })
   })
 
+  // titan-ops features/vm/design.md#vm-stop-timeout — how long a stop waits for a clean shutdown; 30 to 1800 seconds,
+  // and a VM that sets none gets the server's 120.
+  describe('stop timeout', () => {
+    let posts: Record<string, unknown>[]
+    beforeEach(() => {
+      posts = []
+      server.use(
+        http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
+        http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
+        http.get('*/v1/templates', () => HttpResponse.json([template])),
+        http.post('*/v1/tenant/vms', async ({ request }) => {
+          posts.push(await request.json() as Record<string, unknown>)
+          return HttpResponse.json({ vmId: 'vm-new' }, { status: 202 })
+        }),
+      )
+    })
+
+    async function fillTheForm() {
+      await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
+      await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseTheRest()
+    }
+
+    async function typeStopTimeout(text: string) {
+      const field = screen.getByLabelText('Stop timeout (seconds)')
+      await userEvent.clear(field)
+      if (text !== '') {
+        await userEvent.type(field, text)
+      }
+    }
+
+    it('starts at 120 with its hint, and leaves the default to the server', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      expect(screen.getByLabelText('Stop timeout (seconds)')).toHaveValue('120')
+      expect(screen.getByText('How long the VM gets to shut down cleanly when stopped, before its power is cut. 30 to 1800, default 120.')).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts).toHaveLength(1)
+      expect(posts[0]).not.toHaveProperty('stopTimeoutSeconds')
+    })
+
+    it.each([
+      { text: '600', seconds: 600 },
+      { text: '30', seconds: 30 },
+      { text: '1800', seconds: 1800 },
+    ])('sends a stop timeout of $text seconds as a number', async ({ text, seconds }) => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      await typeStopTimeout(text)
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts.at(-1)?.stopTimeoutSeconds).toBe(seconds)
+    })
+
+    it.each(['29', '1801', '', '90.5', 'abc'])('refuses a stop timeout of %j and sends nothing', async (text) => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+      await fillTheForm()
+      await typeStopTimeout(text)
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      expect(await screen.findByText('The stop timeout must be a whole number of seconds from 30 to 1800.')).toBeInTheDocument()
+      expect(posts).toHaveLength(0)
+    })
+
+    it('speaks Vietnamese: label, hint and the range error', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
+      const field = await screen.findByLabelText('Thời gian dừng (giây)')
+      await userEvent.clear(field)
+      await userEvent.type(field, '5')
+      await userEvent.type(screen.getByPlaceholderText(/web/i), 'my-vm')
+      await userEvent.click(screen.getByRole('button', { name: 'Tạo VM' }))
+
+      expect(screen.getByText('Khi dừng, VM có chừng này thời gian để tắt êm trước khi bị ngắt nguồn. Từ 30 đến 1800, mặc định 120.')).toBeInTheDocument()
+      expect(await screen.findByText('Thời gian dừng phải là số giây nguyên, từ 30 đến 1800.')).toBeInTheDocument()
+    })
+  })
+
   // titan-ops features/catalog/design.md#template-per-cluster — each cluster holds its own copy of a template; the
   // form offers only the ones synced in the cluster picked.
   const clusterTwo = { id: 'z2', name: 'Cluster 2' }
