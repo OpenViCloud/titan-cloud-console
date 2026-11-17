@@ -19,7 +19,6 @@ const EVIDENCE = process.env.RESULTS_DIR || 'test-results/evidence'
 // core.wallets.available_amount   = 509841.5070000000
 // core.invoices (2026-09)         = 158.4930000000, SettledByWallet
 // Σ core.usage_records this month = 239.4870000000  (COMPUTE 107.592 + DISK 131.595 + SNAPSHOT 0.3)
-// core.vm_offerings.price_per_hour= s 170 · m 320 · l 640 · xl 1280 (titan-ops features/catalog/design.md#whole-vnd-prices)
 //
 // The portal ROUNDS VND (portal/src/lib/money.ts, English by default), so what a
 // customer reads is not the stored value. Asserting the unrounded number is a false FAIL that looks
@@ -29,7 +28,8 @@ const EXPECTED_MONTH_TOTAL = /239\s*₫/
 
 // Prices are asserted UNROUNDED because they are read off the API response, not off the page — the
 // customer portal never renders an offering price anywhere. This is the read path 16a/16b changed:
-// numeric(18,10) column → Rate converter → `.PerUnit` at the DTO boundary → JSON.
+// numeric(18,10) column → Rate converter → `.PerUnit` and trailing zeros dropped at the DTO boundary → JSON.
+// The values are the seeded catalog, not a database reading (titan-ops features/catalog/design.md#whole-vnd-prices).
 const EXPECTED_PRICES: Record<string, number> = {
   s: 170,
   m: 320,
