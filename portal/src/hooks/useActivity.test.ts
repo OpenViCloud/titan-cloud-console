@@ -106,6 +106,17 @@ describe('formatActivityAction', () => {
     expect(formatActivityAction('vm.console_requested', viMessages)).toBe('Mở phiên console')
   })
 
+  // titan-ops features/vm/design.md#vm-key-addition — unlike other creates, a give-up here DOES write an outcome
+  // (an operation on a VM that already exists, like Stop/Start giving up — not a "create failed, so stay silent").
+  it('labels an SSH key addition requested, added and failed, in both languages', () => {
+    expect(formatActivityAction('vm.add_keys_requested', en)).toBe('Requested SSH key addition')
+    expect(formatActivityAction('vm.add_keys_requested', viMessages)).toBe('Yêu cầu thêm SSH key vào VM')
+    expect(formatActivityAction('vm.keys_added', en)).toBe('Added SSH key')
+    expect(formatActivityAction('vm.keys_added', viMessages)).toBe('Đã thêm SSH key')
+    expect(formatActivityAction('vm.add_keys_failed', en)).toBe('SSH key addition failed')
+    expect(formatActivityAction('vm.add_keys_failed', viMessages)).toBe('Thêm SSH key vào VM thất bại')
+  })
+
   it('keeps the labels of rows written before docs/architecture/intent-and-observation.md#intent-has-identity', () => {
     expect(formatActivityAction('vm.deleted', en)).toBe('Deleted VM')
     expect(formatActivityAction('vm.stopped', en)).toBe('Stopped VM')

@@ -59,6 +59,7 @@ const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'load_balancer.delete_requested': 'loadBalancerDeleteRequested',
   'vm.ssh_requested': 'vmSshRequested',
   'vm.console_requested': 'vmConsoleRequested',
+  'vm.add_keys_requested': 'vmAddKeysRequested',
   'vm.created': 'vmCreated',
   'vm.deleted': 'vmDeleted',
   'vm.stopped': 'vmStopped',
@@ -80,6 +81,7 @@ const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'ssh_key.deleted': 'sshKeyDeleted',
   'api_token.created': 'apiTokenCreated',
   'api_token.deleted': 'apiTokenDeleted',
+  'vm.keys_added': 'vmKeysAdded',
   'load_balancer.created': 'loadBalancerCreated',
   'load_balancer.updated': 'loadBalancerUpdated',
   'load_balancer.deleted': 'loadBalancerDeleted',
@@ -95,6 +97,7 @@ const ACTION_KEYS: Record<string, keyof Messages['activityActions']> = {
   'firewall_rule.delete_failed': 'firewallRuleDeleteFailed',
   'vm_snapshot.revert_failed': 'vmSnapshotRevertFailed',
   'vm_snapshot.delete_failed': 'vmSnapshotDeleteFailed',
+  'vm.add_keys_failed': 'vmAddKeysFailed',
   'load_balancer.update_failed': 'loadBalancerUpdateFailed',
   'load_balancer.delete_failed': 'loadBalancerDeleteFailed',
 }
