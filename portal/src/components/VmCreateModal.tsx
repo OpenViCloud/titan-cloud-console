@@ -17,6 +17,7 @@ import type { AxiosError } from 'axios'
 import { isUsableNetwork } from '@/lib/networkState'
 import { useT } from '@/i18n/LanguageContext'
 import { parseStopTimeout, STOP_TIMEOUT_DEFAULT } from '@/lib/vmStopTimeout'
+import { USER_DATA_MAX_BYTES, userDataByteLength } from '@/lib/vmUserData'
 
 // The length the server accepts (titan-ops features/vm/design.md#console-password); no rule on the kind of characters.
 const CONSOLE_PASSWORD_MIN = 12
@@ -73,9 +74,11 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const [sshKeyIds, setSshKeyIds] = useState<string[]>([])
   const [consolePassword, setConsolePassword] = useState('')
   const [stopTimeout, setStopTimeout] = useState(String(STOP_TIMEOUT_DEFAULT))
+  const [userData, setUserData] = useState('')
   const [nameError, setNameError] = useState('')
   const [consolePasswordError, setConsolePasswordError] = useState('')
   const [stopTimeoutError, setStopTimeoutError] = useState('')
+  const [userDataError, setUserDataError] = useState('')
   const [apiError, setApiError]   = useState('')
 
   const createVm = useCreateVm()
@@ -147,6 +150,12 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       return false
     }
     setStopTimeoutError('')
+    const userDataBytes = userDataByteLength(userData)
+    if (userDataBytes > USER_DATA_MAX_BYTES) {
+      setUserDataError(t.vmCreate.userDataTooLarge(userDataBytes, USER_DATA_MAX_BYTES))
+      return false
+    }
+    setUserDataError('')
     const everyChoiceMade = clusterId !== '' && networkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
     if (!everyChoiceMade) {
       setApiError(t.vmCreate.choicesRequired)
@@ -170,6 +179,9 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       const stopTimeoutSeconds = parseStopTimeout(stopTimeout)
       if (stopTimeoutSeconds !== null && stopTimeoutSeconds !== STOP_TIMEOUT_DEFAULT) {
         request.stopTimeoutSeconds = stopTimeoutSeconds
+      }
+      if (userData !== '') {
+        request.userData = userData
       }
       await createVm.mutateAsync(request)
       handleClose()
@@ -198,7 +210,8 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     setName(''); setNetworkId(''); setClusterId('')
     setTemplateId(''); setVmOfferingId(''); setSshKeyIds([]); setConsolePassword('')
     setStopTimeout(String(STOP_TIMEOUT_DEFAULT))
-    setNameError(''); setConsolePasswordError(''); setStopTimeoutError(''); setApiError('')
+    setUserData('')
+    setNameError(''); setConsolePasswordError(''); setStopTimeoutError(''); setUserDataError(''); setApiError('')
     onOpenChange(false)
   }
 
@@ -324,6 +337,24 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
               disabled={createVm.isPending}
             />
             <p className="text-xs text-faint">{t.vmCreate.stopTimeoutHint}</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="vm-user-data" className="text-[13px] font-medium text-soft-foreground">
+              {t.vmCreate.userData}
+            </label>
+            <textarea
+              id="vm-user-data"
+              rows={4}
+              spellCheck={false}
+              placeholder={t.vmCreate.userDataPlaceholder}
+              value={userData}
+              onChange={e => { setUserData(e.target.value); setUserDataError('') }}
+              disabled={createVm.isPending}
+              className={`w-full rounded-md border bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 ${userDataError ? 'border-bad-border' : 'border-border'}`}
+            />
+            {userDataError && <p className="text-xs text-bad">{userDataError}</p>}
+            <p className="text-xs text-faint">{t.vmCreate.userDataHint}</p>
           </div>
 
           {apiError && (
