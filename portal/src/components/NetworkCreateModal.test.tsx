@@ -235,9 +235,8 @@ describe('NetworkCreateModal', () => {
 
   // A network from the portal sends no policy, so it blocks inbound traffic until a rule opens a port
   // (titan-ops features/network/design.md#firewall-default-policy).
-  it('says traffic from the Internet is blocked until a rule opens it, once public IPv6 is ticked', async () => {
+  it('says under the public IPv6 box that traffic from the Internet is blocked until a rule opens it', async () => {
     renderWithProviders(<NetworkCreateModal open onOpenChange={vi.fn()} />)
-    await userEvent.click(screen.getByRole('checkbox', { name: /enable public ipv6/i }))
     expect(screen.getByText(/traffic from the internet is blocked until you add a firewall rule/i)).toBeInTheDocument()
   })
 })

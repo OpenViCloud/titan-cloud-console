@@ -475,8 +475,8 @@ describe('NetworkListPage', () => {
     expect(screen.getByText('TCP')).toBeInTheDocument()
   })
 
-  // A new network blocks inbound from outside it and allows outbound; a network from before keeps Allow/Allow
-  // (titan-ops features/network/design.md#firewall-default-policy).
+  // The panel reads each network's own policies: a new network blocks inbound from outside it and allows outbound;
+  // a network created over the API may say otherwise (titan-ops features/network/design.md#firewall-default-policy).
   it('says what each network does with traffic no rule allows', async () => {
     server.use(
       http.get('*/v1/tenant/networks', () => HttpResponse.json([
