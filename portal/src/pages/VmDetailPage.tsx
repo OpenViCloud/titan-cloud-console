@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { VmActions, VmStatusBadge, VmStatusNote } from '@/components/vm/VmActions'
+import { AddSshKeyAction } from '@/components/vm/AddSshKeyDialog'
 import { VmSnapshotPanel } from '@/components/vm/VmSnapshotPanel'
 import { VmStopTimeoutPanel } from '@/components/vm/VmStopTimeoutPanel'
 import { useVms } from '@/hooks/useVms'
@@ -104,6 +105,7 @@ export function VmDetailPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
+            <AddSshKeyAction vm={vm} />
             <VmActions vm={vm} onDeleted={() => navigate('/vms')} />
           </div>
         </div>

@@ -75,6 +75,12 @@ export function canAttachVolume(vm: VmStateFields): boolean {
   return ATTACH_STATUSES.has(vm.status)
 }
 
+// titan-ops features/vm/design.md#vm-key-addition — the server checks exactly Running, not the broader "runs a
+// guest" (Ready counts there, not here): worker pull-append-push on the live instance needs it already up.
+export function canAddVmKeys(vm: VmStateFields): boolean {
+  return vm.status === 'Running'
+}
+
 /**
  * Same rule as the server's network-in-use check (Vm.HasNetwork): the instance may be on Incus, a delete in
  * flight included, or its create waits.
