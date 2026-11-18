@@ -210,6 +210,7 @@ export function LoadBalancerFormModal({ open, onOpenChange, loadBalancer, onDone
               <Plus className="h-3 w-3" />
               {f.addListener}
             </Button>
+            <p className="text-[12px] text-faint">{f.firewallHint}</p>
           </fieldset>
 
           <fieldset className="space-y-2">

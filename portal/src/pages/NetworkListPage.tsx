@@ -254,6 +254,11 @@ function FirewallPanel({ network }: { network: Network }) {
         )}
       </div>
 
+      <div className="mb-2 space-y-0.5 text-xs text-muted-foreground">
+        <p>{network.defaultIngressPolicy === 'Deny' ? t.firewall.inboundBlocked : t.firewall.inboundAllowed}</p>
+        <p>{network.defaultEgressPolicy === 'Deny' ? t.firewall.outboundBlocked : t.firewall.outboundAllowed}</p>
+      </div>
+
       {isLoading && <p className="text-xs text-faint py-2">{t.common.loading}</p>}
 
       {!isLoading && (

@@ -14,6 +14,10 @@ export interface Network {
   gateway: string | null
   // The network's public /64; null when it has no public IPv6 (titan-ops features/network/design.md#ipv6-public).
   publicIpv6Subnet: string | null
+  // What the network does with traffic no firewall rule allows, Allow or Deny, set at create
+  // (titan-ops features/network/design.md#firewall-default-policy).
+  defaultIngressPolicy: string
+  defaultEgressPolicy: string
   clusterId: string
   createdAt: string
 }

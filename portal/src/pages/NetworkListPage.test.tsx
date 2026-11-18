@@ -29,6 +29,7 @@ const vmSt = (status: string) => ({ status, requestFailureReason: null })
 const net = (overrides = {}) => ({
   id: 'net-1', name: 'prod-net', ...st('Created'), cidr: '10.0.0.0/24',
   gateway: '10.0.0.1', publicIpv6Subnet: null as string | null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z',
+  defaultIngressPolicy: 'Deny', defaultEgressPolicy: 'Allow',
   ...overrides,
 })
 
@@ -472,6 +473,27 @@ describe('NetworkListPage', () => {
     await waitFor(() => expect(screen.getByText('0.0.0.0/0')).toBeInTheDocument())
     expect(screen.getAllByText('Ingress').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('TCP')).toBeInTheDocument()
+  })
+
+  // A new network blocks inbound from outside it and allows outbound; a network from before keeps Allow/Allow
+  // (titan-ops features/network/design.md#firewall-default-policy).
+  it('says what each network does with traffic no rule allows', async () => {
+    server.use(
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([
+        net({ defaultIngressPolicy: 'Deny', defaultEgressPolicy: 'Allow' }),
+        net({ id: 'net-2', name: 'old-net', defaultIngressPolicy: 'Allow', defaultEgressPolicy: 'Deny' }),
+      ])),
+      http.get('*/v1/tenant/networks/:id/firewall-rules', () => HttpResponse.json([])),
+    )
+    renderWithProviders(<MemoryRouter><NetworkListPage /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText('prod-net')).toBeInTheDocument())
+    const [first, second] = screen.getAllByRole('button', { name: /firewall/i })
+    await userEvent.click(first)
+    expect(await screen.findByText('Inbound from outside the network: blocked unless a rule allows it')).toBeInTheDocument()
+    expect(screen.getByText('Outbound: allowed')).toBeInTheDocument()
+    await userEvent.click(second)
+    expect(await screen.findByText('Inbound from outside the network: allowed')).toBeInTheDocument()
+    expect(screen.getByText('Outbound: blocked unless a rule allows it')).toBeInTheDocument()
   })
 
   // Firewall — empty state
