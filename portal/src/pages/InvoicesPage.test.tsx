@@ -182,7 +182,7 @@ describe('InvoicesPage — pay from wallet', () => {
 
   // With top-up off (titan-ops features/billing/topup/design.md#topup-portal) the customer cannot buy credit, so the
   // rejection points them to OpenViCloud instead of to a button that is not there.
-  it('tells a customer who cannot buy credit to ask OpenViCloud for it', async () => {
+  it('tells a customer who cannot buy credit to open an issue at titan-support with the tenant ID', async () => {
     server.use(http.get('*/v1/tenant/billing/invoices', () => HttpResponse.json([vnd()])))
     stubWallet(500000)
     server.use(http.post('*/v1/tenant/billing/invoices/:id/pay', () =>
@@ -193,7 +193,7 @@ describe('InvoicesPage — pay from wallet', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Pay 300/ }))
 
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('Your wallet no longer covers this invoice. Contact OpenViCloud to add credit, then try again.')
+    expect(alert).toHaveTextContent('Your wallet no longer covers this invoice. To get more credit, open an issue at github.com/OpenViCloud/titan-support with the Tenant ID from your Profile, then try again.')
     expect(alert).not.toHaveTextContent(/top up/i)
   })
 
