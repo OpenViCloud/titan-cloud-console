@@ -34,6 +34,9 @@ export interface CreateVmRequest {
   sshKeyIds?: string[]
   consolePassword?: string
   stopTimeoutSeconds?: number
+  // Cloud-init user data, sent verbatim (titan-ops features/vm/design.md#vm-create-flow); ≤ 32768 bytes UTF-8
+  // (lib/vmUserData.ts), checked client-side like the server's CreateVmValidator.
+  userData?: string
 }
 
 // At least one of the two; the server answers 204 and sends no provider command.

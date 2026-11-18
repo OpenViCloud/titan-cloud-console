@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
@@ -347,6 +347,99 @@ describe('VmCreateModal', () => {
 
       expect(screen.getByText('Khi dừng, VM có chừng này thời gian để tắt êm trước khi bị ngắt nguồn. Từ 30 đến 1800, mặc định 120.')).toBeInTheDocument()
       expect(await screen.findByText('Thời gian dừng phải là số giây nguyên, từ 30 đến 1800.')).toBeInTheDocument()
+    })
+  })
+
+  // US-VM-USERDATA (titan-ops features/vm/design.md#vm-create-flow) — optional cloud-init user data, sent verbatim;
+  // the byte limit is checked client-side like the server's CreateVmValidator (32768 bytes UTF-8).
+  describe('cloud-init user data', () => {
+    let posts: Record<string, unknown>[]
+    beforeEach(() => {
+      posts = []
+      server.use(
+        http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
+        http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
+        http.get('*/v1/templates', () => HttpResponse.json([template])),
+        http.post('*/v1/tenant/vms', async ({ request }) => {
+          posts.push(await request.json() as Record<string, unknown>)
+          return HttpResponse.json({ vmId: 'vm-new' }, { status: 202 })
+        }),
+      )
+    })
+
+    async function fillTheForm() {
+      await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
+      await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseTheRest()
+    }
+
+    it('shows the field with its monospace hint, and sends nothing while empty', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      const field = screen.getByLabelText('Cloud-init user data')
+      expect(field.tagName).toBe('TEXTAREA')
+      expect(field.className).toMatch(/font-mono/)
+      expect(screen.getByText('Optional. Cloud-init user data, such as #cloud-config, run on first boot. Up to 32768 bytes.')).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts).toHaveLength(1)
+      expect(posts[0]).not.toHaveProperty('userData')
+    })
+
+    it('sends pasted cloud-init content exactly as typed', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      const cloudConfig = '#cloud-config\nruncmd:\n  - echo hi'
+      await userEvent.type(screen.getByLabelText('Cloud-init user data'), cloudConfig)
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts.at(-1)?.userData).toBe(cloudConfig)
+    })
+
+    it('sends content right at the 32768 byte limit', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      const atLimit = 'a'.repeat(32768)
+      const field = screen.getByLabelText('Cloud-init user data')
+      // userEvent.type sends one keystroke per character — too slow for 32KB; a pasted value fires the same
+      // onChange the component listens to.
+      fireEvent.change(field, { target: { value: atLimit } })
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts.at(-1)?.userData).toBe(atLimit)
+    })
+
+    it('refuses content over the 32768 byte limit, reports the byte count, and sends nothing', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+      await fillTheForm()
+      const overLimit = 'á'.repeat(16385) // 2 bytes each in UTF-8: 32770 bytes, over the 32768 limit
+      const field = screen.getByLabelText('Cloud-init user data')
+      fireEvent.change(field, { target: { value: overLimit } })
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      expect(await screen.findByText('Cloud-init user data is 32770 bytes; the limit is 32768.')).toBeInTheDocument()
+      expect(posts).toHaveLength(0)
+    })
+
+    it('speaks Vietnamese: label, hint and the over-limit error', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
+      await screen.findByLabelText('Cloud-init user data')
+      expect(screen.getByText('Không bắt buộc. Cloud-init user data, ví dụ #cloud-config, chạy lúc boot đầu. Tối đa 32768 byte.')).toBeInTheDocument()
+
+      const field = screen.getByLabelText('Cloud-init user data')
+      fireEvent.change(field, { target: { value: 'á'.repeat(16385) } })
+      await userEvent.type(screen.getByPlaceholderText(/web/i), 'my-vm')
+      await userEvent.click(screen.getByRole('button', { name: 'Tạo VM' }))
+
+      expect(await screen.findByText('Cloud-init user data dài 32770 byte, vượt giới hạn 32768.')).toBeInTheDocument()
     })
   })
 
