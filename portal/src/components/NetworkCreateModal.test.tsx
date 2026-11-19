@@ -232,4 +232,11 @@ describe('NetworkCreateModal', () => {
     expect(screen.getByText('Vui lòng nhập tên')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Huỷ' })).toBeInTheDocument()
   })
+
+  // A network from the portal sends no policy, so it blocks inbound traffic until a rule opens a port
+  // (titan-ops features/network/design.md#firewall-default-policy).
+  it('says under the public IPv6 box that traffic from the Internet is blocked until a rule opens it', async () => {
+    renderWithProviders(<NetworkCreateModal open onOpenChange={vi.fn()} />)
+    expect(screen.getByText(/traffic from the internet is blocked until you add a firewall rule/i)).toBeInTheDocument()
+  })
 })

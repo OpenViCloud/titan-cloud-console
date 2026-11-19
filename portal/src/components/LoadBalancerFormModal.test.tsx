@@ -32,6 +32,14 @@ const lb = (extra: Partial<LoadBalancer> = {}): LoadBalancer => ({
 })
 
 describe('LoadBalancerFormModal — create', () => {
+  // The network ACL checks a packet after its destination becomes the target port: a network that blocks inbound
+  // needs a rule for it (titan-ops features/load-balancer/design.md).
+  it('says to allow each target port in the network firewall', async () => {
+    serve([net('net-6', 'six')], [])
+    renderWithProviders(<LoadBalancerFormModal open onOpenChange={vi.fn()} />)
+    expect(await screen.findByText(/add an ingress rule for each target port/i)).toBeInTheDocument()
+  })
+
   it('offers only networks with public IPv6 that are usable', async () => {
     serve([
       net('net-6', 'six'),
