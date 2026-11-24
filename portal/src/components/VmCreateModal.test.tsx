@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
@@ -23,6 +23,12 @@ async function chooseTheRest() {
       await userEvent.selectOptions(select, first.getAttribute('value')!)
     }
   }
+}
+
+// Stop timeout and cloud-init user data sit in the Advanced section, closed until the reader opens it
+// (titan-ops features/vm/design.md#vm-create-form).
+async function openAdvanced(name: RegExp = /^Advanced/) {
+  await userEvent.click(await screen.findByRole('button', { name }))
 }
 
 describe('VmCreateModal', () => {
@@ -147,11 +153,20 @@ describe('VmCreateModal', () => {
     expect(requestBody.sshKeyIds).toEqual(['k2'])
   })
 
+  it('points to the SSH keys page when none is saved, as an option, not a requirement', async () => {
+    renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+
+    const link = await screen.findByRole('link', { name: 'Add one' })
+    expect(link.getAttribute('href')).toBe('/ssh-keys')
+    expect(link.parentElement).toHaveTextContent('No SSH keys saved. Add one if you want to log in with SSH.')
+  })
+
   it('points to the SSH keys page when none is saved, in Vietnamese too', async () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
 
     const link = await screen.findByRole('link', { name: 'Thêm một key' })
     expect(link.getAttribute('href')).toBe('/ssh-keys')
+    expect(link.parentElement).toHaveTextContent('Chưa lưu SSH key nào. Thêm một key nếu muốn đăng nhập bằng SSH.')
     expect(screen.getByText('SSH key')).toBeInTheDocument()
   })
 
@@ -179,6 +194,150 @@ describe('VmCreateModal', () => {
 
   // titan-ops features/vm/design.md#console-password — the password logs in as ubuntu on the Console tab; the server
   // keeps only its hash.
+  // titan-ops features/vm/design.md#vm-create-form — the five choices every VM needs come first; SSH keys and the
+  // console password sit under Access (optional); stop timeout and user data under Advanced, closed by default.
+  describe('form sections', () => {
+    let posts: Record<string, unknown>[]
+    beforeEach(() => {
+      posts = []
+      server.use(
+        http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
+        http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
+        http.get('*/v1/templates', () => HttpResponse.json([template])),
+        http.get('*/v1/tenant/ssh-keys', () => HttpResponse.json([laptopKey])),
+        http.post('*/v1/tenant/vms', async ({ request }) => {
+          posts.push(await request.json() as Record<string, unknown>)
+          return HttpResponse.json({ vmId: 'vm-new' }, { status: 202 })
+        }),
+      )
+    })
+
+    async function fillTheForm() {
+      await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
+      await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseTheRest()
+    }
+
+    it('groups SSH keys and the console password under Access (optional) and names the other ways in', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+
+      const access = await screen.findByRole('group', { name: 'Access (optional)' })
+      expect(within(access).getByText('Without an SSH key, log in on the Console tab with a console password, or add a key later on the VM page.')).toBeInTheDocument()
+      expect(await within(access).findByRole('checkbox', { name: /laptop/ })).toBeInTheDocument()
+      expect(within(access).getByLabelText('Console password')).toBeInTheDocument()
+      expect(within(access).queryByRole('combobox')).not.toBeInTheDocument()
+    })
+
+    it('puts the five choices every VM needs before the Access section', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+
+      const access = await screen.findByRole('group', { name: 'Access (optional)' })
+      const name = screen.getByPlaceholderText(/e\.g\. web/i)
+      const choices = [name, ...['Cluster', 'Network', 'Template', 'Size'].map(label => screen.getByText(label))]
+      for (const field of choices) {
+        expect(field.compareDocumentPosition(access) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      }
+    })
+
+    it('says the same in Vietnamese', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
+
+      const access = await screen.findByRole('group', { name: 'Truy cập (không bắt buộc)' })
+      expect(within(access).getByText('Không có SSH key thì đăng nhập ở tab Console bằng mật khẩu console, hoặc thêm key sau ở trang VM.')).toBeInTheDocument()
+      const advanced = screen.getByRole('button', { name: /^Nâng cao/ })
+      expect(advanced).toHaveTextContent('Thời gian dừng, cloud-init user data')
+      expect(advanced).toHaveAttribute('aria-expanded', 'false')
+    })
+
+    it('keeps stop timeout and user data closed under Advanced until it is opened', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+
+      const advanced = await screen.findByRole('button', { name: /^Advanced/ })
+      expect(advanced).toHaveTextContent('Stop timeout, cloud-init user data')
+      expect(advanced).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByLabelText('Stop timeout (seconds)')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Cloud-init user data')).not.toBeInTheDocument()
+
+      await userEvent.click(advanced)
+      expect(advanced).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByLabelText('Stop timeout (seconds)')).toHaveValue('120')
+      expect(screen.getByLabelText('Cloud-init user data')).toBeInTheDocument()
+    })
+
+    it('creates a VM with no SSH key, no console password and Advanced never opened', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts).toHaveLength(1)
+      expect(posts[0]).toMatchObject({ name: 'my-vm', clusterId: 'z1', networkId: 'n1', templateId: 't1', vmOfferingId: 'm', sshKeyIds: [] })
+      expect(posts[0]).not.toHaveProperty('consolePassword')
+      expect(posts[0]).not.toHaveProperty('stopTimeoutSeconds')
+      expect(posts[0]).not.toHaveProperty('userData')
+    })
+
+    it('keeps a value typed under Advanced after it is closed again, and sends it', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await fillTheForm()
+      await openAdvanced()
+      const field = screen.getByLabelText('Stop timeout (seconds)')
+      await userEvent.clear(field)
+      await userEvent.type(field, '600')
+      await openAdvanced()
+      expect(screen.queryByLabelText('Stop timeout (seconds)')).not.toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+      expect(posts[0].stopTimeoutSeconds).toBe(600)
+    })
+
+    it('opens Advanced by itself to show a stop timeout error, and sends nothing', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+      await fillTheForm()
+      await openAdvanced()
+      const field = screen.getByLabelText('Stop timeout (seconds)')
+      await userEvent.clear(field)
+      await userEvent.type(field, '29')
+      await openAdvanced()
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      expect(await screen.findByText('The stop timeout must be a whole number of seconds from 30 to 1800.')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^Advanced/ })).toHaveAttribute('aria-expanded', 'true')
+      expect(posts).toHaveLength(0)
+    })
+
+    it('opens Advanced by itself to show a user data error, and sends nothing', async () => {
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+      await fillTheForm()
+      await openAdvanced()
+      fireEvent.change(screen.getByLabelText('Cloud-init user data'), { target: { value: 'á'.repeat(16385) } })
+      await openAdvanced()
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      expect(await screen.findByText('Cloud-init user data is 32770 bytes; the limit is 32768.')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^Advanced/ })).toHaveAttribute('aria-expanded', 'true')
+      expect(posts).toHaveLength(0)
+    })
+
+    // The parent keeps `open` true here, so after Cancel the same dialog shows what a new one would.
+    it('starts closed again after Cancel', async () => {
+      const onOpenChange = vi.fn()
+      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
+      await openAdvanced()
+      expect(screen.getByLabelText('Stop timeout (seconds)')).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(onOpenChange).toHaveBeenCalledWith(false)
+
+      expect(await screen.findByRole('button', { name: /^Advanced/ })).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByLabelText('Stop timeout (seconds)')).not.toBeInTheDocument()
+    })
+  })
+
   describe('console password', () => {
     let posts: Record<string, unknown>[]
     beforeEach(() => {
@@ -289,6 +448,7 @@ describe('VmCreateModal', () => {
       await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
       await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
       await chooseTheRest()
+      await openAdvanced()
     }
 
     async function typeStopTimeout(text: string) {
@@ -339,6 +499,7 @@ describe('VmCreateModal', () => {
 
     it('speaks Vietnamese: label, hint and the range error', async () => {
       renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
+      await openAdvanced(/^Nâng cao/)
       const field = await screen.findByLabelText('Thời gian dừng (giây)')
       await userEvent.clear(field)
       await userEvent.type(field, '5')
@@ -373,6 +534,7 @@ describe('VmCreateModal', () => {
       await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
       await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
       await chooseTheRest()
+      await openAdvanced()
     }
 
     it('shows the field with its monospace hint, and sends nothing while empty', async () => {
@@ -431,6 +593,7 @@ describe('VmCreateModal', () => {
 
     it('speaks Vietnamese: label, hint and the over-limit error', async () => {
       renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
+      await openAdvanced(/^Nâng cao/)
       await screen.findByLabelText('Cloud-init user data')
       expect(screen.getByText('Không bắt buộc. Cloud-init user data, ví dụ #cloud-config, chạy lúc boot đầu. Tối đa 32768 byte.')).toBeInTheDocument()
 
