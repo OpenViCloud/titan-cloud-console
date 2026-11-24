@@ -174,6 +174,27 @@ describe('MainLayout', () => {
     expect(window.localStorage.getItem(LANG_STORAGE_KEY)).toBe('vi')
   })
 
+  // titan-ops features/cloud-console/design.md#portal-language — the header shows the other language by its own name,
+  // so a reader finds the switch without opening the account menu.
+  it('switches to Vietnamese and back from the header button, and remembers it', async () => {
+    renderLayout('/vms')
+    const banner = screen.getByRole('banner')
+    const toVietnamese = within(banner).getByRole('button', { name: 'Tiếng Việt' })
+    expect(toVietnamese).toHaveAttribute('lang', 'vi')
+    await userEvent.click(toVietnamese)
+
+    expect(screen.getByRole('navigation', { name: 'Điều hướng chính' })).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe('vi')
+    expect(window.localStorage.getItem(LANG_STORAGE_KEY)).toBe('vi')
+    expect(within(banner).queryByRole('button', { name: 'Tiếng Việt' })).not.toBeInTheDocument()
+
+    const toEnglish = within(banner).getByRole('button', { name: 'English' })
+    expect(toEnglish).toHaveAttribute('lang', 'en')
+    await userEvent.click(toEnglish)
+    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument()
+    expect(window.localStorage.getItem(LANG_STORAGE_KEY)).toBe('en')
+  })
+
   it('starts in the saved language', async () => {
     window.localStorage.setItem(LANG_STORAGE_KEY, 'vi')
     renderLayout()

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogDescription, DialogFooter, DialogClose,
@@ -80,6 +81,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const [stopTimeoutError, setStopTimeoutError] = useState('')
   const [userDataError, setUserDataError] = useState('')
   const [apiError, setApiError]   = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const createVm = useCreateVm()
   const { data: networks = [] }  = useNetworks()
@@ -145,14 +147,17 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       return false
     }
     setConsolePasswordError('')
+    // An error in the Advanced section opens it, so the reader sees the field it names.
     if (parseStopTimeout(stopTimeout) === null) {
       setStopTimeoutError(t.vmCreate.stopTimeoutRange)
+      setAdvancedOpen(true)
       return false
     }
     setStopTimeoutError('')
     const userDataBytes = userDataByteLength(userData)
     if (userDataBytes > USER_DATA_MAX_BYTES) {
       setUserDataError(t.vmCreate.userDataTooLarge(userDataBytes, USER_DATA_MAX_BYTES))
+      setAdvancedOpen(true)
       return false
     }
     setUserDataError('')
@@ -212,12 +217,14 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     setStopTimeout(String(STOP_TIMEOUT_DEFAULT))
     setUserData('')
     setNameError(''); setConsolePasswordError(''); setStopTimeoutError(''); setUserDataError(''); setApiError('')
+    setAdvancedOpen(false)
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
-      <DialogContent>
+      {/* The dialog is centered and fixed, so a form taller than the screen scrolls inside it. */}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t.vmCreate.title}</DialogTitle>
           <DialogDescription>{t.vmCreate.description}</DialogDescription>
@@ -276,85 +283,114 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
             disabled={createVm.isPending}
           />
 
-          <fieldset className="space-y-1.5">
-            <legend className="text-[13px] font-medium text-soft-foreground">{t.vmCreate.sshKeys}</legend>
-            {sshKeys.length === 0 ? (
-              <p className="rounded-md border border-border bg-card px-3 py-2 text-[13px] text-faint">
-                {t.vmCreate.noSshKeysBefore}
-                <Link to="/ssh-keys" className="text-primary underline-offset-2 hover:underline">{t.vmCreate.noSshKeysLink}</Link>
-                {t.vmCreate.noSshKeysAfter}
-              </p>
-            ) : (
-              <div className="space-y-1.5">
-                {sshKeys.map(key => (
-                  <div key={key.id} className="flex items-center gap-2.5">
-                    <input
-                      id={`ssh-key-${key.id}`}
-                      type="checkbox"
-                      checked={sshKeyIds.includes(key.id)}
-                      onChange={e => toggleSshKey(key.id, e.target.checked)}
-                      disabled={createVm.isPending}
-                      className="w-4 h-4 rounded accent-primary"
-                    />
-                    <label htmlFor={`ssh-key-${key.id}`} className="text-[13px] text-soft-foreground select-none cursor-pointer">
-                      {key.name} <span className="font-mono text-xs text-faint">{key.fingerprint}</span>
-                    </label>
-                  </div>
-                ))}
-                <p className="text-xs text-faint">{t.vmCreate.sshKeysHint}</p>
-              </div>
-            )}
+          {/* SSH keys and a console password are both optional (titan-ops features/vm/design.md#vm-create-form):
+              a VM with neither is reached by adding a key later. */}
+          <fieldset className="space-y-4 border-t border-border pt-4">
+            <legend className="float-left mb-1 w-full text-[13px] font-semibold text-foreground">{t.vmCreate.access}</legend>
+            <p className="clear-both text-xs text-faint">{t.vmCreate.accessHint}</p>
+
+            <fieldset className="space-y-1.5">
+              <legend className="text-[13px] font-medium text-soft-foreground">{t.vmCreate.sshKeys}</legend>
+              {sshKeys.length === 0 ? (
+                <p className="rounded-md border border-border bg-card px-3 py-2 text-[13px] text-faint">
+                  {t.vmCreate.noSshKeysBefore}
+                  <Link to="/ssh-keys" className="text-primary underline-offset-2 hover:underline">{t.vmCreate.noSshKeysLink}</Link>
+                  {t.vmCreate.noSshKeysAfter}
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {sshKeys.map(key => (
+                    <div key={key.id} className="flex items-center gap-2.5">
+                      <input
+                        id={`ssh-key-${key.id}`}
+                        type="checkbox"
+                        checked={sshKeyIds.includes(key.id)}
+                        onChange={e => toggleSshKey(key.id, e.target.checked)}
+                        disabled={createVm.isPending}
+                        className="w-4 h-4 rounded accent-primary"
+                      />
+                      <label htmlFor={`ssh-key-${key.id}`} className="text-[13px] text-soft-foreground select-none cursor-pointer">
+                        {key.name} <span className="font-mono text-xs text-faint">{key.fingerprint}</span>
+                      </label>
+                    </div>
+                  ))}
+                  <p className="text-xs text-faint">{t.vmCreate.sshKeysHint}</p>
+                </div>
+              )}
+            </fieldset>
+
+            <div className="space-y-1.5">
+              <label htmlFor="console-password" className="text-[13px] font-medium text-soft-foreground">
+                {t.vmCreate.consolePassword}
+              </label>
+              <Input
+                id="console-password"
+                type="password"
+                autoComplete="new-password"
+                value={consolePassword}
+                onChange={e => { setConsolePassword(e.target.value); setConsolePasswordError('') }}
+                error={consolePasswordError}
+                disabled={createVm.isPending}
+              />
+              <p className="text-xs text-faint">{t.vmCreate.consolePasswordHint}</p>
+            </div>
           </fieldset>
 
-          <div className="space-y-1.5">
-            <label htmlFor="console-password" className="text-[13px] font-medium text-soft-foreground">
-              {t.vmCreate.consolePassword}
-            </label>
-            <Input
-              id="console-password"
-              type="password"
-              autoComplete="new-password"
-              value={consolePassword}
-              onChange={e => { setConsolePassword(e.target.value); setConsolePasswordError('') }}
-              error={consolePasswordError}
-              disabled={createVm.isPending}
-            />
-            <p className="text-xs text-faint">{t.vmCreate.consolePasswordHint}</p>
-          </div>
+          {/* Closed by default; the fields keep their values while it is closed. */}
+          <div className="space-y-4 border-t border-border pt-4">
+            <button
+              type="button"
+              aria-expanded={advancedOpen}
+              aria-controls="vm-create-advanced"
+              onClick={() => setAdvancedOpen(!advancedOpen)}
+              className="flex w-full flex-wrap items-center gap-x-1.5 rounded-md text-left text-[13px] font-semibold text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <ChevronRight
+                className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform ${advancedOpen ? 'rotate-90' : ''}`}
+                aria-hidden="true"
+              />
+              {t.vmCreate.advanced}{' '}
+              <span className="font-normal text-faint">{t.vmCreate.advancedSummary}</span>
+            </button>
 
-          <div className="space-y-1.5">
-            <label htmlFor="stop-timeout" className="text-[13px] font-medium text-soft-foreground">
-              {t.vmCreate.stopTimeout}
-            </label>
-            {/* Text, not type=number: the range check is ours and shows inline, not the browser's bubble. */}
-            <Input
-              id="stop-timeout"
-              type="text"
-              inputMode="numeric"
-              value={stopTimeout}
-              onChange={e => { setStopTimeout(e.target.value); setStopTimeoutError('') }}
-              error={stopTimeoutError}
-              disabled={createVm.isPending}
-            />
-            <p className="text-xs text-faint">{t.vmCreate.stopTimeoutHint}</p>
-          </div>
+            {advancedOpen && (
+              <div id="vm-create-advanced" className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="stop-timeout" className="text-[13px] font-medium text-soft-foreground">
+                    {t.vmCreate.stopTimeout}
+                  </label>
+                  {/* Text, not type=number: the range check is ours and shows inline, not the browser's bubble. */}
+                  <Input
+                    id="stop-timeout"
+                    type="text"
+                    inputMode="numeric"
+                    value={stopTimeout}
+                    onChange={e => { setStopTimeout(e.target.value); setStopTimeoutError('') }}
+                    error={stopTimeoutError}
+                    disabled={createVm.isPending}
+                  />
+                  <p className="text-xs text-faint">{t.vmCreate.stopTimeoutHint}</p>
+                </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="vm-user-data" className="text-[13px] font-medium text-soft-foreground">
-              {t.vmCreate.userData}
-            </label>
-            <textarea
-              id="vm-user-data"
-              rows={4}
-              spellCheck={false}
-              placeholder={t.vmCreate.userDataPlaceholder}
-              value={userData}
-              onChange={e => { setUserData(e.target.value); setUserDataError('') }}
-              disabled={createVm.isPending}
-              className={`w-full rounded-md border bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 ${userDataError ? 'border-bad-border' : 'border-border'}`}
-            />
-            {userDataError && <p className="text-xs text-bad">{userDataError}</p>}
-            <p className="text-xs text-faint">{t.vmCreate.userDataHint}</p>
+                <div className="space-y-1.5">
+                  <label htmlFor="vm-user-data" className="text-[13px] font-medium text-soft-foreground">
+                    {t.vmCreate.userData}
+                  </label>
+                  <textarea
+                    id="vm-user-data"
+                    rows={4}
+                    spellCheck={false}
+                    placeholder={t.vmCreate.userDataPlaceholder}
+                    value={userData}
+                    onChange={e => { setUserData(e.target.value); setUserDataError('') }}
+                    disabled={createVm.isPending}
+                    className={`w-full rounded-md border bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 ${userDataError ? 'border-bad-border' : 'border-border'}`}
+                  />
+                  {userDataError && <p className="text-xs text-bad">{userDataError}</p>}
+                  <p className="text-xs text-faint">{t.vmCreate.userDataHint}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {apiError && (

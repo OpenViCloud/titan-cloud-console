@@ -121,7 +121,20 @@ export function AppShell({
 
         {search && <div className="ml-6 hidden flex-1 min-[900px]:block">{search}</div>}
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          {/* The other language, named in itself, one click away; the account menu keeps the full choice
+              (titan-ops features/cloud-console/design.md#portal-language). */}
+          {languageOptions(t).filter(option => option.value !== lang).map(option => (
+            <button
+              key={option.value}
+              type="button"
+              lang={option.value}
+              onClick={() => setLang(option.value)}
+              className="whitespace-nowrap rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              {option.label}
+            </button>
+          ))}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
