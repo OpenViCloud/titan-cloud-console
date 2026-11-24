@@ -267,6 +267,47 @@ describe('VmListPage', () => {
     expect(capturedBody).not.toHaveProperty('enablePublicIpv6')
   })
 
+  // A tenant gets one network, `default`, when it is approved (titan-ops features/network/design.md#default-network):
+  // the cluster's only usable network is the one the VM goes on, so the form picks it.
+  it('picks the network when the chosen cluster has only one, and sends it', async () => {
+    let capturedBody: Record<string, unknown> = {}
+    server.use(
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }, { id: 'n2', name: 'other', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z2', createdAt: '2026-01-01T00:00:00Z' }])),
+      http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }, { id: 'z2', name: 'Cluster 2' }])),
+      http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
+      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
+      http.post('*/v1/tenant/vms', async ({ request }) => {
+        capturedBody = await request.json() as Record<string, unknown>
+        return HttpResponse.json({ id: 'vm-new' }, { status: 202 })
+      }),
+    )
+    renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
+    await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Cluster 1' })).toBeInTheDocument())
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cluster' }), 'z1')
+    expect((screen.getByRole('combobox', { name: 'Network' }) as HTMLSelectElement).value).toBe('n1')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cluster' }), 'z2')
+    expect((screen.getByRole('combobox', { name: 'Network' }) as HTMLSelectElement).value).toBe('n2')
+    await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
+    await chooseEveryFirstOption()
+    await userEvent.click(screen.getByRole('button', { name: /^create vm$/i }))
+    await waitFor(() => expect(capturedBody.networkId).toBe('n2'))
+  })
+
+  it('leaves the network to choose when the chosen cluster has two', async () => {
+    server.use(
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([{ id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }, { id: 'n2', name: 'second', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, publicIpv6Subnet: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }])),
+      http.get('*/v1/clusters', () => HttpResponse.json([{ id: 'z1', name: 'Cluster 1' }])),
+      http.get('*/v1/templates', () => HttpResponse.json([{ id: 't1', name: 'Ubuntu', os: 'Ubuntu' }])),
+      http.get('*/v1/vm-offerings', () => HttpResponse.json([{ id: 'm', name: 'Medium', vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }])),
+    )
+    renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
+    await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Cluster 1' })).toBeInTheDocument())
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Cluster' }), 'z1')
+    expect((screen.getByRole('combobox', { name: 'Network' }) as HTMLSelectElement).value).toBe('')
+  })
+
   // AT-P15 — create success toast
   it('shows success toast after VM created', async () => {
     server.use(

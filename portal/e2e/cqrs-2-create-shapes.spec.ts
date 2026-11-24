@@ -41,7 +41,7 @@ test.beforeAll(() => {
   if (!PASSWORD) throw new Error('BETA_USER_PASSWORD is not set — inject from the k8s secret.')
 })
 
-// A-4 — the network quota is full on this environment (max_networks=1, one live network), so a
+// A-4 — the network quota is full on this environment (as many live networks as the tenant's maxNetworks), so a
 // create must be refused by the quota rather than succeed. This is the EXPECTED answer, not a
 // defect: writing it down here is what stops a later run from filing it as one.
 test('A-4 creating a network past the quota is refused, and the refusal is the quota rule', async ({ page, request }) => {
@@ -53,7 +53,10 @@ test('A-4 creating a network past the quota is refused, and the refusal is the q
   const list = await request.get(`${API}/v1/tenant/networks`, { headers })
   expect(list.status()).toBe(200)
   const active = (await list.json()).filter((n: { status: string }) => !['Deleting', 'Deleted', 'NotFound', 'Failed'].includes(n.status))
-  expect(active.length, 'network quota must be full for this case to mean anything').toBe(1)
+  const tenantRes = await request.get(`${API}/v1/tenant`, { headers })
+  expect(tenantRes.status()).toBe(200)
+  const { maxNetworks } = await tenantRes.json() as { maxNetworks: number }
+  expect(active.length, 'network quota must be full for this case to mean anything').toBe(maxNetworks)
 
   const res = await request.post(`${API}/v1/tenant/networks`, {
     headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() }, data: { name: `cqrs2-quota-${Date.now()}`, clusterId: active[0].clusterId },

@@ -99,6 +99,12 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   // A VM lands on its network's cluster, so only the chosen cluster's networks are offered
   // (titan-ops features/catalog/design.md#cluster-is-a-real-choice).
   const clusterNetworks = activeNetworks.filter(n => n.clusterId === clusterId)
+  // A cluster with one usable network (the tenant's default one, titan-ops features/network/design.md#default-network)
+  // has nothing to choose: that network is taken until the customer picks another.
+  let chosenNetworkId = networkId
+  if (chosenNetworkId === '' && clusterNetworks.length === 1) {
+    chosenNetworkId = clusterNetworks[0].id
+  }
   const canSubmit = activeNetworks.length > 0 && !createVm.isPending
 
   let networkEmptyText = t.vmCreate.noNetworksInCluster
@@ -161,7 +167,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       return false
     }
     setUserDataError('')
-    const everyChoiceMade = clusterId !== '' && networkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
+    const everyChoiceMade = clusterId !== '' && chosenNetworkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
     if (!everyChoiceMade) {
       setApiError(t.vmCreate.choicesRequired)
       return false
@@ -175,7 +181,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     setApiError('')
     try {
       const request: CreateVmRequest = {
-        name, networkId, clusterId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds,
+        name, networkId: chosenNetworkId, clusterId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds,
       }
       if (consolePassword !== '') {
         request.consolePassword = consolePassword
@@ -254,7 +260,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
 
           <SelectField
             label={t.vmCreate.network}
-            value={networkId}
+            value={chosenNetworkId}
             onChange={setNetworkId}
             options={clusterNetworks.map(n => ({ id: n.id, label: n.name }))}
             placeholder={t.vmCreate.selectNetwork}
