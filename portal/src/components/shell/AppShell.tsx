@@ -60,14 +60,9 @@ function languageOptions(t: Messages): { value: Lang; label: string }[] {
   ]
 }
 
+// titan-ops features/public-site/design.md#brand-icon
 function BrandMark() {
-  return (
-    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <circle cx="7" cy="7" r="4.2" stroke="currentColor" strokeWidth="2.2" />
-      </svg>
-    </span>
-  )
+  return <img src="/brand-mark.png" alt="" width={28} height={28} className="h-7 w-7 flex-shrink-0 rounded-lg" />
 }
 
 export function AppShell({

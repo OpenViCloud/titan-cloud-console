@@ -56,6 +56,19 @@ describe('MainLayout', () => {
     expect(screen.queryByText(/titan cloud/i)).not.toBeInTheDocument()
   })
 
+  // titan-ops features/public-site/design.md#brand-icon
+  it('shows the OpenViCloud icon beside the brand in the top bar and in the phone menu', () => {
+    const { container } = renderLayout()
+    const icons = container.querySelectorAll('img[src="/brand-mark.png"]')
+    expect(icons.length).toBe(2)
+    for (const icon of icons) {
+      expect(icon.getAttribute('alt')).toBe('')
+      const holder = icon.parentElement
+      expect(holder).not.toBeNull()
+      expect(holder === null ? '' : holder.textContent).toContain('OpenViCloud')
+    }
+  })
+
   it('shows tenant name in the account menu button', () => {
     renderLayout()
     expect(screen.getByRole('button', { name: /account menu for alice/i })).toHaveTextContent('alice')
