@@ -138,6 +138,7 @@ export const vi: Messages = {
     created: 'Ngày tạo',
     costThisMonth: 'Chi phí tháng này',
     costHint: 'Compute được tính tiền khi VM ở trạng thái Running, Ready, Frozen hoặc Error.',
+    costHintRestored: 'Miễn phí cho tới khi bạn xoá, kể cả khi VM đang chạy.',
     snapshots: 'Snapshot',
     stopTimeout: 'Thời gian dừng',
     stopTimeoutValue: (seconds: number) => {
@@ -360,6 +361,10 @@ export const vi: Messages = {
     title: (name: string) => `Xoá ${name}?`,
     description: 'Không thể hoàn tác. Tài nguyên sẽ bị xoá vĩnh viễn.',
     deleting: 'Đang xoá…',
+  },
+  restored: {
+    badge: 'Đã khôi phục · miễn phí',
+    description: 'Nền tảng đã khôi phục tài nguyên này từ một bản sao lưu. Miễn phí và không tính vào hạn mức cho tới khi bạn xoá. Snapshot bạn tạo từ nó vẫn có giới hạn và tính tiền như thường.',
   },
   quota: {
     title: 'Hạn mức',

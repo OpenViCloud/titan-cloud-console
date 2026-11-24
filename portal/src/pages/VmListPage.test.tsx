@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
@@ -72,6 +72,43 @@ describe('VmListPage', () => {
     await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
     expect(screen.getByText('Running')).toBeInTheDocument()
     expect(screen.getByText('10.0.0.5')).toBeInTheDocument()
+  })
+
+  // titan-ops features/backup/design.md#restore-as-new-resource
+  describe('a VM restored from a backup', () => {
+    const description =
+      'Restored from a backup by the platform. Free of charge and outside your quota until you delete it. Snapshots you take of it are limited and billed as usual.'
+
+    it('carries the label by its name, and an ordinary VM beside it does not', async () => {
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([
+        vm({ id: 'vm-r', name: 'web-restored', restoredFromBackup: true }),
+        vm({ id: 'vm-o', name: 'web-plain', restoredFromBackup: false }),
+      ])))
+      renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
+      await waitFor(() => expect(screen.getByText('web-restored')).toBeInTheDocument())
+      const restoredRow = screen.getByText('web-restored').closest('li') as HTMLElement
+      const plainRow = screen.getByText('web-plain').closest('li') as HTMLElement
+      expect(within(restoredRow).getByText('Restored · free')).toHaveTextContent(description)
+      expect(within(plainRow).queryByText('Restored · free')).not.toBeInTheDocument()
+      expect(screen.getAllByText('Restored · free')).toHaveLength(1)
+    })
+
+    it('carries the label in Vietnamese', async () => {
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ restoredFromBackup: true })])))
+      renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>, { lang: 'vi' })
+      await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
+      expect(screen.getByText('Đã khôi phục · miễn phí')).toHaveTextContent(
+        'Nền tảng đã khôi phục tài nguyên này từ một bản sao lưu. Miễn phí và không tính vào hạn mức cho tới khi bạn xoá. Snapshot bạn tạo từ nó vẫn có giới hạn và tính tiền như thường.',
+      )
+      expect(screen.queryByText('Restored · free')).not.toBeInTheDocument()
+    })
+
+    it('shows no label when the control plane does not send the field yet', async () => {
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm()])))
+      renderWithProviders(<MemoryRouter><VmListPage /></MemoryRouter>)
+      await waitFor(() => expect(screen.getByText('web-01')).toBeInTheDocument())
+      expect(screen.queryByText('Restored · free')).not.toBeInTheDocument()
+    })
   })
 
   it('shows dash for null IP', async () => {

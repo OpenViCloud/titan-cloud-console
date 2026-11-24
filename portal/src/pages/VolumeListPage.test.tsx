@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
@@ -54,6 +54,42 @@ describe('VolumeListPage', () => {
     await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByText('50 GB')).toBeInTheDocument()
+  })
+
+  // titan-ops features/backup/design.md#restore-as-new-resource
+  describe('a volume restored from a backup', () => {
+    it('carries the label by its name, and an ordinary volume beside it does not', async () => {
+      server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([
+        vol({ id: 'vol-r', name: 'data-restored', restoredFromBackup: true }),
+        vol({ id: 'vol-o', name: 'data-plain', restoredFromBackup: false }),
+      ])))
+      renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
+      await waitFor(() => expect(screen.getByText('data-restored')).toBeInTheDocument())
+      const restoredRow = screen.getByText('data-restored').closest('li') as HTMLElement
+      const plainRow = screen.getByText('data-plain').closest('li') as HTMLElement
+      expect(within(restoredRow).getByText('Restored · free')).toHaveTextContent(
+        'Restored from a backup by the platform. Free of charge and outside your quota until you delete it. Snapshots you take of it are limited and billed as usual.',
+      )
+      expect(within(plainRow).queryByText('Restored · free')).not.toBeInTheDocument()
+      expect(screen.getAllByText('Restored · free')).toHaveLength(1)
+    })
+
+    it('carries the label in Vietnamese', async () => {
+      server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol({ restoredFromBackup: true })])))
+      renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>, { lang: 'vi' })
+      await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
+      expect(screen.getByText('Đã khôi phục · miễn phí')).toHaveTextContent(
+        'Nền tảng đã khôi phục tài nguyên này từ một bản sao lưu. Miễn phí và không tính vào hạn mức cho tới khi bạn xoá. Snapshot bạn tạo từ nó vẫn có giới hạn và tính tiền như thường.',
+      )
+      expect(screen.queryByText('Restored · free')).not.toBeInTheDocument()
+    })
+
+    it('shows no label when the control plane does not send the field yet', async () => {
+      server.use(http.get('*/v1/tenant/volumes', () => HttpResponse.json([vol()])))
+      renderWithProviders(<MemoryRouter><VolumeListPage /></MemoryRouter>)
+      await waitFor(() => expect(screen.getByText('data-vol-1')).toBeInTheDocument())
+      expect(screen.queryByText('Restored · free')).not.toBeInTheDocument()
+    })
   })
 
   // DESIRED-CURRENT-STATE PR-2 — the badge shows the waiting request, and no new request starts over it.

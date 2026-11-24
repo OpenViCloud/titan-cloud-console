@@ -18,6 +18,10 @@ export interface Volume {
   clusterId: string
   volumeOfferingId: string
   sizeGb: number
+  // The platform restored this volume from a backup: free of charge and outside the quota until deleted
+  // (titan-ops features/backup/design.md#restore-as-new-resource). Absent from a control plane that does not send it
+  // yet: the volume is then an ordinary one.
+  restoredFromBackup?: boolean
   createdAt: string
 }
 

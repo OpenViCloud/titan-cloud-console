@@ -140,6 +140,7 @@ export const en = {
     created: 'Created',
     costThisMonth: 'Cost this month',
     costHint: 'Compute is billed while the VM is Running, Ready, Frozen or Error.',
+    costHintRestored: 'Free of charge until you delete it, also while the VM runs.',
     snapshots: 'Snapshots',
     stopTimeout: 'Stop timeout',
     stopTimeoutValue: (seconds: number) => {
@@ -362,6 +363,10 @@ export const en = {
     title: (name: string) => `Delete ${name}?`,
     description: 'This action cannot be undone. The resource will be permanently deleted.',
     deleting: 'Deleting…',
+  },
+  restored: {
+    badge: 'Restored · free',
+    description: 'Restored from a backup by the platform. Free of charge and outside your quota until you delete it. Snapshots you take of it are limited and billed as usual.',
   },
   quota: {
     title: 'Quota',
