@@ -132,8 +132,10 @@ test('A-1..A-5 every Billing route answers on the real host; commands write noth
     { headers: internal, data: { error: 'CQRS-3 regression probe' } }), 404)
 
   // ── A-5 titan-ops architecture/http-contract.md#commands-return-no-data: PATCH answers 204 with an empty body (values unchanged) ────────────────────
+  // The tenant's own caps, sent back as they are: a fixed body would rewrite them.
+  const caps = await (await request.get(`${API}/v1/tenant`, { headers: tenant })).json() as { maxVms: number, maxNetworks: number }
   for (const [path, data, headers] of [
-    [`/v1/tenants/${need('BETA_TENANT_ID')}/quota`, { maxVms: 10, maxNetworks: 1 }, admin],
+    [`/v1/tenants/${need('BETA_TENANT_ID')}/quota`, { maxVms: caps.maxVms, maxNetworks: caps.maxNetworks }, admin],
     [`/v1/tenants/${need('BETA_TENANT_ID')}/debt-ceiling`, { debtCeiling: 500000 }, admin],
     [`/v1/tenant/networks/${need('PAYTEST_NET_ID')}`, { name: 'paytest-net' }, tenant],
   ] as const) {

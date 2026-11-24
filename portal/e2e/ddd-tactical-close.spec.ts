@@ -205,8 +205,8 @@ test('U6 — VM list agrees with the API it read [ddd-tactical-close]', async ({
 // PREVIOUS network's name. One network, or one open, cannot see it — the stale value and the correct
 // value are the same string. It needs two DIFFERENT renamable networks.
 //
-// ⚠️ That precondition is IMPOSSIBLE on the environment it was written for, and the reason is worth writing down: beta-user has
-// `max_networks = 1`. Trying to create a second one returns 422 NETWORK_QUOTA_EXCEEDED — correctly.
+// ⚠️ That precondition was IMPOSSIBLE on the environment it was written for, and the reason is worth writing down: beta-user had
+// `max_networks = 1`. Trying to create a second one returned 422 NETWORK_QUOTA_EXCEEDED — correctly.
 // The stack trace of that refusal is, incidentally, the only LIVE evidence of titan-ops architecture/code-structure.md#tenant-typed-edge:
 //
 //   Tenant.Refuse → Tenant.EnsureCanCreateNetwork(activeNetworkCount)
@@ -238,8 +238,8 @@ test('U5 — rename dialog shows the right name on the second open [ddd-tactical
   if (renamable.length < 2) {
     test.skip(
       true,
-      `INCONCLUSIVE: only ${renamable.length} renamable network(s). beta-user has max_networks = 1, ` +
-        'so a second one cannot be created (422 NETWORK_QUOTA_EXCEEDED, correctly). The second-open ' +
+      `INCONCLUSIVE: only ${renamable.length} renamable network(s). Without room under beta-user's max_networks ` +
+        'a second one cannot be created (422 NETWORK_QUOTA_EXCEEDED, correctly). The second-open ' +
         'regression is covered by NetworkListPage.test.tsx, which is mutation-verified against the ' +
         'reinstated useEffect.',
     )

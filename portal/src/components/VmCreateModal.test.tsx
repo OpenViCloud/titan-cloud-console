@@ -755,9 +755,11 @@ describe('VmCreateModal', () => {
 
   it('drops the chosen network when the cluster changes to one it is not in', async () => {
     const otherClusterNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', clusterId: 'z2' }
+    // Two in z2, so the form picks none there (a cluster's only network is picked for the customer).
+    const secondOtherClusterNetwork = { ...activeNetwork, id: 'n3', name: 'farther', clusterId: 'z2' }
     let requestBody: unknown
     server.use(
-      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, otherClusterNetwork])),
+      http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, otherClusterNetwork, secondOtherClusterNetwork])),
       http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])),
       http.get('*/v1/templates', () => HttpResponse.json([template])),
       http.post('*/v1/tenant/vms', async ({ request }) => {
@@ -773,7 +775,7 @@ describe('VmCreateModal', () => {
     await userEvent.selectOptions(clusterSelect, 'z2')
 
     const network = screen.getByRole('combobox', { name: 'Network' })
-    expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'far-away'])
+    expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'far-away', 'farther'])
     // Template and size chosen, network not: z1's network still chosen would let the form send. The select alone
     // would read '' either way (its value is not among the options).
     await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Template' }), 't1')
