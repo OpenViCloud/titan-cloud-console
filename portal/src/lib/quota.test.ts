@@ -14,6 +14,18 @@ describe('vmOccupiesQuota', () => {
       expect(vmOccupiesQuota({ status }), status).toBe(false)
     }
   })
+
+  it('never counts a VM restored from a backup, whatever its status', () => {
+    for (const status of ['Creating', 'Starting', 'Stopping', 'Running', 'Ready', 'Stopped', 'Frozen', 'Error', 'Unknown', 'Deleting', 'Deleted', 'NotFound', 'Failed']) {
+      expect(vmOccupiesQuota({ status, restoredFromBackup: true }), status).toBe(false)
+    }
+  })
+
+  it('counts a VM not restored from a backup as before, the field false or absent', () => {
+    expect(vmOccupiesQuota({ status: 'Running', restoredFromBackup: false })).toBe(true)
+    expect(vmOccupiesQuota({ status: 'Running' })).toBe(true)
+    expect(vmOccupiesQuota({ status: 'Failed', restoredFromBackup: false })).toBe(false)
+  })
 })
 
 // Network.OccupiesQuota: status not in Deleting, Deleted, NotFound, Failed.
@@ -43,5 +55,17 @@ describe('volumeOccupiesQuota', () => {
     for (const status of ['Deleting', 'Deleted', 'NotFound', 'Failed']) {
       expect(volumeOccupiesQuota({ status }), status).toBe(false)
     }
+  })
+
+  it('never counts a volume restored from a backup, whatever its status', () => {
+    for (const status of ['Creating', 'Available', 'Attaching', 'Detaching', 'Deleting', 'Deleted', 'NotFound', 'Failed']) {
+      expect(volumeOccupiesQuota({ status, restoredFromBackup: true }), status).toBe(false)
+    }
+  })
+
+  it('counts a volume not restored from a backup as before, the field false or absent', () => {
+    expect(volumeOccupiesQuota({ status: 'Available', restoredFromBackup: false })).toBe(true)
+    expect(volumeOccupiesQuota({ status: 'Available' })).toBe(true)
+    expect(volumeOccupiesQuota({ status: 'Deleting', restoredFromBackup: false })).toBe(false)
   })
 })

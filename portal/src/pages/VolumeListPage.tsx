@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { VolumeCreateModal } from '@/components/VolumeCreateModal'
+import { RestoredBadge } from '@/components/RestoredBadge'
 import { useVolumes, useDeleteVolume, useDetachVolume, useAttachVolume, type Volume } from '@/hooks/useVolumes'
 import { useVms } from '@/hooks/useVms'
 import {
@@ -486,6 +487,7 @@ export function VolumeListPage() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-foreground">{volume.name}</span>
+                        <RestoredBadge restoredFromBackup={volume.restoredFromBackup} />
                         <Badge variant={volumeStateVariant[volumeLabel(volume)] ?? 'default'}>{volumeLabel(volume)}</Badge>
                         {attachmentDrift(volume, vmNameMap, t) !== null && (
                           <span className="text-[11px] text-faint">{attachmentDrift(volume, vmNameMap, t)}</span>

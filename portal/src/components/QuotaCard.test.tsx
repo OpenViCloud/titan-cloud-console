@@ -51,6 +51,28 @@ describe('QuotaCard', () => {
     expect(within(row('VMs')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
   })
 
+  it('does not count a VM or a volume restored from a backup, beside ordinary ones', async () => {
+    server.use(
+      http.get('*/v1/tenant', () => HttpResponse.json(tenant)),
+      http.get('*/v1/tenant/vms', () => HttpResponse.json([
+        { id: 'a', status: 'Running', restoredFromBackup: false },
+        // an older control plane sends no field: the VM counts as before
+        { id: 'b', status: 'Stopped' },
+        { id: 'r1', status: 'Running', restoredFromBackup: true },
+        { id: 'r2', status: 'Creating', restoredFromBackup: true },
+      ])),
+      http.get('*/v1/tenant/volumes', () => HttpResponse.json([
+        { id: 'v1', status: 'Available', restoredFromBackup: false },
+        { id: 'r3', status: 'Available', restoredFromBackup: true },
+        { id: 'r4', status: 'Attaching', restoredFromBackup: true },
+      ])),
+    )
+    renderWithProviders(<QuotaCard />)
+    await waitFor(() => expect(within(row('VMs')).getByText('2 / 5')).toBeInTheDocument())
+    await waitFor(() => expect(within(row('Volumes')).getByText('1 / 10')).toBeInTheDocument())
+    expect(within(row('VMs')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
+  })
+
   it('counts no public IPv6 when the control plane is too old to send publicIpv6Subnet', async () => {
     server.use(
       http.get('*/v1/tenant', () => HttpResponse.json(tenant)),

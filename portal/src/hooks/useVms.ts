@@ -21,6 +21,10 @@ export interface Vm {
   // How long a stop waits for a clean shutdown before the power is cut (titan-ops features/vm/design.md#vm-stop-timeout).
   // Absent from a control plane that does not send it yet: the VM page then shows no stop timeout.
   stopTimeoutSeconds?: number
+  // The platform restored this VM from a backup: free of charge and outside the quota until deleted
+  // (titan-ops features/backup/design.md#restore-as-new-resource). Absent from a control plane that does not send it
+  // yet: the VM is then an ordinary one.
+  restoredFromBackup?: boolean
   createdAt: string
 }
 

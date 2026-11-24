@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Plus, Server } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { VmCreateModal } from '@/components/VmCreateModal'
+import { RestoredBadge } from '@/components/RestoredBadge'
 import { VmActions, VmStatusBadge, VmStatusNote } from '@/components/vm/VmActions'
 import { useVms, type Vm } from '@/hooks/useVms'
 import { useClusterMap } from '@/hooks/useClusters'
@@ -36,6 +37,7 @@ function VmRow({ vm, offerings, templateName, clusterName }: {
           <Link to={`/vms/${vm.id}`} className="font-semibold text-foreground hover:text-primary-ink hover:underline">
             {vm.name}
           </Link>
+          <RestoredBadge restoredFromBackup={vm.restoredFromBackup} />
           <VmStatusBadge vm={vm} />
           <VmStatusNote vm={vm} />
         </div>

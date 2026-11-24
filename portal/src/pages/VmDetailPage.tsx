@@ -4,6 +4,7 @@ import { VmActions, VmStatusBadge, VmStatusNote } from '@/components/vm/VmAction
 import { AddSshKeyAction } from '@/components/vm/AddSshKeyDialog'
 import { VmSnapshotPanel } from '@/components/vm/VmSnapshotPanel'
 import { VmStopTimeoutPanel } from '@/components/vm/VmStopTimeoutPanel'
+import { RestoredBadge } from '@/components/RestoredBadge'
 import { useVms } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
 import { useClusterMap } from '@/hooks/useClusters'
@@ -89,6 +90,7 @@ export function VmDetailPage() {
   const networkHasPublicIpv6 = network !== undefined && typeof network.publicIpv6Subnet === 'string'
   const cost = billing?.perVm.find(c => c.vmId === vm.id)
   const currency = billing?.currency ?? 'VND'
+  const restored = vm.restoredFromBackup === true
 
   return (
     <div className="flex max-w-6xl flex-col gap-5">
@@ -97,12 +99,14 @@ export function VmDetailPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight">{vm.name}</h1>
+              <RestoredBadge restoredFromBackup={vm.restoredFromBackup} describe={false} />
               <VmStatusBadge vm={vm} />
               <VmStatusNote vm={vm} />
             </div>
             <p className="mt-1 text-[13px] text-muted-foreground">
               {size} · {templateMap.get(vm.templateId) ?? vm.templateId} · {clusterMap.get(vm.clusterId) ?? vm.clusterId}
             </p>
+            {restored && <p className="mt-1 text-[13px] text-info">{t.restored.description}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <AddSshKeyAction vm={vm} />
@@ -151,7 +155,9 @@ export function VmDetailPage() {
               <p data-testid="vm-cost" className="mt-3 text-[28px] font-bold tracking-tight tabular-nums">
                 {f.money(cost?.totalCost ?? 0, currency)}
               </p>
-              <p className="mt-1 text-[12.5px] text-faint">{t.vmDetail.costHint}</p>
+              {/* A restored VM is never billed (titan-ops features/backup/design.md#restore-as-new-resource): the billed-while
+                  hint would be untrue of it. */}
+              <p className="mt-1 text-[12.5px] text-faint">{restored ? t.vmDetail.costHintRestored : t.vmDetail.costHint}</p>
             </section>
             {vm.stopTimeoutSeconds !== undefined && (
               <VmStopTimeoutPanel

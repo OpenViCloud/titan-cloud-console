@@ -94,6 +94,61 @@ describe('VmDetailPage', () => {
     await waitFor(() => expect(screen.getByTestId('vm-cost')).toHaveTextContent('85.907 ₫'))
   })
 
+  // titan-ops features/backup/design.md#restore-as-new-resource
+  describe('a VM restored from a backup', () => {
+    const billedHint = 'Compute is billed while the VM is Running, Ready, Frozen or Error.'
+
+    it('carries the label by its title, says why it is free, and never says it is billed', async () => {
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ restoredFromBackup: true })])))
+      renderAt('/vms/vm-1')
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'web-01' })).toBeInTheDocument())
+      const title = screen.getByRole('heading', { name: 'web-01' }).parentElement as HTMLElement
+      // The line below says it; the badge does not say it a second time.
+      expect(within(title).getByText('Restored · free')).toHaveTextContent(/^Restored · free$/)
+      expect(screen.getByText(
+        'Restored from a backup by the platform. Free of charge and outside your quota until you delete it. Snapshots you take of it are limited and billed as usual.',
+        { selector: 'p' },
+      )).toBeInTheDocument()
+      const cost = screen.getByRole('region', { name: 'Cost this month' })
+      expect(within(cost).getByText('Free of charge until you delete it, also while the VM runs.')).toBeInTheDocument()
+      // The server's per-VM cost is compute only, and a restored VM has none: no row, so the page shows 0.
+      await waitFor(() => expect(screen.getByTestId('vm-cost')).toHaveTextContent('0 ₫'))
+      expect(screen.queryByText(billedHint)).not.toBeInTheDocument()
+    })
+
+    it('says the same in Vietnamese', async () => {
+      server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm({ restoredFromBackup: true })])))
+      renderWithProviders(
+        <MemoryRouter initialEntries={['/vms/vm-1']}>
+          <Routes>
+            <Route path="/vms/:vmId" element={<VmDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+        { lang: 'vi' },
+      )
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'web-01' })).toBeInTheDocument())
+      expect(screen.getByText('Đã khôi phục · miễn phí')).toBeInTheDocument()
+      expect(screen.getByText(
+        'Nền tảng đã khôi phục tài nguyên này từ một bản sao lưu. Miễn phí và không tính vào hạn mức cho tới khi bạn xoá. Snapshot bạn tạo từ nó vẫn có giới hạn và tính tiền như thường.',
+        { selector: 'p' },
+      )).toBeInTheDocument()
+      expect(screen.getByText('Miễn phí cho tới khi bạn xoá, kể cả khi VM đang chạy.')).toBeInTheDocument()
+      expect(screen.queryByText('Compute được tính tiền khi VM ở trạng thái Running, Ready, Frozen hoặc Error.')).not.toBeInTheDocument()
+    })
+
+    it('shows an ordinary VM, and one from a control plane that does not send the field yet, as billed and unlabelled', async () => {
+      for (const restored of [{ restoredFromBackup: false }, {}]) {
+        server.use(http.get('*/v1/tenant/vms', () => HttpResponse.json([vm(restored)])))
+        const { unmount } = renderAt('/vms/vm-1')
+        await waitFor(() => expect(screen.getByRole('heading', { name: 'web-01' })).toBeInTheDocument())
+        expect(screen.getByText(billedHint)).toBeInTheDocument()
+        expect(screen.queryByText('Restored · free')).not.toBeInTheDocument()
+        expect(screen.queryByText(/Restored from a backup/)).not.toBeInTheDocument()
+        unmount()
+      }
+    })
+  })
+
   function publicIpv6Fact() {
     return screen.getByText('Public IPv6').closest('div') as HTMLElement
   }
