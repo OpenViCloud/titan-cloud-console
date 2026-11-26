@@ -974,8 +974,12 @@ describe('VmCreateModal', () => {
 
       await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Network' }), 'n3')
       expect(await screen.findByText('Cluster 1 · web')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Change' })).toHaveAttribute('aria-expanded', 'true')
+      const change = screen.getByRole('button', { name: 'Change' })
+      expect(change).toHaveAttribute('aria-expanded', 'true')
       expect(screen.getByRole('combobox', { name: 'Network' })).toHaveValue('n3')
+
+      await userEvent.click(change)
+      expect(screen.queryByRole('combobox', { name: 'Network' })).not.toBeInTheDocument()
     })
 
     it('groups templates by OS family and shows the family column only with two families or more', async () => {
