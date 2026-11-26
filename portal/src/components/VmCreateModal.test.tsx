@@ -949,7 +949,7 @@ describe('VmCreateModal', () => {
       expect(screen.queryByText('Cluster 1 · default')).not.toBeInTheDocument()
     })
 
-    it('keeps the cluster and network selects open once one is changed, until Change is pressed again', async () => {
+    it('keeps the selects open once the cluster is changed in them, until Change is pressed', async () => {
       server.use(
         http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, clusterTwoNetwork])),
         http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])),
@@ -965,6 +965,17 @@ describe('VmCreateModal', () => {
       await userEvent.click(change)
       expect(change).toHaveAttribute('aria-expanded', 'false')
       expect(screen.queryByRole('combobox', { name: 'Cluster' })).not.toBeInTheDocument()
+    })
+
+    it('keeps the selects open once the network is changed in them', async () => {
+      const secondNetwork = { ...activeNetwork, id: 'n3', name: 'web' }
+      server.use(http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, secondNetwork])))
+      render()
+
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Network' }), 'n3')
+      expect(await screen.findByText('Cluster 1 · web')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Change' })).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByRole('combobox', { name: 'Network' })).toHaveValue('n3')
     })
 
     it('groups templates by OS family and shows the family column only with two families or more', async () => {
