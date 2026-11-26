@@ -288,7 +288,7 @@ export const vi: Messages = {
     sshKeysHint: 'Key đã chọn được thêm cho user ubuntu.',
     noSshKeysBefore: 'Chưa lưu SSH key nào. ',
     noSshKeysLink: 'Thêm một key',
-    noSshKeysAfter: '.',
+    noSshKeysAfter: ' nếu muốn đăng nhập bằng SSH.',
     sshKeysNonePicked: 'Chưa chọn key nào',
     sshKeysPicked: (count: number) => `Đã chọn ${count} key`,
     access: 'Truy cập (không bắt buộc)',

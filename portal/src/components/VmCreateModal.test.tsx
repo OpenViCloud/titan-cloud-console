@@ -120,8 +120,7 @@ describe('VmCreateModal', () => {
     // The cluster comes first: the network and template lists only open once a cluster is chosen.
     await chooseCluster('z1')
 
-    // Template option label pulls the `os` field from the API DTO — regression guard
-    // against the `osTypeName` mismatch that rendered "<name> — undefined".
+    // The template list reads the cluster's templates; its family comes from their `os` (lib/templateFamily.ts).
     expect(await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })).toBeInTheDocument()
 
     await chooseTheRest()
@@ -174,7 +173,7 @@ describe('VmCreateModal', () => {
 
     const link = await screen.findByRole('link', { name: 'Add one' })
     expect(link.getAttribute('href')).toBe('/ssh-keys')
-    expect(link.parentElement).toHaveTextContent('No SSH keys saved. Add one.')
+    expect(link.parentElement).toHaveTextContent('No SSH keys saved. Add one if you want to log in with SSH.')
   })
 
   it('points to the SSH keys page when none is saved, in Vietnamese too', async () => {
@@ -182,7 +181,7 @@ describe('VmCreateModal', () => {
 
     const link = await screen.findByRole('link', { name: 'Thêm một key' })
     expect(link.getAttribute('href')).toBe('/ssh-keys')
-    expect(link.parentElement).toHaveTextContent('Chưa lưu SSH key nào. Thêm một key.')
+    expect(link.parentElement).toHaveTextContent('Chưa lưu SSH key nào. Thêm một key nếu muốn đăng nhập bằng SSH.')
     expect(screen.getByText('SSH key')).toBeInTheDocument()
   })
 
@@ -421,7 +420,7 @@ describe('VmCreateModal', () => {
       }
     })
 
-    it('speaks Vietnamese: label, hint and the length error', async () => {
+    it('speaks Vietnamese: label, placeholder and the length error', async () => {
       renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
       await userEvent.type(await screen.findByLabelText('Mật khẩu console'), 'short')
       await userEvent.type(screen.getByPlaceholderText(/web/i), 'my-vm')

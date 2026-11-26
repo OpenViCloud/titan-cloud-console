@@ -290,7 +290,7 @@ export const en = {
     sshKeysHint: 'Picked keys are added for the user ubuntu.',
     noSshKeysBefore: 'No SSH keys saved. ',
     noSshKeysLink: 'Add one',
-    noSshKeysAfter: '.',
+    noSshKeysAfter: ' if you want to log in with SSH.',
     sshKeysNonePicked: 'None picked',
     sshKeysPicked: (count: number) => `${count} picked`,
     access: 'Access (optional)',
