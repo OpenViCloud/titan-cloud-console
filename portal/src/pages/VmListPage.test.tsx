@@ -28,14 +28,21 @@ const vm = (overrides = {}) => ({
 })
 
 // The VM form sends only once cluster, network, template and size are chosen, and network and template open after the
-// cluster: pick the first option of every choice, then again for the ones the cluster opened.
+// cluster: pick the first option of every select still empty, twice for the ones the cluster opened, then the first
+// radio of the template and size groups that have none checked.
 async function chooseEveryFirstOption() {
   for (let pass = 0; pass < 2; pass++) {
-    for (const select of screen.getAllByRole('combobox') as HTMLSelectElement[]) {
+    for (const select of screen.queryAllByRole('combobox') as HTMLSelectElement[]) {
       const first = select.querySelectorAll('option')[1]
       if (select.value === '' && first !== undefined) {
         await userEvent.selectOptions(select, first.getAttribute('value')!)
       }
+    }
+  }
+  for (const name of ['Template', 'Size']) {
+    const radios = within(await screen.findByRole('radiogroup', { name })).getAllByRole('radio') as HTMLInputElement[]
+    if (!radios.some(radio => radio.checked)) {
+      await userEvent.click(radios[0])
     }
   }
 }

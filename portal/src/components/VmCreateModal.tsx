@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
-  DialogDescription, DialogFooter, DialogClose,
+  DialogDescription, DialogClose,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,13 +12,15 @@ import { useCreateVm, type CreateVmRequest } from '@/hooks/useVms'
 import { useNetworks } from '@/hooks/useNetworks'
 import { useClusters } from '@/hooks/useClusters'
 import { useClusterTemplates } from '@/hooks/useTemplates'
-import { useVmOfferings, formatOfferingLabel } from '@/hooks/useVmOfferings'
+import { useVmOfferings } from '@/hooks/useVmOfferings'
 import { useSshKeys } from '@/hooks/useSshKeys'
 import type { AxiosError } from 'axios'
 import { isUsableNetwork } from '@/lib/networkState'
-import { useT } from '@/i18n/LanguageContext'
+import { useFormat, useT } from '@/i18n/LanguageContext'
 import { parseStopTimeout, STOP_TIMEOUT_DEFAULT } from '@/lib/vmStopTimeout'
 import { USER_DATA_MAX_BYTES, userDataByteLength } from '@/lib/vmUserData'
+import { VmTemplatePicker } from '@/components/vm/VmTemplatePicker'
+import { VmSizePicker } from '@/components/vm/VmSizePicker'
 
 // The length the server accepts (titan-ops features/vm/design.md#console-password); no rule on the kind of characters.
 const CONSOLE_PASSWORD_MIN = 12
@@ -67,6 +69,7 @@ function SelectField({ label, value, onChange, options, placeholder, disabled, e
 
 export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const t = useT()
+  const fmt = useFormat()
   const [name, setName]           = useState('')
   const [networkId, setNetworkId] = useState('')
   const [clusterId, setClusterId]       = useState('')
@@ -82,11 +85,19 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const [userDataError, setUserDataError] = useState('')
   const [apiError, setApiError]   = useState('')
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [locationOpen, setLocationOpen] = useState(false)
+  const [sshListOpen, setSshListOpen] = useState(false)
 
   const createVm = useCreateVm()
   const { data: networks = [] }  = useNetworks()
   const { data: clusters = [] }     = useClusters()
-  const { data: clusterTemplates = [] } = useClusterTemplates(clusterId)
+  // A tenant that sees one cluster has nothing to choose: that cluster is taken until the customer picks another
+  // (titan-ops features/vm/design.md#vm-create-form).
+  let chosenClusterId = clusterId
+  if (chosenClusterId === '' && clusters.length === 1) {
+    chosenClusterId = clusters[0].id
+  }
+  const { data: clusterTemplates = [] } = useClusterTemplates(chosenClusterId)
   const { data: offerings = [] } = useVmOfferings()
   const { data: sshKeys = [] } = useSshKeys()
   const queryClient = useQueryClient()
@@ -98,7 +109,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const activeNetworks = networks.filter(isUsableNetwork)
   // A VM lands on its network's cluster, so only the chosen cluster's networks are offered
   // (titan-ops features/catalog/design.md#cluster-is-a-real-choice).
-  const clusterNetworks = activeNetworks.filter(n => n.clusterId === clusterId)
+  const clusterNetworks = activeNetworks.filter(n => n.clusterId === chosenClusterId)
   // A cluster with one usable network (the tenant's default one, titan-ops features/network/design.md#default-network)
   // has nothing to choose: that network is taken until the customer picks another.
   let chosenNetworkId = networkId
@@ -108,7 +119,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   const canSubmit = activeNetworks.length > 0 && !createVm.isPending
 
   let networkEmptyText = t.vmCreate.noNetworksInCluster
-  const noClusterChosen = clusterId === ''
+  const noClusterChosen = chosenClusterId === ''
   if (activeNetworks.length === 0) {
     networkEmptyText = t.vmCreate.noNetworks
   } else if (noClusterChosen) {
@@ -121,6 +132,8 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
   let chosenTemplateId = ''
   if (templateOfferedInCluster) {
     chosenTemplateId = templateId
+  } else if (clusterTemplates.length === 1) {
+    chosenTemplateId = clusterTemplates[0].id
   }
   let templateEmptyText = t.vmCreate.noTemplatesInCluster
   if (noClusterChosen) {
@@ -129,6 +142,8 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
 
   function handleClusterChange(nextClusterId: string) {
     setClusterId(nextClusterId)
+    // The selects the customer is using stay open once both are chosen, rather than folding into the line under them.
+    setLocationOpen(true)
     const chosenNetworkStaysInCluster = activeNetworks.some(n => n.id === networkId && n.clusterId === nextClusterId)
     if (!chosenNetworkStaysInCluster) {
       setNetworkId('')
@@ -167,7 +182,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
       return false
     }
     setUserDataError('')
-    const everyChoiceMade = clusterId !== '' && chosenNetworkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
+    const everyChoiceMade = chosenClusterId !== '' && chosenNetworkId !== '' && chosenTemplateId !== '' && vmOfferingId !== ''
     if (!everyChoiceMade) {
       setApiError(t.vmCreate.choicesRequired)
       return false
@@ -181,7 +196,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     setApiError('')
     try {
       const request: CreateVmRequest = {
-        name, networkId: chosenNetworkId, clusterId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds,
+        name, networkId: chosenNetworkId, clusterId: chosenClusterId, vmOfferingId, templateId: chosenTemplateId, sshKeyIds: pickedSshKeyIds,
       }
       if (consolePassword !== '') {
         request.consolePassword = consolePassword
@@ -224,87 +239,164 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
     setUserData('')
     setNameError(''); setConsolePasswordError(''); setStopTimeoutError(''); setUserDataError(''); setApiError('')
     setAdvancedOpen(false)
+    setLocationOpen(false)
+    setSshListOpen(false)
     onOpenChange(false)
+  }
+
+  const chosenCluster = clusters.find(z => z.id === chosenClusterId)
+  const chosenNetwork = clusterNetworks.find(n => n.id === chosenNetworkId)
+  // The location line stands for the two selects while both are chosen; Change opens them anyway.
+  const locationKnown = chosenCluster !== undefined && chosenNetwork !== undefined
+  const showLocationSelects = locationOpen || !locationKnown
+
+  const chosenTemplate = clusterTemplates.find(zt => zt.id === chosenTemplateId)
+  const chosenOffering = offerings.find(o => o.id === vmOfferingId)
+  const summary: string[] = []
+  if (chosenTemplate !== undefined) {
+    summary.push(chosenTemplate.name)
+  }
+  if (chosenOffering !== undefined) {
+    summary.push(chosenOffering.name, t.vmCreate.perHour(fmt.rate(chosenOffering.pricePerHour)))
+  }
+
+  let sshKeysPicked = t.vmCreate.sshKeysNonePicked
+  if (pickedSshKeyIds.length > 0) {
+    sshKeysPicked = t.vmCreate.sshKeysPicked(pickedSshKeyIds.length)
   }
 
   return (
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
-      {/* The dialog is centered and fixed, so a form taller than the screen scrolls inside it. */}
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t.vmCreate.title}</DialogTitle>
-          <DialogDescription>{t.vmCreate.description}</DialogDescription>
-        </DialogHeader>
+      {/* Only the form body scrolls when the dialog is taller than the screen; the footer stays in view. */}
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] max-w-2xl flex-col p-0">
+        <div className="border-b border-border px-6 pb-4 pt-6">
+          <DialogHeader className="mb-0">
+            <DialogTitle>{t.vmCreate.title}</DialogTitle>
+            <DialogDescription className="sr-only">{t.vmCreate.description}</DialogDescription>
+          </DialogHeader>
+          {locationKnown && (
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[13px] text-muted-foreground">
+              <span>{`${chosenCluster.name} · ${chosenNetwork.name}`}</span>
+              <button
+                type="button"
+                aria-expanded={locationOpen}
+                onClick={() => setLocationOpen(!locationOpen)}
+                disabled={createVm.isPending}
+                className="rounded-md text-primary underline-offset-2 hover:underline focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {t.vmCreate.changeLocation}
+              </button>
+            </p>
+          )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-soft-foreground">{t.vmCreate.name}</label>
-            <Input
-              placeholder={t.vmCreate.namePlaceholder}
-              value={name}
-              onChange={e => { setName(e.target.value); setNameError('') }}
-              error={nameError}
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+            {showLocationSelects && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField
+                  label={t.vmCreate.cluster}
+                  value={chosenClusterId}
+                  onChange={handleClusterChange}
+                  options={clusters.map(z => ({ id: z.id, label: z.name }))}
+                  placeholder={t.vmCreate.selectCluster}
+                  disabled={createVm.isPending}
+                />
+                <SelectField
+                  label={t.vmCreate.network}
+                  value={chosenNetworkId}
+                  onChange={id => { setNetworkId(id); setLocationOpen(true) }}
+                  options={clusterNetworks.map(n => ({ id: n.id, label: n.name }))}
+                  placeholder={t.vmCreate.selectNetwork}
+                  disabled={createVm.isPending}
+                  empty={networkEmptyText}
+                />
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label htmlFor="vm-name" className="text-[13px] font-medium text-soft-foreground">{t.vmCreate.name}</label>
+              <Input
+                id="vm-name"
+                placeholder={t.vmCreate.namePlaceholder}
+                value={name}
+                onChange={e => { setName(e.target.value); setNameError('') }}
+                error={nameError}
+                disabled={createVm.isPending}
+                autoFocus
+              />
+            </div>
+
+            <VmTemplatePicker
+              templates={clusterTemplates}
+              value={chosenTemplateId}
+              onChange={setTemplateId}
               disabled={createVm.isPending}
-              autoFocus
+              emptyText={templateEmptyText}
             />
-          </div>
 
-          <SelectField
-            label={t.vmCreate.cluster}
-            value={clusterId}
-            onChange={handleClusterChange}
-            options={clusters.map(z => ({ id: z.id, label: z.name }))}
-            placeholder={t.vmCreate.selectCluster}
-            disabled={createVm.isPending}
-          />
+            <VmSizePicker
+              offerings={offerings}
+              value={vmOfferingId}
+              onChange={setVmOfferingId}
+              disabled={createVm.isPending}
+            />
 
-          <SelectField
-            label={t.vmCreate.network}
-            value={chosenNetworkId}
-            onChange={setNetworkId}
-            options={clusterNetworks.map(n => ({ id: n.id, label: n.name }))}
-            placeholder={t.vmCreate.selectNetwork}
-            disabled={createVm.isPending}
-            empty={networkEmptyText}
-          />
+            {/* SSH keys and a console password are both optional (titan-ops features/vm/design.md#vm-create-form):
+                a VM with neither is reached by adding a key later. */}
+            <fieldset className="space-y-3 border-t border-border pt-5">
+              <legend className="float-left mb-1 w-full text-[13px] font-semibold text-foreground">{t.vmCreate.access}</legend>
+              <p className="clear-both text-xs text-faint">{t.vmCreate.accessHint}</p>
 
-          <SelectField
-            label={t.vmCreate.template}
-            value={chosenTemplateId}
-            onChange={setTemplateId}
-            options={clusterTemplates.map(zt => ({ id: zt.id, label: `${zt.name} — ${zt.os}` }))}
-            placeholder={t.vmCreate.selectTemplate}
-            disabled={createVm.isPending}
-            empty={templateEmptyText}
-          />
-
-          {/* Size is chosen independently of the OS template (titan-ops features/catalog/design.md#vm-offering-sizing) — the label spells out
-              vCPU/RAM so the customer sees what they are provisioning, not just a tier name. */}
-          <SelectField
-            label={t.vmCreate.size}
-            value={vmOfferingId}
-            onChange={setVmOfferingId}
-            options={offerings.map(o => ({ id: o.id, label: formatOfferingLabel(o) }))}
-            placeholder={t.vmCreate.selectSize}
-            disabled={createVm.isPending}
-          />
-
-          {/* SSH keys and a console password are both optional (titan-ops features/vm/design.md#vm-create-form):
-              a VM with neither is reached by adding a key later. */}
-          <fieldset className="space-y-4 border-t border-border pt-4">
-            <legend className="float-left mb-1 w-full text-[13px] font-semibold text-foreground">{t.vmCreate.access}</legend>
-            <p className="clear-both text-xs text-faint">{t.vmCreate.accessHint}</p>
-
-            <fieldset className="space-y-1.5">
-              <legend className="text-[13px] font-medium text-soft-foreground">{t.vmCreate.sshKeys}</legend>
-              {sshKeys.length === 0 ? (
-                <p className="rounded-md border border-border bg-card px-3 py-2 text-[13px] text-faint">
-                  {t.vmCreate.noSshKeysBefore}
-                  <Link to="/ssh-keys" className="text-primary underline-offset-2 hover:underline">{t.vmCreate.noSshKeysLink}</Link>
-                  {t.vmCreate.noSshKeysAfter}
-                </p>
-              ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
+                  <p id="vm-ssh-keys-label" className="text-[13px] font-medium text-soft-foreground">{t.vmCreate.sshKeys}</p>
+                  {sshKeys.length === 0 ? (
+                    <p className="rounded-md border border-border bg-card px-3 py-2 text-[13px] text-faint">
+                      {t.vmCreate.noSshKeysBefore}
+                      <Link to="/ssh-keys" className="text-primary underline-offset-2 hover:underline">{t.vmCreate.noSshKeysLink}</Link>
+                      {t.vmCreate.noSshKeysAfter}
+                    </p>
+                  ) : (
+                    <button
+                      id="vm-ssh-keys-button"
+                      type="button"
+                      aria-labelledby="vm-ssh-keys-label vm-ssh-keys-button"
+                      aria-expanded={sshListOpen}
+                      aria-controls="vm-ssh-keys-list"
+                      onClick={() => setSshListOpen(!sshListOpen)}
+                      disabled={createVm.isPending}
+                      className="flex w-full items-center justify-between rounded-md border border-border bg-popover px-3 py-2 text-left text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40"
+                    >
+                      {sshKeysPicked}
+                      <ChevronRight
+                        className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform ${sshListOpen ? 'rotate-90' : ''}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="console-password" className="text-[13px] font-medium text-soft-foreground">
+                    {t.vmCreate.consolePassword}
+                  </label>
+                  <Input
+                    id="console-password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder={t.vmCreate.consolePasswordPlaceholder}
+                    value={consolePassword}
+                    onChange={e => { setConsolePassword(e.target.value); setConsolePasswordError('') }}
+                    error={consolePasswordError}
+                    disabled={createVm.isPending}
+                  />
+                </div>
+              </div>
+
+              {/* Rendered only while open, like Advanced, so a test sees the closed state. */}
+              {sshListOpen && sshKeys.length > 0 && (
+                <div id="vm-ssh-keys-list" className="space-y-1.5 rounded-md border border-border bg-card px-3 py-2">
                   {sshKeys.map(key => (
                     <div key={key.id} className="flex items-center gap-2.5">
                       <input
@@ -325,87 +417,72 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
               )}
             </fieldset>
 
-            <div className="space-y-1.5">
-              <label htmlFor="console-password" className="text-[13px] font-medium text-soft-foreground">
-                {t.vmCreate.consolePassword}
-              </label>
-              <Input
-                id="console-password"
-                type="password"
-                autoComplete="new-password"
-                value={consolePassword}
-                onChange={e => { setConsolePassword(e.target.value); setConsolePasswordError('') }}
-                error={consolePasswordError}
-                disabled={createVm.isPending}
-              />
-              <p className="text-xs text-faint">{t.vmCreate.consolePasswordHint}</p>
+            {/* Closed by default; the fields keep their values while it is closed. */}
+            <div className="space-y-4 border-t border-border pt-5">
+              <button
+                type="button"
+                aria-expanded={advancedOpen}
+                aria-controls="vm-create-advanced"
+                onClick={() => setAdvancedOpen(!advancedOpen)}
+                className="flex w-full flex-wrap items-center gap-x-1.5 rounded-md text-left text-[13px] font-semibold text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <ChevronRight
+                  className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform ${advancedOpen ? 'rotate-90' : ''}`}
+                  aria-hidden="true"
+                />
+                {t.vmCreate.advanced}{' '}
+                <span className="font-normal text-faint">{t.vmCreate.advancedSummary}</span>
+              </button>
+
+              {advancedOpen && (
+                <div id="vm-create-advanced" className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="stop-timeout" className="text-[13px] font-medium text-soft-foreground">
+                      {t.vmCreate.stopTimeout}
+                    </label>
+                    {/* Text, not type=number: the range check is ours and shows inline, not the browser's bubble. */}
+                    <Input
+                      id="stop-timeout"
+                      type="text"
+                      inputMode="numeric"
+                      value={stopTimeout}
+                      onChange={e => { setStopTimeout(e.target.value); setStopTimeoutError('') }}
+                      error={stopTimeoutError}
+                      disabled={createVm.isPending}
+                    />
+                    <p className="text-xs text-faint">{t.vmCreate.stopTimeoutHint}</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="vm-user-data" className="text-[13px] font-medium text-soft-foreground">
+                      {t.vmCreate.userData}
+                    </label>
+                    <textarea
+                      id="vm-user-data"
+                      rows={4}
+                      spellCheck={false}
+                      placeholder={t.vmCreate.userDataPlaceholder}
+                      value={userData}
+                      onChange={e => { setUserData(e.target.value); setUserDataError('') }}
+                      disabled={createVm.isPending}
+                      className={`w-full rounded-md border bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 ${userDataError ? 'border-bad-border' : 'border-border'}`}
+                    />
+                    {userDataError && <p className="text-xs text-bad">{userDataError}</p>}
+                    <p className="text-xs text-faint">{t.vmCreate.userDataHint}</p>
+                  </div>
+                </div>
+              )}
             </div>
-          </fieldset>
 
-          {/* Closed by default; the fields keep their values while it is closed. */}
-          <div className="space-y-4 border-t border-border pt-4">
-            <button
-              type="button"
-              aria-expanded={advancedOpen}
-              aria-controls="vm-create-advanced"
-              onClick={() => setAdvancedOpen(!advancedOpen)}
-              className="flex w-full flex-wrap items-center gap-x-1.5 rounded-md text-left text-[13px] font-semibold text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <ChevronRight
-                className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform ${advancedOpen ? 'rotate-90' : ''}`}
-                aria-hidden="true"
-              />
-              {t.vmCreate.advanced}{' '}
-              <span className="font-normal text-faint">{t.vmCreate.advancedSummary}</span>
-            </button>
-
-            {advancedOpen && (
-              <div id="vm-create-advanced" className="space-y-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="stop-timeout" className="text-[13px] font-medium text-soft-foreground">
-                    {t.vmCreate.stopTimeout}
-                  </label>
-                  {/* Text, not type=number: the range check is ours and shows inline, not the browser's bubble. */}
-                  <Input
-                    id="stop-timeout"
-                    type="text"
-                    inputMode="numeric"
-                    value={stopTimeout}
-                    onChange={e => { setStopTimeout(e.target.value); setStopTimeoutError('') }}
-                    error={stopTimeoutError}
-                    disabled={createVm.isPending}
-                  />
-                  <p className="text-xs text-faint">{t.vmCreate.stopTimeoutHint}</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="vm-user-data" className="text-[13px] font-medium text-soft-foreground">
-                    {t.vmCreate.userData}
-                  </label>
-                  <textarea
-                    id="vm-user-data"
-                    rows={4}
-                    spellCheck={false}
-                    placeholder={t.vmCreate.userDataPlaceholder}
-                    value={userData}
-                    onChange={e => { setUserData(e.target.value); setUserDataError('') }}
-                    disabled={createVm.isPending}
-                    className={`w-full rounded-md border bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 ${userDataError ? 'border-bad-border' : 'border-border'}`}
-                  />
-                  {userDataError && <p className="text-xs text-bad">{userDataError}</p>}
-                  <p className="text-xs text-faint">{t.vmCreate.userDataHint}</p>
-                </div>
-              </div>
+            {apiError && (
+              <p className="text-xs text-bad bg-bad-soft border border-bad-border rounded-md px-3 py-2">
+                {apiError}
+              </p>
             )}
           </div>
 
-          {apiError && (
-            <p className="text-xs text-bad bg-bad-soft border border-bad-border rounded-md px-3 py-2">
-              {apiError}
-            </p>
-          )}
-
-          <DialogFooter>
+          <div className="flex flex-wrap items-center gap-2 border-t border-border px-6 py-4">
+            <p role="status" className="min-w-0 flex-1 truncate text-[13px] text-soft-foreground">{summary.join(' · ')}</p>
             <DialogClose asChild>
               <Button type="button" variant="ghost" disabled={createVm.isPending} onClick={handleClose}>
                 {t.common.cancel}
@@ -414,7 +491,7 @@ export function VmCreateModal({ open, onOpenChange, onCreated }: Props) {
             <Button type="submit" disabled={createVm.isPending || !canSubmit}>
               {createVm.isPending ? t.vmCreate.creating : t.vmCreate.submit}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
