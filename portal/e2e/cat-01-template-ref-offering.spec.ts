@@ -179,24 +179,25 @@ test('U6 — Create VM keeps Template and Size as two independent choices', asyn
   await page.getByRole('button', { name: 'Virtual Machines' }).first().click()
   await page.getByRole('button', { name: 'Create VM' }).first().click()
 
-  // label and select are siblings inside the field wrapper.
-  const templateSelect = page.locator('label:text-is("Template") + select')
-  const sizeSelect = page.locator('label:text-is("Size") + select')
-  await expect(templateSelect).toBeVisible({ timeout: 30_000 })
-  await expect(sizeSelect).toBeVisible()
+  // Template and size are radio groups (titan-ops features/vm/design.md#vm-create-form).
+  const templates = page.getByRole('radiogroup', { name: 'Template' })
+  const sizes = page.getByRole('radiogroup', { name: 'Size' })
+  await expect(templates).toBeVisible({ timeout: 30_000 })
+  await expect(sizes).toBeVisible()
 
-  // Each select carries one placeholder option plus the real ones.
-  await expect(templateSelect.locator('option'), '1 listed template + placeholder').toHaveCount(2)
-  await expect(sizeSelect.locator('option'), '4 tiers + placeholder').toHaveCount(5)
+  // One listed template, which the form picks; four tiers, none picked.
+  await expect(templates.getByRole('radio'), '1 listed template').toHaveCount(1)
+  await expect(templates.getByRole('radio')).toBeChecked()
+  await expect(sizes.getByRole('radio'), '4 tiers').toHaveCount(4)
 
-  // The size options still spell out what the customer is buying — and they come from the offering
+  // The size rows still spell out what the customer is buying — and they come from the offering
   // catalog, not from whatever tier a template happens to point at.
-  await expect(sizeSelect.locator('option', { hasText: /Small — 1 vCPU · 2 GB/ })).toHaveCount(1)
-  await expect(sizeSelect.locator('option', { hasText: /Extra Large — 8 vCPU · 16 GB/ })).toHaveCount(1)
+  await expect(sizes.getByRole('radio', { name: /^Small 1 vCPU 2 GB RAM/ })).toHaveCount(1)
+  await expect(sizes.getByRole('radio', { name: /^Extra Large 8 vCPU 16 GB RAM/ })).toHaveCount(1)
 
   // Choosing a template must NOT constrain the size list (titan-ops features/catalog/design.md#template-borrows-sizing: the FK is a base, not a limit).
-  await templateSelect.selectOption({ index: 1 })
-  await expect(sizeSelect.locator('option'), 'size list unchanged by template choice').toHaveCount(5)
+  await templates.getByRole('radio').first().check()
+  await expect(sizes.getByRole('radio'), 'size list unchanged by template choice').toHaveCount(4)
 
   await page.screenshot({ path: `${EVIDENCE}/u6-create-vm-two-choices-pass.png`, fullPage: true })
   // Deliberately NOT clicking Create — provisioning a VM is billable.

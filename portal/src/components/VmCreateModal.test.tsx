@@ -9,20 +9,36 @@ import { VmCreateModal } from './VmCreateModal'
 
 const activeNetwork = { id: 'n1', name: 'default', status: 'Created', requestFailureReason: null, cidr: null, gateway: null, clusterId: 'z1', createdAt: '2026-01-01T00:00:00Z' }
 const cluster = { id: 'z1', name: 'Cluster 1' }
-const template = { id: 't1', name: 'Ubuntu 22.04', os: 'Ubuntu' }
+const template = { id: 't1', name: 'Ubuntu 22.04', description: 'Ubuntu 22.04 LTS', os: 'ubuntu/22.04' }
 const offering = { id: 'm', name: 'Medium', vcpu: 2, memoryMb: 4096, pricePerHour: 311.256 }
 const clusterTwoNetwork = { ...activeNetwork, id: 'n2', name: 'far-away', clusterId: 'z2' }
 
 // The form refuses to send until cluster, network, template and size are chosen; a test about what the server answers
-// picks whatever it did not pick itself: the first option of each choice still empty.
+// picks whatever it did not pick itself: the first option of a select still empty, the first radio of a group with
+// none checked.
 async function chooseTheRest() {
-  for (const name of ['Network', 'Template', 'Size']) {
-    const select = await screen.findByRole('combobox', { name }) as HTMLSelectElement
-    if (select.value === '') {
-      const first = select.querySelectorAll('option')[1]
-      await userEvent.selectOptions(select, first.getAttribute('value')!)
+  const network = screen.queryByRole('combobox', { name: 'Network' }) as HTMLSelectElement | null
+  if (network !== null && network.value === '') {
+    await userEvent.selectOptions(network, network.querySelectorAll('option')[1].getAttribute('value')!)
+  }
+  for (const name of ['Template', 'Size']) {
+    const radios = within(await screen.findByRole('radiogroup', { name })).getAllByRole('radio') as HTMLInputElement[]
+    if (!radios.some(radio => radio.checked)) {
+      await userEvent.click(radios[0])
     }
   }
+}
+
+// The cluster select shows once Change is pressed, or by itself while there is a cluster to choose
+// (titan-ops features/vm/design.md#vm-create-form).
+async function chooseCluster(id: string) {
+  await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
+  let select = screen.queryByRole('combobox', { name: 'Cluster' })
+  if (select === null) {
+    await userEvent.click(await screen.findByRole('button', { name: 'Change' }))
+    select = await screen.findByRole('combobox', { name: 'Cluster' })
+  }
+  await userEvent.selectOptions(select, id)
 }
 
 // Stop timeout and cloud-init user data sit in the Advanced section, closed until the reader opens it
@@ -102,14 +118,13 @@ describe('VmCreateModal', () => {
 
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
     // The cluster comes first: the network and template lists only open once a cluster is chosen.
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+    await chooseCluster('z1')
 
     // Template option label pulls the `os` field from the API DTO — regression guard
     // against the `osTypeName` mismatch that rendered "<name> — undefined".
-    expect(await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })).toBeInTheDocument()
+    expect(await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })).toBeInTheDocument()
 
-    const selects = screen.getAllByRole('combobox')
-    for (const s of selects) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
+    await chooseTheRest()
 
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
@@ -140,10 +155,11 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={onOpenChange} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
-    await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
-    for (const s of screen.getAllByRole('combobox')) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
+    await chooseCluster('z1')
+    await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })
+    await chooseTheRest()
 
+    await userEvent.click(screen.getByRole('button', { name: /^SSH keys/ }))
     await userEvent.click(await screen.findByRole('checkbox', { name: /desktop/ }))
     expect(screen.getByText('Picked keys are added for the user ubuntu.')).toBeInTheDocument()
     await chooseTheRest()
@@ -158,7 +174,7 @@ describe('VmCreateModal', () => {
 
     const link = await screen.findByRole('link', { name: 'Add one' })
     expect(link.getAttribute('href')).toBe('/ssh-keys')
-    expect(link.parentElement).toHaveTextContent('No SSH keys saved. Add one if you want to log in with SSH.')
+    expect(link.parentElement).toHaveTextContent('No SSH keys saved. Add one.')
   })
 
   it('points to the SSH keys page when none is saved, in Vietnamese too', async () => {
@@ -166,7 +182,7 @@ describe('VmCreateModal', () => {
 
     const link = await screen.findByRole('link', { name: 'Thêm một key' })
     expect(link.getAttribute('href')).toBe('/ssh-keys')
-    expect(link.parentElement).toHaveTextContent('Chưa lưu SSH key nào. Thêm một key nếu muốn đăng nhập bằng SSH.')
+    expect(link.parentElement).toHaveTextContent('Chưa lưu SSH key nào. Thêm một key.')
     expect(screen.getByText('SSH key')).toBeInTheDocument()
   })
 
@@ -182,9 +198,10 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
-    await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
-    for (const s of screen.getAllByRole('combobox')) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
+    await chooseCluster('z1')
+    await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })
+    await chooseTheRest()
+    await userEvent.click(screen.getByRole('button', { name: /^SSH keys/ }))
     await userEvent.click(await screen.findByRole('checkbox', { name: /laptop/ }))
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
@@ -194,8 +211,8 @@ describe('VmCreateModal', () => {
 
   // titan-ops features/vm/design.md#console-password — the password logs in as ubuntu on the Console tab; the server
   // keeps only its hash.
-  // titan-ops features/vm/design.md#vm-create-form — the five choices every VM needs come first; SSH keys and the
-  // console password sit under Access (optional); stop timeout and user data under Advanced, closed by default.
+  // titan-ops features/vm/design.md#vm-create-form — SSH keys and the console password sit under Access (optional);
+  // stop timeout and user data under Advanced, closed by default.
   describe('form sections', () => {
     let posts: Record<string, unknown>[]
     beforeEach(() => {
@@ -215,8 +232,8 @@ describe('VmCreateModal', () => {
     async function fillTheForm() {
       await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
       await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
-      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseCluster('z1')
+      await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })
       await chooseTheRest()
     }
 
@@ -224,28 +241,18 @@ describe('VmCreateModal', () => {
       renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
 
       const access = await screen.findByRole('group', { name: 'Access (optional)' })
-      expect(within(access).getByText('Without an SSH key, log in on the Console tab with a console password, or add a key later on the VM page.')).toBeInTheDocument()
+      expect(within(access).getByText('Without an SSH key, log in on the Console tab as ubuntu with the console password, which can’t be shown again, or add a key later on the VM page.')).toBeInTheDocument()
+      await userEvent.click(await within(access).findByRole('button', { name: /^SSH keys/ }))
       expect(await within(access).findByRole('checkbox', { name: /laptop/ })).toBeInTheDocument()
       expect(within(access).getByLabelText('Console password')).toBeInTheDocument()
       expect(within(access).queryByRole('combobox')).not.toBeInTheDocument()
-    })
-
-    it('puts the five choices every VM needs before the Access section', async () => {
-      renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-
-      const access = await screen.findByRole('group', { name: 'Access (optional)' })
-      const name = screen.getByPlaceholderText(/e\.g\. web/i)
-      const choices = [name, ...['Cluster', 'Network', 'Template', 'Size'].map(label => screen.getByText(label))]
-      for (const field of choices) {
-        expect(field.compareDocumentPosition(access) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-      }
     })
 
     it('says the same in Vietnamese', async () => {
       renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>, { lang: 'vi' })
 
       const access = await screen.findByRole('group', { name: 'Truy cập (không bắt buộc)' })
-      expect(within(access).getByText('Không có SSH key thì đăng nhập ở tab Console bằng mật khẩu console, hoặc thêm key sau ở trang VM.')).toBeInTheDocument()
+      expect(within(access).getByText('Không có SSH key thì đăng nhập user ubuntu ở tab Console bằng mật khẩu console (không xem lại được), hoặc thêm key sau ở trang VM.')).toBeInTheDocument()
       const advanced = screen.getByRole('button', { name: /^Nâng cao/ })
       expect(advanced).toHaveTextContent('Thời gian dừng, cloud-init user data')
       expect(advanced).toHaveAttribute('aria-expanded', 'false')
@@ -356,8 +363,8 @@ describe('VmCreateModal', () => {
     async function fillTheForm() {
       await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
       await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
-      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseCluster('z1')
+      await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })
       await chooseTheRest()
     }
 
@@ -368,7 +375,7 @@ describe('VmCreateModal', () => {
       const field = screen.getByLabelText('Console password')
       expect(field.getAttribute('type')).toBe('password')
       expect(field.getAttribute('autocomplete')).toBe('new-password')
-      expect(screen.getByText('Optional. 12 to 72 characters, to log in as ubuntu on the Console tab. It cannot be shown again.')).toBeInTheDocument()
+      expect(field.getAttribute('placeholder')).toBe('12 to 72 characters')
       await userEvent.type(field, 'correct horse battery')
       await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
 
@@ -420,7 +427,7 @@ describe('VmCreateModal', () => {
       await userEvent.type(screen.getByPlaceholderText(/web/i), 'my-vm')
       await userEvent.click(screen.getByRole('button', { name: 'Tạo VM' }))
 
-      expect(screen.getByText('Không bắt buộc. 12 đến 72 ký tự, để đăng nhập user ubuntu ở tab Console. Không xem lại được.')).toBeInTheDocument()
+      expect(screen.getByLabelText('Mật khẩu console').getAttribute('placeholder')).toBe('12 đến 72 ký tự')
       expect(await screen.findByText('Mật khẩu console phải từ 12 đến 72 ký tự.')).toBeInTheDocument()
     })
   })
@@ -445,8 +452,8 @@ describe('VmCreateModal', () => {
     async function fillTheForm() {
       await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
       await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
-      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseCluster('z1')
+      await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })
       await chooseTheRest()
       await openAdvanced()
     }
@@ -531,8 +538,8 @@ describe('VmCreateModal', () => {
     async function fillTheForm() {
       await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
       await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
-      await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })
+      await chooseCluster('z1')
+      await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })
       await chooseTheRest()
       await openAdvanced()
     }
@@ -609,7 +616,7 @@ describe('VmCreateModal', () => {
   // titan-ops features/catalog/design.md#template-per-cluster — each cluster holds its own copy of a template; the
   // form offers only the ones synced in the cluster picked.
   const clusterTwo = { id: 'z2', name: 'Cluster 2' }
-  const debian = { id: 't2', name: 'Debian 12', os: 'Debian' }
+  const debian = { id: 't2', name: 'Debian 12', description: 'Debian 12 bookworm', os: 'debian/12' }
   const templatesByCluster = http.get('*/v1/templates', ({ request }) => {
     const clusterId = new URL(request.url).searchParams.get('clusterId')
     if (clusterId === 'z1') {
@@ -633,12 +640,12 @@ describe('VmCreateModal', () => {
     const clusterSelect = await screen.findByRole('combobox', { name: 'Cluster' })
 
     await userEvent.selectOptions(clusterSelect, 'z1')
-    expect(await screen.findByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: 'Debian 12 — Debian' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })).toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: /^Debian 12/ })).not.toBeInTheDocument()
 
     await userEvent.selectOptions(clusterSelect, 'z2')
-    expect(await screen.findByRole('option', { name: 'Debian 12 — Debian' })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: 'Ubuntu 22.04 — Ubuntu' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('radio', { name: /^Debian 12/ })).toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: /^Ubuntu 22\.04/ })).not.toBeInTheDocument()
   })
 
   it('drops the chosen template when the new cluster does not offer it', async () => {
@@ -655,19 +662,19 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     const clusterSelect = await screen.findByRole('combobox', { name: 'Cluster' })
     await userEvent.selectOptions(clusterSelect, 'z1')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Template' }), 't1')
+    await userEvent.click(await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ }))
 
     await userEvent.selectOptions(clusterSelect, 'z2')
-    await screen.findByRole('option', { name: 'Debian 12 — Debian' })
+    await screen.findByRole('radio', { name: /^Debian 12/ })
 
-    // Network and size chosen, template not: a template still chosen from z1 would let the form send. The select
-    // alone would read '' either way (a value outside the options).
+    // z2 offers one template, so that one is chosen; the template picked in z1 is never sent.
+    expect(screen.getByRole('radio', { name: /^Debian 12/ })).toBeChecked()
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Network' }), 'n2')
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Size' }), 'm')
+    await userEvent.click(screen.getByRole('radio', { name: /^Medium/ }))
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
-    expect(await screen.findByText('Choose a cluster, network, template and size.')).toBeInTheDocument()
-    expect(requestBody).toBeUndefined()
+    await waitFor(() => expect(requestBody).toBeDefined())
+    expect((requestBody as { templateId: string }).templateId).toBe('t2')
   })
 
   it('keeps the chosen template when the new cluster offers it too', async () => {
@@ -684,10 +691,10 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     const clusterSelect = await screen.findByRole('combobox', { name: 'Cluster' })
     await userEvent.selectOptions(clusterSelect, 'z1')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Template' }), 't1')
+    await userEvent.click(await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ }))
 
     await userEvent.selectOptions(clusterSelect, 'z2')
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Template' })).toHaveValue('t1'))
+    await waitFor(() => expect(screen.getByRole('radio', { name: /^Ubuntu 22\.04/ })).toBeChecked())
 
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
     await chooseTheRest()
@@ -705,7 +712,7 @@ describe('VmCreateModal', () => {
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+    await chooseCluster('z1')
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
 
@@ -725,7 +732,7 @@ describe('VmCreateModal', () => {
     expect(await screen.findByText(/select a cluster first/i)).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: 'Network' })).not.toBeInTheDocument()
 
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+    await chooseCluster('z1')
 
     const network = screen.getByRole('combobox', { name: 'Network' })
     expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'default'])
@@ -747,7 +754,7 @@ describe('VmCreateModal', () => {
       http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+    await chooseCluster('z1')
 
     const network = screen.getByRole('combobox', { name: 'Network' })
     expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'default'])
@@ -778,8 +785,8 @@ describe('VmCreateModal', () => {
     expect(Array.from(network.querySelectorAll('option')).map(o => o.textContent)).toEqual(['Select a network', 'far-away', 'farther'])
     // Template and size chosen, network not: z1's network still chosen would let the form send. The select alone
     // would read '' either way (its value is not among the options).
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Template' }), 't1')
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Size' }), 'm')
+    await userEvent.click(await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ }))
+    await userEvent.click(screen.getByRole('radio', { name: /^Medium/ }))
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
     expect(await screen.findByText('Choose a cluster, network, template and size.')).toBeInTheDocument()
@@ -792,7 +799,7 @@ describe('VmCreateModal', () => {
       http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])),
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z2')
+    await chooseCluster('z2')
 
     expect(screen.getByText(/no active networks in this cluster/i)).toBeInTheDocument()
   })
@@ -806,7 +813,7 @@ describe('VmCreateModal', () => {
     )
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+    await chooseCluster('z1')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Network' }), 'n1')
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
@@ -826,8 +833,7 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    const selects = screen.getAllByRole('combobox')
-    for (const s of selects) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
+    await chooseTheRest()
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
     await waitFor(() => expect(screen.getByText('VM quota exceeded')).toBeInTheDocument())
@@ -847,8 +853,7 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    const selects = screen.getAllByRole('combobox')
-    for (const s of selects) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
+    await chooseTheRest()
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
     await waitFor(() => expect(screen.getByText(/account is suspended/i)).toBeInTheDocument())
@@ -869,8 +874,7 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    const selects = screen.getAllByRole('combobox')
-    for (const s of selects) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
+    await chooseTheRest()
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
     await waitFor(() => expect(screen.getByText('Selected template is not available right now — pick another')).toBeInTheDocument())
@@ -891,11 +895,150 @@ describe('VmCreateModal', () => {
     renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
     await waitFor(() => expect(screen.queryByText(/no active networks/i)).not.toBeInTheDocument())
     await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
-    const selects = screen.getAllByRole('combobox')
-    for (const s of selects) await userEvent.selectOptions(s, s.querySelectorAll('option')[1]?.value ?? '')
+    await chooseTheRest()
     await chooseTheRest()
     await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
     await waitFor(() => expect(screen.getByText(/awaiting admin approval/i)).toBeInTheDocument())
     expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument()
+  })
+
+  // titan-ops features/vm/design.md#vm-create-form — where the VM goes sits on one line under the title; templates are
+  // grouped by OS family; sizes are rows with their hourly price; the footer sums up the choice.
+  describe('layout', () => {
+    const small = { id: 's', name: 'Small', vcpu: 1, memoryMb: 2048, pricePerHour: 170 }
+    const ubuntu24 = { id: 't3', name: 'Ubuntu 24.04', description: 'Ubuntu 24.04 LTS', os: 'ubuntu/24.04' }
+    const rocky = { id: 't4', name: 'Rocky 9', description: 'Rocky Linux 9 application server', os: 'rockylinux/9' }
+    let posts: Record<string, unknown>[]
+
+    beforeEach(() => {
+      posts = []
+      server.use(
+        http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork])),
+        http.get('*/v1/clusters', () => HttpResponse.json([cluster])),
+        http.get('*/v1/templates', () => HttpResponse.json([template])),
+        http.get('*/v1/vm-offerings', () => HttpResponse.json([small, offering])),
+        http.post('*/v1/tenant/vms', async ({ request }) => {
+          posts.push(await request.json() as Record<string, unknown>)
+          return HttpResponse.json({ vmId: 'vm-new' }, { status: 202 })
+        }),
+      )
+    })
+
+    function render() {
+      return renderWithProviders(<MemoryRouter><VmCreateModal open onOpenChange={vi.fn()} /></MemoryRouter>)
+    }
+
+    it('shows cluster and network on one line with Change, and opens their selects on Change', async () => {
+      render()
+
+      expect(await screen.findByText('Cluster 1 · default')).toBeInTheDocument()
+      expect(screen.queryByRole('combobox', { name: 'Cluster' })).not.toBeInTheDocument()
+      const change = screen.getByRole('button', { name: 'Change' })
+      expect(change).toHaveAttribute('aria-expanded', 'false')
+
+      await userEvent.click(change)
+      expect(screen.getByRole('combobox', { name: 'Cluster' })).toHaveValue('z1')
+      expect(screen.getByRole('combobox', { name: 'Network' })).toHaveValue('n1')
+      expect(change).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('shows the cluster and network selects when there is a choice to make', async () => {
+      server.use(http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])))
+      render()
+
+      expect(await screen.findByRole('combobox', { name: 'Cluster' })).toHaveValue('')
+      expect(screen.queryByText('Cluster 1 · default')).not.toBeInTheDocument()
+    })
+
+    it('groups templates by OS family and shows the family column only with two families or more', async () => {
+      server.use(http.get('*/v1/templates', () => HttpResponse.json([template, ubuntu24, rocky])))
+      render()
+
+      // Families in alphabetical order; the one with the most templates is open first.
+      const ubuntuFamily = await screen.findByRole('button', { name: 'Ubuntu 2' })
+      const rockyFamily = screen.getByRole('button', { name: 'Rocky Linux 1' })
+      expect(rockyFamily.compareDocumentPosition(ubuntuFamily) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(ubuntuFamily).toHaveAttribute('aria-pressed', 'true')
+      const radios = within(screen.getByRole('radiogroup', { name: 'Template' })).getAllByRole('radio')
+      expect(radios.map(radio => radio.getAttribute('value'))).toEqual(['t1', 't3'])
+      expect(screen.getByText('Ubuntu 24.04 LTS')).toBeInTheDocument()
+
+      await userEvent.click(rockyFamily)
+      expect(rockyFamily).toHaveAttribute('aria-pressed', 'true')
+      expect(ubuntuFamily).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByRole('radio', { name: /^Rocky 9/ })).toBeInTheDocument()
+      expect(screen.queryByRole('radio', { name: /^Ubuntu 22\.04/ })).not.toBeInTheDocument()
+    })
+
+    it('searches templates only when there are more than six', async () => {
+      const six = [template, ubuntu24, rocky, debian, { ...debian, id: 't5', name: 'Debian 11' }, { ...ubuntu24, id: 't6', name: 'Ubuntu 20.04' }]
+      server.use(http.get('*/v1/templates', () => HttpResponse.json(six)))
+      const first = render()
+      await screen.findByRole('radiogroup', { name: 'Template' })
+      expect(screen.queryByRole('searchbox', { name: 'Search templates' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Ubuntu 3' })).toBeInTheDocument()
+      first.unmount()
+
+      server.use(http.get('*/v1/templates', () => HttpResponse.json([...six, { ...rocky, id: 't7', name: 'Rocky 8' }])))
+      render()
+      const search = await screen.findByRole('searchbox', { name: 'Search templates' })
+      await userEvent.type(search, 'rocky')
+      const radios = within(screen.getByRole('radiogroup', { name: 'Template' })).getAllByRole('radio')
+      expect(radios.map(radio => radio.getAttribute('value'))).toEqual(['t4', 't7'])
+    })
+
+    it('picks the only template of the cluster', async () => {
+      render()
+
+      expect(await screen.findByRole('radio', { name: /^Ubuntu 22\.04/ })).toBeChecked()
+      expect(screen.queryByRole('button', { name: 'Ubuntu 1' })).not.toBeInTheDocument()
+      await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
+      await userEvent.click(screen.getByRole('radio', { name: /^Small/ }))
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+
+      await waitFor(() => expect(posts).toHaveLength(1))
+      expect(posts[0]).toMatchObject({ clusterId: 'z1', networkId: 'n1', templateId: 't1', vmOfferingId: 's' })
+    })
+
+    it('lists sizes with vCPU, RAM and hourly price, none picked', async () => {
+      render()
+
+      const sizes = await screen.findByRole('radiogroup', { name: 'Size' })
+      const smallRow = within(sizes).getByRole('radio', { name: /^Small/ })
+      expect(within(sizes).getAllByRole('radio').some(radio => (radio as HTMLInputElement).checked)).toBe(false)
+      expect(smallRow).toHaveAccessibleName('Small 1 vCPU 2 GB RAM 170 ₫/hour')
+      expect(within(sizes).getByRole('radio', { name: /^Medium/ })).toHaveAccessibleName('Medium 2 vCPU 4 GB RAM 311.256 ₫/hour')
+    })
+
+    it('sums up template, size and hourly price in the footer', async () => {
+      render()
+
+      const summary = await screen.findByRole('status')
+      await waitFor(() => expect(summary).toHaveTextContent('Ubuntu 22.04'))
+      expect(summary).not.toHaveTextContent('₫')
+      await userEvent.click(screen.getByRole('radio', { name: /^Medium/ }))
+      expect(summary).toHaveTextContent('Ubuntu 22.04 · Medium · 311.256 ₫/hour')
+    })
+
+    it('opens the SSH key list from its button and counts the picked keys', async () => {
+      server.use(http.get('*/v1/tenant/ssh-keys', () => HttpResponse.json([laptopKey, desktopKey])))
+      render()
+
+      const button = await screen.findByRole('button', { name: /^SSH keys/ })
+      await waitFor(() => expect(button).toHaveTextContent('None picked'))
+      expect(button).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+
+      await userEvent.click(button)
+      await userEvent.click(screen.getByRole('checkbox', { name: /laptop/ }))
+      await userEvent.click(screen.getByRole('checkbox', { name: /desktop/ }))
+      expect(button).toHaveTextContent('2 picked')
+
+      await userEvent.type(screen.getByPlaceholderText(/e\.g\. web/i), 'my-vm')
+      await userEvent.click(screen.getByRole('radio', { name: /^Small/ }))
+      await userEvent.click(screen.getByRole('button', { name: /create vm/i }))
+      await waitFor(() => expect(posts).toHaveLength(1))
+      expect(posts[0].sshKeyIds).toEqual(['k1', 'k2'])
+    })
   })
 })
