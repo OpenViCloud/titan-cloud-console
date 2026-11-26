@@ -949,6 +949,24 @@ describe('VmCreateModal', () => {
       expect(screen.queryByText('Cluster 1 · default')).not.toBeInTheDocument()
     })
 
+    it('keeps the cluster and network selects open once one is changed, until Change is pressed again', async () => {
+      server.use(
+        http.get('*/v1/tenant/networks', () => HttpResponse.json([activeNetwork, clusterTwoNetwork])),
+        http.get('*/v1/clusters', () => HttpResponse.json([cluster, { id: 'z2', name: 'Cluster 2' }])),
+      )
+      render()
+
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Cluster' }), 'z1')
+      expect(await screen.findByText('Cluster 1 · default')).toBeInTheDocument()
+      const change = screen.getByRole('button', { name: 'Change' })
+      expect(change).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByRole('combobox', { name: 'Network' })).toHaveValue('n1')
+
+      await userEvent.click(change)
+      expect(change).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByRole('combobox', { name: 'Cluster' })).not.toBeInTheDocument()
+    })
+
     it('groups templates by OS family and shows the family column only with two families or more', async () => {
       server.use(http.get('*/v1/templates', () => HttpResponse.json([template, ubuntu24, rocky])))
       render()

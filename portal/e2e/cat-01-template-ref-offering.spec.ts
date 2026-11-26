@@ -185,7 +185,8 @@ test('U6 — Create VM keeps Template and Size as two independent choices', asyn
   await expect(templates).toBeVisible({ timeout: 30_000 })
   await expect(sizes).toBeVisible()
 
-  // One listed template, which the form picks; four tiers, none picked.
+  // One listed template, which the form picks; four tiers, none picked. The picked template does not narrow the
+  // sizes (titan-ops features/catalog/design.md#template-borrows-sizing: the FK is a base, not a limit).
   await expect(templates.getByRole('radio'), '1 listed template').toHaveCount(1)
   await expect(templates.getByRole('radio')).toBeChecked()
   await expect(sizes.getByRole('radio'), '4 tiers').toHaveCount(4)
@@ -194,10 +195,6 @@ test('U6 — Create VM keeps Template and Size as two independent choices', asyn
   // catalog, not from whatever tier a template happens to point at.
   await expect(sizes.getByRole('radio', { name: /^Small 1 vCPU 2 GB RAM/ })).toHaveCount(1)
   await expect(sizes.getByRole('radio', { name: /^Extra Large 8 vCPU 16 GB RAM/ })).toHaveCount(1)
-
-  // A picked template must NOT constrain the size list (titan-ops features/catalog/design.md#template-borrows-sizing: the FK is a base, not a limit).
-  // The only listed template is picked already, and all four tiers are still offered.
-  await expect(sizes.getByRole('radio'), 'size list unchanged by the picked template').toHaveCount(4)
 
   await page.screenshot({ path: `${EVIDENCE}/u6-create-vm-two-choices-pass.png`, fullPage: true })
   // Deliberately NOT clicking Create — provisioning a VM is billable.
